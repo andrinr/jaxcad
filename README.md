@@ -1,6 +1,6 @@
 # JaxCAD
 
-> **⚠️ Experimental Project** - Currently exploratory and under active development.
+> **⚠️ Experimental Project** - Currently very exploratory and under active development.
 
 Fully differentiable CAD with Signed Distance Functions (SDFs) and JAX. Design shapes using intuitive fluent API, then optimize them with gradient descent.
 
