@@ -1,17 +1,119 @@
 # JaxCAD
 
-> **⚠️ Early Prototype** - This is an initial prototype exploring differentiable CAD operations with JAX.
+> **⚠️ Experimental Project** - Currently very exploratory and under active development.
 
-Differentiable CAD primitives and operations built with JAX. Compute gradients through 3D geometry operations for gradient-based shape optimization.
+Fully differentiable CAD with Signed Distance Functions (SDFs) and JAX. Design shapes using intuitive fluent API, then optimize them with gradient descent.
 
-![Primitives](assets/primitives.png)
+![Showcase](assets/showcase_geometry.png)
 
-## What it does
+## Key Features
 
-- **Differentiable primitives** (box, sphere, cylinder) and transformations (translate, rotate, scale)
-- **2D sketch operations** (rectangle, circle, polygon) → **3D operations** (extrude, revolve, loft, sweep)
-- **Gradient support** through all operations via JAX autodiff
-- **Shape optimization** using gradient descent on geometric parameters
+- **Fluent API**: Build geometry with intuitive method chaining
+- **Full Differentiability**: Every parameter can be optimized with JAX gradients
+- **SDF-based CSG**: Smooth boolean operations for robust geometry
+- **Parameter System**: Mark parameters as free/fixed for precise optimization control
+
+## Quick Start
+
+```python
+import jax.numpy as jnp
+from jaxcad.primitives import Sphere, Box
+
+# Build shapes with fluent API
+sphere = Sphere(radius=1.0).translate([2, 0, 0])
+box = Box(size=[1, 1, 1])
+
+# Combine with boolean operators
+shape = sphere | box  # Union
+shape = sphere & box  # Intersection
+shape = sphere - box  # Difference
+
+# Evaluate signed distance at any point
+point = jnp.array([0.5, 0.0, 0.0])
+distance = shape(point)  # Returns SDF value
+```
+
+### Parametric Optimization
+
+```python
+import jax
+from jaxcad.parametric import parametric
+
+# Define parametric shape
+@parametric
+def my_shape():
+    sphere = Sphere(radius=1.0)
+    return sphere.translate([0.0, 0.0, 0.0])
+
+# Optimize to make surface pass through target
+params = my_shape.init_params()
+target = jnp.array([2.5, 0.0, 0.0])
+
+for _ in range(30):
+    grad = jax.grad(lambda p: my_shape(p, target) ** 2)(params)
+    params = jax.tree_util.tree_map(lambda p, g: p - 0.1 * g, params, grad)
+
+# Result: sphere moves to target point!
+```
+
+## Parameters and Optimization
+
+Control which values can be optimized during gradient descent:
+
+**Raw values** (fixed by default):
+```python
+sphere = Sphere(radius=1.0)  # Fixed, won't change during optimization
+```
+
+**Free parameters** (can be optimized):
+```python
+from jaxcad.constraints import Scalar, Point
+from jaxcad.parametric import parametric
+
+radius = Scalar(value=1.0, free=True, name='radius')
+position = Point(value=[0, 0, 0], free=True, name='pos')
+
+@parametric
+def shape():
+    return Sphere(radius=radius).translate(position)
+
+# Optimize with JAX gradients
+params = shape.init_params()
+# params = {'radius': 1.0, 'pos': [0, 0, 0]}
+```
+
+D**Parameter types**: `Scalar` (single values), `Point` (3D vectors). Aliases: `Distance`, `Angle`.
+
+**Example: Optimize position, keep size fixed**
+
+```python
+import jax
+import jax.numpy as jnp
+from jaxcad.constraints import Scalar, Point
+from jaxcad.primitives import Sphere
+from jaxcad.parametric import parametric
+
+# Design intent: sphere size is fixed, but position can be optimized
+fixed_radius = Scalar(value=1.0, free=False)      # Cannot change
+free_position = Point(value=[0, 0, 0], free=True)   # Can be optimized
+
+@parametric
+def constrained_design():
+    sphere = Sphere(radius=fixed_radius)
+    return sphere.translate(free_position)
+
+# Optimize position to fit a target point, but radius stays 1.0
+params = constrained_design.init_params()
+target = jnp.array([3.0, 1.0, 0.0])
+
+for _ in range(50):
+    grad = jax.grad(lambda p: constrained_design(p, target) ** 2)(params)
+    params = jax.tree_util.tree_map(lambda p, g: p - 0.1 * g, params, grad)
+
+# Result: position optimized to [2.0, 1.0, 0.0], radius remains 1.0!
+```
+
+---
 
 ## Installation
 
@@ -19,77 +121,23 @@ Differentiable CAD primitives and operations built with JAX. Compute gradients t
 uv sync  # or: pip install -e .
 ```
 
-## Quick Example
-
-```python
-import jax
-import jax.numpy as jnp
-from jaxcad import box, extrude, rectangle, twist
-
-# Create geometry
-profile = rectangle(jnp.zeros(2), width=2.0, height=1.0)
-solid = extrude(profile, height=3.0)
-twisted = twist(solid, axis=jnp.array([0., 0., 1.]), angle=jnp.pi/2)
-
-# Compute gradients
-def volume(twist_angle):
-    solid = extrude(profile, height=3.0)
-    twisted = twist(solid, axis=jnp.array([0., 0., 1.]), angle=twist_angle)
-    bbox = jnp.max(twisted.vertices, axis=0) - jnp.min(twisted.vertices, axis=0)
-    return jnp.prod(bbox)
-
-grad = jax.grad(volume)(jnp.pi/2)  # ∂(volume)/∂(angle)
-```
-
 ## Examples
 
-<table>
-<tr>
-<td width="33%"><img src="assets/extrude.png"/><br/><b>Extrude</b><br/>2D → 3D</td>
-<td width="33%"><img src="assets/revolve.png"/><br/><b>Revolve</b><br/>Profile around axis</td>
-<td width="33%"><img src="assets/sweep.png"/><br/><b>Sweep</b><br/>Profile along path</td>
-</tr>
-<tr>
-<td width="33%"><img src="assets/array.png"/><br/><b>Array</b><br/>Circular pattern</td>
-<td width="33%"><img src="assets/twist.png"/><br/><b>Twist</b><br/>Deformation</td>
-<td width="33%"><img src="assets/complex.png"/><br/><b>Complex</b><br/>Combined operations</td>
-</tr>
-</table>
-
 ```bash
-uv run python examples/basic_differentiability.py   # Gradients, Jacobians, Hessians
-uv run python examples/optimization_example.py       # Gradient-based optimization
-uv run python examples/complex_geometry.py           # All operations with viz
-```
+# Start here
+JAX_PLATFORMS=cpu uv run python examples/quickstart.py
 
-## Core Operations
+# See all primitives
+JAX_PLATFORMS=cpu uv run python examples/primitives.py
 
-**Primitives**: `box`, `sphere`, `cylinder`
-**2D Sketch**: `rectangle`, `circle`, `polygon`, `regular_polygon`
-**3D Operations**: `extrude`, `revolve`, `loft`, `sweep`
-**Transformations**: `translate`, `rotate`, `scale`
-**Modifications**: `twist`, `taper`, `thicken`
-**Arrays**: `array_linear`, `array_circular`
-**Mesh**: `merge`, `smooth_vertices`, `subdivide_faces`
+# Boolean operations with visualization
+JAX_PLATFORMS=cpu uv run python examples/boolean_operations.py
 
-## Implementation
-
-- Mesh-based B-rep: vertices (N×3) and faces (M×3) as JAX arrays
-- Pure functions compatible with `jax.grad`, `jax.vmap`, `jax.jit`
-- 65 passing tests covering operations and gradients
-
-## Testing & Linting
-
-```bash
-uv run pytest tests/ -v                              # Run tests
-uv run ruff check jaxcad/ tests/ examples/ --fix    # Lint & format
+# Advanced parametric optimization
+JAX_PLATFORMS=cpu uv run python examples/decorator_api.py
 ```
 
 ## License
-
-MIT License - See full text below.
-
----
 
 MIT License
 
