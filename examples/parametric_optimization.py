@@ -23,9 +23,9 @@ def example_basic_constraints():
     cs = ConstraintSystem()
 
     # Create parameters with different properties
-    center = cs.point([0.0, 0.0, 0.0], free=True, name="center")
-    radius = cs.distance(1.0, free=False, name="radius")  # Fixed
-    angle = cs.angle(jnp.pi/4, free=True, name="rotation_angle")
+    center = cs.point([0.0, 0.0, 0.0], name="center")  # Free by default
+    radius = cs.distance(1.0, fixed=True, name="radius")  # Explicitly fixed
+    angle = cs.angle(jnp.pi/4, name="rotation_angle")  # Free by default
 
     print("\n" + cs.summary())
 
@@ -169,7 +169,7 @@ def example_mixed_free_fixed():
     # Now mark some as fixed
     params = cs.get_free_params()
     if len(params) >= 2:
-        params[1].free = False  # Fix the rotation angle
+        params[1].fixed = True  # Fix the rotation angle
         print(f"\nMarked '{params[1].name}' as FIXED")
 
     print("\nAfter marking rotation as fixed:")
@@ -209,10 +209,11 @@ def main():
     print("PARAMETRIC OPTIMIZATION EXAMPLES COMPLETE")
     print("=" * 70)
     print("\nKey takeaways:")
-    print("  1. Parameters can be marked as free (optimizable) or fixed (static)")
-    print("  2. Transform operations automatically become constraints")
-    print("  3. JAX AD only differentiates through free parameters")
-    print("  4. You can optimize to match target geometric conditions")
+    print("  1. ALL parameters are FREE (optimizable) by default")
+    print("  2. Both primitives AND transforms become constraints automatically")
+    print("  3. Mark parameters as fixed=True to exclude from optimization")
+    print("  4. JAX AD only differentiates through free parameters")
+    print("  5. Optimize to match target geometric conditions")
 
 
 if __name__ == "__main__":

@@ -126,7 +126,8 @@ def compile_parametric(sdf: SDF, constraint_system: ConstraintSystem) -> Callabl
 
                 radius_param = param_map.get((node.node_id, 'radius'))
                 if radius_param:
-                    updated_kwargs['radius'] = float(radius_param.value)
+                    # Keep as JAX array for tracing compatibility
+                    updated_kwargs['radius'] = radius_param.value
 
                 size_param = param_map.get((node.node_id, 'size'))
                 if size_param:
@@ -134,15 +135,15 @@ def compile_parametric(sdf: SDF, constraint_system: ConstraintSystem) -> Callabl
 
                 height_param = param_map.get((node.node_id, 'height'))
                 if height_param:
-                    updated_kwargs['height'] = float(height_param.value)
+                    updated_kwargs['height'] = height_param.value
 
                 major_radius_param = param_map.get((node.node_id, 'major_radius'))
                 if major_radius_param:
-                    updated_kwargs['major_radius'] = float(major_radius_param.value)
+                    updated_kwargs['major_radius'] = major_radius_param.value
 
                 minor_radius_param = param_map.get((node.node_id, 'minor_radius'))
                 if minor_radius_param:
-                    updated_kwargs['minor_radius'] = float(minor_radius_param.value)
+                    updated_kwargs['minor_radius'] = minor_radius_param.value
 
                 # If we have updated parameters, rebuild the primitive
                 if updated_kwargs:
