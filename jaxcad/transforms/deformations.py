@@ -1,8 +1,11 @@
 """Non-linear deformation transformations for SDFs."""
 
+from typing import Union
+
 import jax.numpy as jnp
 from jax import Array
 
+from jaxcad.constraints import Distance
 from jaxcad.sdf import SDF
 
 
@@ -12,45 +15,48 @@ class Twist(SDF):
     Args:
         sdf: The SDF to twist
         axis: Twist axis ('x', 'y', or 'z')
-        strength: Twist strength (radians per unit length along axis)
+        strength: Twist strength (radians per unit length along axis, float or Distance)
     """
 
-    def __init__(self, sdf: SDF, axis: str = 'z', strength: float = 1.0):
+    def __init__(self, sdf: SDF, axis: str = 'z', strength: Union[float, Distance] = 1.0):
         self.sdf = sdf
         self.axis = axis.lower()
-        self.strength = strength
+
+        # Accept both raw values and constraints
+        if isinstance(strength, Distance):
+            self.strength_param = strength
+        else:
+            # Wrap raw value in a fixed Distance constraint
+            self.strength_param = Distance(value=float(strength), free=False)
 
         if self.axis not in ['x', 'y', 'z']:
             raise ValueError(f"Invalid axis: {axis}. Use 'x', 'y', or 'z'")
 
     def __call__(self, p: Array) -> Array:
         """Evaluate twisted SDF."""
-        if self.axis == 'z':
-            # Twist around Z axis
-            z = p[..., 2]
-            angle = z * self.strength
-            c, s = jnp.cos(angle), jnp.sin(angle)
-            x = p[..., 0] * c + p[..., 1] * s
-            y = -p[..., 0] * s + p[..., 1] * c
-            p_twisted = jnp.stack([x, y, z], axis=-1)
-        elif self.axis == 'y':
-            # Twist around Y axis
-            y = p[..., 1]
-            angle = y * self.strength
-            c, s = jnp.cos(angle), jnp.sin(angle)
-            x = p[..., 0] * c + p[..., 2] * s
-            z = -p[..., 0] * s + p[..., 2] * c
-            p_twisted = jnp.stack([x, y, z], axis=-1)
-        else:  # 'x'
-            # Twist around X axis
-            x = p[..., 0]
-            angle = x * self.strength
-            c, s = jnp.cos(angle), jnp.sin(angle)
-            y = p[..., 1] * c + p[..., 2] * s
-            z = -p[..., 1] * s + p[..., 2] * c
-            p_twisted = jnp.stack([x, y, z], axis=-1)
+        # Use static functional method (default to Z-axis for now)
+        return Twist.eval(self.sdf, p, self.strength_param.value)
 
-        return self.sdf(p_twisted)
+    @staticmethod
+    def eval(sdf_fn, p: Array, strength: float) -> Array:
+        """Functional evaluation of Z-axis twist.
+
+        Args:
+            sdf_fn: SDF function to twist
+            p: Query point(s)
+            strength: Twist strength (radians per unit length along Z)
+
+        Returns:
+            Twisted SDF value
+        """
+        # Twist around Z axis
+        z = p[..., 2]
+        angle = z * strength
+        c, s = jnp.cos(angle), jnp.sin(angle)
+        x = p[..., 0] * c + p[..., 1] * s
+        y = -p[..., 0] * s + p[..., 1] * c
+        p_twisted = jnp.stack([x, y, z], axis=-1)
+        return sdf_fn(p_twisted)
 
 
 class Bend(SDF):
@@ -59,20 +65,26 @@ class Bend(SDF):
     Args:
         sdf: The SDF to bend
         axis: Bend axis ('x', 'y', or 'z') - the axis to bend along
-        strength: Bend strength (curvature factor)
+        strength: Bend strength (curvature factor, float or Distance)
     """
 
-    def __init__(self, sdf: SDF, axis: str = 'z', strength: float = 1.0):
+    def __init__(self, sdf: SDF, axis: str = 'z', strength: Union[float, Distance] = 1.0):
         self.sdf = sdf
         self.axis = axis.lower()
-        self.strength = strength
+
+        # Accept both raw values and constraints
+        if isinstance(strength, Distance):
+            self.strength_param = strength
+        else:
+            # Wrap raw value in a fixed Distance constraint
+            self.strength_param = Distance(value=float(strength), free=False)
 
         if self.axis not in ['x', 'y', 'z']:
             raise ValueError(f"Invalid axis: {axis}. Use 'x', 'y', or 'z'")
 
     def __call__(self, p: Array) -> Array:
         """Evaluate bent SDF."""
-        k = self.strength
+        k = self.strength_param.value
 
         if self.axis == 'z':
             # Bend along Z axis
@@ -110,39 +122,46 @@ class Taper(SDF):
     Args:
         sdf: The SDF to taper
         axis: Taper axis ('x', 'y', or 'z')
-        strength: Taper strength (scale change per unit length)
+        strength: Taper strength (scale change per unit length, float or Distance)
     """
 
-    def __init__(self, sdf: SDF, axis: str = 'z', strength: float = 0.5):
+    def __init__(self, sdf: SDF, axis: str = 'z', strength: Union[float, Distance] = 0.5):
         self.sdf = sdf
         self.axis = axis.lower()
-        self.strength = strength
+
+        # Accept both raw values and constraints
+        if isinstance(strength, Distance):
+            self.strength_param = strength
+        else:
+            # Wrap raw value in a fixed Distance constraint
+            self.strength_param = Distance(value=float(strength), free=False)
 
         if self.axis not in ['x', 'y', 'z']:
             raise ValueError(f"Invalid axis: {axis}. Use 'x', 'y', or 'z'")
 
     def __call__(self, p: Array) -> Array:
         """Evaluate tapered SDF."""
-        if self.axis == 'z':
-            z = p[..., 2]
-            scale = 1.0 + z * self.strength
-            x = p[..., 0] / scale
-            y = p[..., 1] / scale
-            p_tapered = jnp.stack([x, y, z], axis=-1)
-        elif self.axis == 'y':
-            y = p[..., 1]
-            scale = 1.0 + y * self.strength
-            x = p[..., 0] / scale
-            z = p[..., 2] / scale
-            p_tapered = jnp.stack([x, y, z], axis=-1)
-        else:  # 'x'
-            x = p[..., 0]
-            scale = 1.0 + x * self.strength
-            y = p[..., 1] / scale
-            z = p[..., 2] / scale
-            p_tapered = jnp.stack([x, y, z], axis=-1)
+        # Use static functional method (default to Z-axis)
+        return Taper.eval(self.sdf, p, self.strength_param.value)
 
-        return self.sdf(p_tapered)
+    @staticmethod
+    def eval(sdf_fn, p: Array, strength: float) -> Array:
+        """Functional evaluation of Z-axis taper.
+
+        Args:
+            sdf_fn: SDF function to taper
+            p: Query point(s)
+            strength: Taper strength (scale change per unit length along Z)
+
+        Returns:
+            Tapered SDF value
+        """
+        z = p[..., 2]
+        scale = 1.0 + z * strength
+        x = p[..., 0] / scale
+        y = p[..., 1] / scale
+        p_tapered = jnp.stack([x, y, z], axis=-1)
+        return sdf_fn(p_tapered)
 
 
 class RepeatInfinite(SDF):

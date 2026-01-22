@@ -5,7 +5,6 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional
 
 import jax
-import jax.numpy as jnp
 from jax import Array
 
 from jaxcad.sdf import SDF
@@ -140,45 +139,52 @@ def extract_graph(sdf: SDF) -> SDFGraph:
         # Transforms
         elif class_name == "Translate":
             child = walk(obj.sdf)
+            # Extract value from parameter (supports both old .offset and new .offset_param)
+            offset = obj.offset_param.value if hasattr(obj, 'offset_param') else obj.offset
             return graph.add_node(
                 OpType.TRANSLATE,
                 children=[child],
-                params={"offset": obj.offset}
+                params={"offset": offset}
             )
         elif class_name == "Rotate":
             child = walk(obj.sdf)
+            angle = obj.angle_param.value if hasattr(obj, 'angle_param') else obj.angle
             return graph.add_node(
                 OpType.ROTATE,
                 children=[child],
-                params={"angle": obj.angle, "matrix": obj.rotation_matrix}
+                params={"angle": angle, "matrix": obj.rotation_matrix}
             )
         elif class_name == "Scale":
             child = walk(obj.sdf)
+            scale = obj.scale_param.value if hasattr(obj, 'scale_param') else obj.scale
             return graph.add_node(
                 OpType.SCALE,
                 children=[child],
-                params={"scale": obj.scale, "is_uniform": obj.is_uniform}
+                params={"scale": scale, "is_uniform": obj.is_uniform}
             )
         elif class_name == "Twist":
             child = walk(obj.sdf)
+            strength = obj.strength_param.value if hasattr(obj, 'strength_param') else obj.strength
             return graph.add_node(
                 OpType.TWIST,
                 children=[child],
-                params={"axis": obj.axis, "strength": obj.strength}
+                params={"axis": obj.axis, "strength": strength}
             )
         elif class_name == "Bend":
             child = walk(obj.sdf)
+            strength = obj.strength_param.value if hasattr(obj, 'strength_param') else obj.strength
             return graph.add_node(
                 OpType.BEND,
                 children=[child],
-                params={"axis": obj.axis, "strength": obj.strength}
+                params={"axis": obj.axis, "strength": strength}
             )
         elif class_name == "Taper":
             child = walk(obj.sdf)
+            strength = obj.strength_param.value if hasattr(obj, 'strength_param') else obj.strength
             return graph.add_node(
                 OpType.TAPER,
                 children=[child],
-                params={"axis": obj.axis, "strength": obj.strength}
+                params={"axis": obj.axis, "strength": strength}
             )
         elif class_name == "Mirror":
             child = walk(obj.sdf)

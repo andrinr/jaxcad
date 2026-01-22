@@ -10,7 +10,6 @@ import jax.numpy as jnp
 
 from jaxcad.primitives import Box, Sphere
 from jaxcad.transforms import Translate, Rotate, Scale, Twist, Taper
-from jaxcad.transforms.functional import translate_eval, rotate_z_eval, twist_z_eval, taper_z_eval
 
 
 def test_translate_gradient_functional():
@@ -19,7 +18,7 @@ def test_translate_gradient_functional():
 
     def loss_fn(offset):
         # Evaluate at a fixed point - distance changes as we move the sphere
-        return translate_eval(sphere, jnp.array([2.0, 0.0, 0.0]), offset) ** 2
+        return Translate.eval(sphere, jnp.array([2.0, 0.0, 0.0]), offset) ** 2
 
     offset = jnp.array([0.0, 0.0, 0.0])  # Start with no offset
     grad_fn = jax.grad(loss_fn)
@@ -55,7 +54,7 @@ def test_rotate_gradient_functional():
 
     def loss_fn(angle):
         # Point outside box that changes distance as we rotate
-        return rotate_z_eval(box, jnp.array([2.0, 1.0, 0.0]), angle) ** 2
+        return Rotate.eval_z(box, jnp.array([2.0, 1.0, 0.0]), angle) ** 2
 
     angle = 0.2  # Small non-zero angle
     grad_fn = jax.grad(loss_fn)
@@ -71,7 +70,7 @@ def test_twist_gradient_functional():
     box = Box(size=jnp.array([0.5, 0.5, 1.0]))
 
     def loss_fn(strength):
-        return twist_z_eval(box, jnp.array([1.0, 0.0, 0.5]), strength) ** 2
+        return Twist.eval(box, jnp.array([1.0, 0.0, 0.5]), strength) ** 2
 
     strength = 1.0
     grad_fn = jax.grad(loss_fn)
@@ -88,7 +87,7 @@ def test_taper_gradient_functional():
 
     def loss_fn(strength):
         # Point outside box
-        return taper_z_eval(box, jnp.array([1.5, 0.0, 0.3]), strength) ** 2
+        return Taper.eval(box, jnp.array([1.5, 0.0, 0.3]), strength) ** 2
 
     strength = 0.3
     grad_fn = jax.grad(loss_fn)
@@ -106,7 +105,7 @@ def test_optimization_example_functional():
 
     def loss_fn(offset):
         # Want the sphere surface to pass through target_point
-        distance = translate_eval(sphere, target_point, offset)
+        distance = Translate.eval(sphere, target_point, offset)
         return distance ** 2
 
     # Start with initial guess

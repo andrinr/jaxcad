@@ -2,51 +2,118 @@
 
 > **⚠️ Experimental Project** - Currently exploratory and under active development.
 
-Differentiable CAD operations using Signed Distance Functions (SDFs) and Constructive Solid Geometry (CSG) built with JAX.
+Fully differentiable CAD with Signed Distance Functions (SDFs) and JAX. Design shapes using intuitive fluent API, then optimize them with gradient descent.
 
-![Boolean Operations](assets/boolean_operations.png)
+![Showcase](assets/showcase_geometry.png)
 
-## Approach
+## Key Features
 
-**SDF-based CSG**: All geometry is represented as signed distance functions, with boolean operations implemented as smooth min/max functions for full differentiability.
+- **Fluent API**: Build geometry with intuitive method chaining
+- **Full Differentiability**: Every parameter can be optimized with JAX gradients
+- **SDF-based CSG**: Smooth boolean operations for robust geometry
+- **Parameter System**: Mark parameters as free/fixed for precise optimization control
 
-## Features
-
-### Primitives
-Sphere, box, cylinder, cone, torus, capsule (as SDF functions)
-
-![Primitives](assets/primitives.png)
-
-### Boolean Operations
-Union, difference, intersection with smooth blending
-
-### Transformations
-Affine transforms (translate, rotate, scale) and complex deformations (twist, bend, taper, repeat, mirror)
-
-![Complex Transforms](assets/complex_transforms.png)
-
-## Quick Example
+## Quick Start
 
 ```python
-from jaxcad.primitives import Sphere, Box, Cylinder
+import jax.numpy as jnp
+from jaxcad.primitives import Sphere, Box
 
-# Create primitives
-sphere = Sphere(radius=1.5)
-box = Box(size=[1.0, 1.0, 1.0])
+# Build shapes with fluent API
+sphere = Sphere(radius=1.0).translate([2, 0, 0])
+box = Box(size=[1, 1, 1])
 
-# Boolean operations using intuitive operators
-union = sphere | box              # Union
-intersection = sphere & box        # Intersection
-difference = sphere - Cylinder(0.5, 2.0)  # Difference
+# Combine with boolean operators
+shape = sphere | box  # Union
+shape = sphere & box  # Intersection
+shape = sphere - box  # Difference
 
-# Transformations with method chaining
-transformed = (
-    box
-    .twist('z', strength=2.0)     # Twist around Z axis
-    .translate([1.0, 0.0, 0.0])   # Move in X direction
-    .mirror('x')                  # Mirror across YZ plane
-)
+# Evaluate signed distance at any point
+point = jnp.array([0.5, 0.0, 0.0])
+distance = shape(point)  # Returns SDF value
 ```
+
+### Parametric Optimization
+
+```python
+import jax
+from jaxcad.parametric import parametric
+
+# Define parametric shape
+@parametric
+def my_shape():
+    sphere = Sphere(radius=1.0)
+    return sphere.translate([0.0, 0.0, 0.0])
+
+# Optimize to make surface pass through target
+params = my_shape.init_params()
+target = jnp.array([2.5, 0.0, 0.0])
+
+for _ in range(30):
+    grad = jax.grad(lambda p: my_shape(p, target) ** 2)(params)
+    params = jax.tree_util.tree_map(lambda p, g: p - 0.1 * g, params, grad)
+
+# Result: sphere moves to target point!
+```
+
+## Parameters and Optimization
+
+Control which values can be optimized during gradient descent:
+
+**Raw values** (fixed by default):
+```python
+sphere = Sphere(radius=1.0)  # Fixed, won't change during optimization
+```
+
+**Free parameters** (can be optimized):
+```python
+from jaxcad.constraints import Scalar, Point
+from jaxcad.parametric import parametric
+
+radius = Scalar(value=1.0, free=True, name='radius')
+position = Point(value=[0, 0, 0], free=True, name='pos')
+
+@parametric
+def shape():
+    return Sphere(radius=radius).translate(position)
+
+# Optimize with JAX gradients
+params = shape.init_params()
+# params = {'radius': 1.0, 'pos': [0, 0, 0]}
+```
+
+D**Parameter types**: `Scalar` (single values), `Point` (3D vectors). Aliases: `Distance`, `Angle`.
+
+**Example: Optimize position, keep size fixed**
+
+```python
+import jax
+import jax.numpy as jnp
+from jaxcad.constraints import Scalar, Point
+from jaxcad.primitives import Sphere
+from jaxcad.parametric import parametric
+
+# Design intent: sphere size is fixed, but position can be optimized
+fixed_radius = Scalar(value=1.0, free=False)      # Cannot change
+free_position = Point(value=[0, 0, 0], free=True)   # Can be optimized
+
+@parametric
+def constrained_design():
+    sphere = Sphere(radius=fixed_radius)
+    return sphere.translate(free_position)
+
+# Optimize position to fit a target point, but radius stays 1.0
+params = constrained_design.init_params()
+target = jnp.array([3.0, 1.0, 0.0])
+
+for _ in range(50):
+    grad = jax.grad(lambda p: constrained_design(p, target) ** 2)(params)
+    params = jax.tree_util.tree_map(lambda p, g: p - 0.1 * g, params, grad)
+
+# Result: position optimized to [2.0, 1.0, 0.0], radius remains 1.0!
+```
+
+---
 
 ## Installation
 
@@ -56,12 +123,18 @@ uv sync  # or: pip install -e .
 
 ## Examples
 
-Generate visualizations:
 ```bash
+# Start here
+JAX_PLATFORMS=cpu uv run python examples/quickstart.py
+
+# See all primitives
 JAX_PLATFORMS=cpu uv run python examples/primitives.py
+
+# Boolean operations with visualization
 JAX_PLATFORMS=cpu uv run python examples/boolean_operations.py
-JAX_PLATFORMS=cpu uv run python examples/transforms.py
-JAX_PLATFORMS=cpu uv run python examples/complex_transforms.py
+
+# Advanced parametric optimization
+JAX_PLATFORMS=cpu uv run python examples/decorator_api.py
 ```
 
 ## License

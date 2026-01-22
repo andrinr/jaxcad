@@ -1,7 +1,5 @@
 """Graph optimization passes for SDF expressions."""
 
-from typing import List
-
 from jaxcad.compiler.graph import SDFGraph, GraphNode, OpType
 
 

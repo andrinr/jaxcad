@@ -44,47 +44,21 @@ class SDF(ABC):
         from jaxcad.boolean import Difference
         return Difference(self, other)
 
-    def translate(self, offset: Array) -> "SDF":
-        """Translate this SDF by offset vector."""
-        from jaxcad.transforms import Translate
-        return Translate(self, offset)
+    @classmethod
+    def register_transform(cls, name: str, transform_class):
+        """Register a transform as a fluent API method.
 
-    def scale(self, scale: float | Array) -> "SDF":
-        """Scale this SDF uniformly or non-uniformly."""
-        from jaxcad.transforms import Scale
-        return Scale(self, scale)
+        Args:
+            name: Method name to add to SDF class
+            transform_class: Transform class to instantiate
 
-    def rotate(self, axis: str | Array, angle: float) -> "SDF":
-        """Rotate this SDF around an axis."""
-        from jaxcad.transforms import Rotate
-        return Rotate(self, axis, angle)
+        Example:
+            SDF.register_transform('translate', Translate)
+            # Now you can do: sphere.translate([1, 0, 0])
+        """
+        def method(self, *args, **kwargs):
+            return transform_class(self, *args, **kwargs)
 
-    def twist(self, axis: str = 'z', strength: float = 1.0) -> "SDF":
-        """Twist this SDF around an axis."""
-        from jaxcad.transforms import Twist
-        return Twist(self, axis, strength)
-
-    def bend(self, axis: str = 'z', strength: float = 1.0) -> "SDF":
-        """Bend this SDF along an axis."""
-        from jaxcad.transforms import Bend
-        return Bend(self, axis, strength)
-
-    def taper(self, axis: str = 'z', strength: float = 0.5) -> "SDF":
-        """Taper this SDF along an axis."""
-        from jaxcad.transforms import Taper
-        return Taper(self, axis, strength)
-
-    def repeat_infinite(self, spacing: Array) -> "SDF":
-        """Infinitely repeat this SDF in space."""
-        from jaxcad.transforms import RepeatInfinite
-        return RepeatInfinite(self, spacing)
-
-    def repeat_finite(self, spacing: Array, count: Array) -> "SDF":
-        """Repeat this SDF a finite number of times."""
-        from jaxcad.transforms import RepeatFinite
-        return RepeatFinite(self, spacing, count)
-
-    def mirror(self, axis: str = 'x', offset: float = 0.0) -> "SDF":
-        """Mirror this SDF across a plane."""
-        from jaxcad.transforms import Mirror
-        return Mirror(self, axis, offset)
+        method.__name__ = name
+        method.__doc__ = transform_class.__doc__
+        setattr(cls, name, method)

@@ -2,62 +2,9 @@
 
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
-import numpy as np
-from skimage import measure
 
 from jaxcad.primitives import Box, Capsule, Cone, Cylinder, Sphere, Torus
-
-
-def sdf_to_mesh(sdf, extent=2.5, resolution=100):
-    """Convert SDF to mesh using marching cubes.
-
-    Args:
-        sdf: SDF function to evaluate
-        extent: Spatial extent in each dimension
-        resolution: Grid resolution
-
-    Returns:
-        verts: Vertex positions (N, 3)
-        faces: Triangle faces (M, 3)
-    """
-    # Create 3D grid
-    x = np.linspace(-extent, extent, resolution)
-    y = np.linspace(-extent, extent, resolution)
-    z = np.linspace(-extent, extent, resolution)
-    X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
-
-    # Evaluate SDF on grid
-    points = np.stack([X.ravel(), Y.ravel(), Z.ravel()], axis=-1)
-    volume = np.array(sdf(jnp.array(points))).reshape(X.shape)
-
-    # Extract mesh at level=0 (surface)
-    verts, faces, _, _ = measure.marching_cubes(volume, level=0.0, spacing=(
-        x[1] - x[0], y[1] - y[0], z[1] - z[0]
-    ))
-
-    # Offset vertices to match grid coordinates
-    verts = verts + np.array([-extent, -extent, -extent])
-
-    return verts, faces
-
-
-def plot_mesh(verts, faces, title, ax):
-    """Plot mesh using matplotlib 3D."""
-    ax.plot_trisurf(
-        verts[:, 0], verts[:, 1], faces, verts[:, 2],
-        color='lightblue', edgecolor='darkblue', linewidth=0.1, alpha=0.8
-    )
-    ax.set_title(title, fontsize=12, fontweight="bold", pad=10)
-    ax.set_xlabel("X")
-    ax.set_ylabel("Y")
-    ax.set_zlabel("Z")
-    ax.set_box_aspect([1, 1, 1])
-
-    # Set equal aspect ratio
-    extent = 2.5
-    ax.set_xlim([-extent, extent])
-    ax.set_ylim([-extent, extent])
-    ax.set_zlim([-extent, extent])
+from jaxcad.render import render_marching_cubes
 
 
 def main():
@@ -73,11 +20,28 @@ def main():
         (Capsule(radius=0.6, height=1.0), "Capsule"),
     ]
 
+    extent = 2.5
     for idx, (primitive, name) in enumerate(primitives):
         ax = fig.add_subplot(2, 3, idx + 1, projection='3d')
         print(f"Generating mesh for: {name}...")
-        verts, faces = sdf_to_mesh(primitive, extent=2.5, resolution=80)
-        plot_mesh(verts, faces, name, ax)
+
+        # Use new vectorized rendering
+        render_marching_cubes(
+            primitive,
+            bounds=(-extent, -extent, -extent),
+            size=(2*extent, 2*extent, 2*extent),
+            resolution=80,
+            ax=ax,
+            color='lightblue',
+            alpha=0.8,
+            title=name
+        )
+
+        # Set view limits
+        ax.set_xlim([-extent, extent])
+        ax.set_ylim([-extent, extent])
+        ax.set_zlim([-extent, extent])
+        ax.set_box_aspect([1, 1, 1])
 
     plt.tight_layout()
     plt.savefig("assets/primitives.png", dpi=150, bbox_inches="tight")
