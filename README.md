@@ -1,17 +1,17 @@
 # JaxCAD
 
-> **⚠️ Experimental Project** - Currently very exploratory and under active development.
+> **⚠️ Experimental Project** - Not a full CAD system. A research exploration into differentiable geometry modeling with JAX.
 
-Fully differentiable CAD with Signed Distance Functions (SDFs) and JAX. Design shapes using intuitive fluent API, then optimize them with gradient descent.
+Differentiable signed distance functions (SDFs) for shape design and optimization. The goal is a simple, composable API for gradient-based geometry work.
 
 ![Showcase](assets/showcase_geometry.png)
 
 ## Key Features
 
-- **Fluent API**: Build geometry with intuitive method chaining
+- **Fluent API**: Build geometry with method chaining
 - **Full Differentiability**: Every parameter can be optimized with JAX gradients
-- **SDF-based CSG**: Smooth boolean operations for robust geometry
-- **Parameter System**: Mark parameters as free/fixed for precise optimization control
+- **SDF-based CSG**: Smooth boolean operations using signed distance fields
+- **Parameter System**: Mark parameters as free/fixed for optimization control
 
 ## Quick Start
 
