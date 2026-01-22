@@ -137,6 +137,10 @@ JAX_PLATFORMS=cpu uv run python examples/boolean_operations.py
 JAX_PLATFORMS=cpu uv run python examples/decorator_api.py
 ```
 
+## Acknowledgments
+
+Primitive SDFs and operations based on [Inigo Quilez's distance functions](https://iquilezles.org/articles/distfunctions/).
+
 ## License
 
 MIT License

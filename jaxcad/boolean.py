@@ -7,7 +7,7 @@ from jaxcad.sdf import SDF
 
 
 def smooth_min(a: Array, b: Array, k: float = 0.1) -> Array:
-    """Smooth minimum function for blending SDFs.
+    """Smooth minimum function for blending SDFs (Inigo Quilez's version).
 
     Args:
         a: First SDF value(s)
@@ -17,8 +17,9 @@ def smooth_min(a: Array, b: Array, k: float = 0.1) -> Array:
     Returns:
         Smoothly blended minimum value
     """
-    h = jnp.maximum(k - jnp.abs(a - b), 0.0) / k
-    return jnp.minimum(a, b) - h * h * k * 0.25
+    k_scaled = k * 4.0
+    h = jnp.maximum(k_scaled - jnp.abs(a - b), 0.0)
+    return jnp.minimum(a, b) - h * h * 0.25 / k_scaled
 
 
 def smooth_max(a: Array, b: Array, k: float = 0.1) -> Array:
@@ -151,3 +152,35 @@ def difference(sdf1: SDF, sdf2: SDF, smoothness: float = 0.1) -> Difference:
         Difference SDF
     """
     return Difference(sdf1, sdf2, smoothness)
+
+
+class Xor(SDF):
+    """XOR of two SDFs (symmetric difference).
+
+    Args:
+        sdf1: First SDF
+        sdf2: Second SDF
+    """
+
+    def __init__(self, sdf1: SDF, sdf2: SDF):
+        self.sdf1 = sdf1
+        self.sdf2 = sdf2
+
+    def __call__(self, p: Array) -> Array:
+        """XOR: max(min(d1, d2), -max(d1, d2))"""
+        d1 = self.sdf1(p)
+        d2 = self.sdf2(p)
+        return jnp.maximum(jnp.minimum(d1, d2), -jnp.maximum(d1, d2))
+
+
+def xor(sdf1: SDF, sdf2: SDF) -> Xor:
+    """Create XOR (symmetric difference) of two SDFs.
+
+    Args:
+        sdf1: First SDF
+        sdf2: Second SDF
+
+    Returns:
+        Xor SDF
+    """
+    return Xor(sdf1, sdf2)
