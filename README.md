@@ -1,33 +1,67 @@
 # JaxCAD
 
-> **⚠️ Fresh Start** - Rebuilding from scratch with SDF-based CSG approach.
+> **⚠️ Experimental Project** - Currently exploratory and under active development.
 
 Differentiable CAD operations using Signed Distance Functions (SDFs) and Constructive Solid Geometry (CSG) built with JAX.
+
+![Boolean Operations](assets/boolean_operations.png)
 
 ## Approach
 
 **SDF-based CSG**: All geometry is represented as signed distance functions, with boolean operations implemented as smooth min/max functions for full differentiability.
 
-### Why SDFs + CSG?
+## Features
 
-- **Intuitive for engineers**: Familiar CAD workflow (primitives + boolean ops)
-- **Fully differentiable**: Smooth operations enable gradient flow
-- **General**: Can represent most mechanical parts
-- **Composable**: Build complex shapes from simple primitives
+### Primitives
+Sphere, box, cylinder, cone, torus, capsule (as SDF functions)
 
-## Planned Features
+![Primitives](assets/primitives.png)
 
-**Primitives**: sphere, box, cylinder, cone (as SDF functions)
-**Boolean Ops**: union, difference, intersection (smooth versions)
-**Transformations**: translate, rotate, scale
-**Advanced Ops**: fillet, chamfer (smooth blending)
-**Parametric Features**: holes, slots, patterns
-**Mesh Export**: Convert SDF to mesh for visualization/manufacturing
+### Boolean Operations
+Union, difference, intersection with smooth blending
+
+### Transformations
+Affine transforms (translate, rotate, scale) and complex deformations (twist, bend, taper, repeat, mirror)
+
+![Complex Transforms](assets/complex_transforms.png)
+
+## Quick Example
+
+```python
+from jaxcad.primitives import Sphere, Box, Cylinder
+
+# Create primitives
+sphere = Sphere(radius=1.5)
+box = Box(size=[1.0, 1.0, 1.0])
+
+# Boolean operations using intuitive operators
+union = sphere | box              # Union
+intersection = sphere & box        # Intersection
+difference = sphere - Cylinder(0.5, 2.0)  # Difference
+
+# Transformations with method chaining
+transformed = (
+    box
+    .twist('z', strength=2.0)     # Twist around Z axis
+    .translate([1.0, 0.0, 0.0])   # Move in X direction
+    .mirror('x')                  # Mirror across YZ plane
+)
+```
 
 ## Installation
 
 ```bash
 uv sync  # or: pip install -e .
+```
+
+## Examples
+
+Generate visualizations:
+```bash
+JAX_PLATFORMS=cpu uv run python examples/primitives.py
+JAX_PLATFORMS=cpu uv run python examples/boolean_operations.py
+JAX_PLATFORMS=cpu uv run python examples/transforms.py
+JAX_PLATFORMS=cpu uv run python examples/complex_transforms.py
 ```
 
 ## License

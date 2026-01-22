@@ -7,27 +7,51 @@ from jaxcad.sdf import SDF
 
 
 class Cone(SDF):
-    """Cone along Z-axis with apex at origin.
+    """Cone along Z-axis centered at origin.
 
     Args:
-        radius: Base radius (at z = -height)
-        height: Cone height
+        radius: Base radius
+        height: Cone height (apex at +height/2, base at -height/2)
     """
 
     def __init__(self, radius: float, height: float):
         self.radius = radius
         self.height = height
-        # Precompute cone angle factors
-        self.c = jnp.array([radius / height, -1.0])
-        self.c = self.c / jnp.linalg.norm(self.c)
+        # Cone angle: sin and cos
+        h = jnp.sqrt(radius * radius + height * height)
+        self.sin_angle = radius / h
+        self.cos_angle = height / h
 
     def __call__(self, p: Array) -> Array:
-        """SDF for cone"""
+        """SDF for cone centered at origin."""
+        # Shift z so apex is at top, base at bottom
+        z = p[..., 2] + self.height / 2.0
+
         # Distance in XY plane
-        q = jnp.stack([jnp.linalg.norm(p[..., :2], axis=-1), p[..., 2]], axis=-1)
+        r = jnp.linalg.norm(p[..., :2], axis=-1)
 
-        # Project onto cone surface
-        d = jnp.sum(q * self.c, axis=-1)
+        # Create 2D point (r, z)
+        q = jnp.stack([r, z], axis=-1)
 
-        # Distance to cone
-        return jnp.maximum(d, -self.height - p[..., 2])
+        # Cone direction vector (pointing from apex to base edge)
+        c = jnp.array([self.sin_angle, -self.cos_angle])
+
+        # Project q onto cone direction
+        dot_qc = q[..., 0] * c[0] + q[..., 1] * c[1]
+
+        # Clamped projection (only valid between apex and base)
+        t = jnp.clip(dot_qc, 0.0, self.height)
+
+        # Closest point on cone spine
+        closest = jnp.stack([c[0] * t, c[1] * t], axis=-1)
+
+        # Distance to cone surface
+        d = jnp.linalg.norm(q - closest, axis=-1)
+
+        # Inside/outside sign
+        inside = (q[..., 0] * c[1] - q[..., 1] * c[0]) < 0
+
+        # Cap the bottom
+        d_base = jnp.where(z < 0, jnp.maximum(d, -z), d)
+
+        return jnp.where(inside, -d_base, d_base)

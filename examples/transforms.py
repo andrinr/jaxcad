@@ -1,44 +1,29 @@
-"""Example: Boolean operations (CSG) on SDFs."""
+"""Example: Transformations on SDFs."""
 
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
-from mpl_toolkits.mplot3d import Axes3D
 from skimage import measure
 
 from jaxcad.primitives import Box, Cylinder, Sphere
 
 
-def sdf_to_mesh(sdf, extent=2.5, resolution=100):
-    """Convert SDF to mesh using marching cubes.
-
-    Args:
-        sdf: SDF function to evaluate
-        extent: Spatial extent in each dimension
-        resolution: Grid resolution
-
-    Returns:
-        verts: Vertex positions (N, 3)
-        faces: Triangle faces (M, 3)
-    """
-    # Create 3D grid
+def sdf_to_mesh(sdf, extent=3.0, resolution=80):
+    """Convert SDF to mesh using marching cubes."""
     x = np.linspace(-extent, extent, resolution)
     y = np.linspace(-extent, extent, resolution)
     z = np.linspace(-extent, extent, resolution)
     X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
 
-    # Evaluate SDF on grid
     points = np.stack([X.ravel(), Y.ravel(), Z.ravel()], axis=-1)
     volume = np.array(sdf(jnp.array(points))).reshape(X.shape)
 
-    # Extract mesh at level=0 (surface)
-    verts, faces, _, _ = measure.marching_cubes(volume, level=0.0, spacing=(
-        x[1] - x[0], y[1] - y[0], z[1] - z[0]
-    ))
+    verts, faces, _, _ = measure.marching_cubes(
+        volume, level=0.0,
+        spacing=(x[1] - x[0], y[1] - y[0], z[1] - z[0])
+    )
 
-    # Offset vertices to match grid coordinates
     verts = verts + np.array([-extent, -extent, -extent])
-
     return verts, faces
 
 
@@ -54,45 +39,48 @@ def plot_mesh(verts, faces, title, ax):
     ax.set_zlabel("Z")
     ax.set_box_aspect([1, 1, 1])
 
-    # Set equal aspect ratio
-    extent = 2.5
+    extent = 3.0
     ax.set_xlim([-extent, extent])
     ax.set_ylim([-extent, extent])
     ax.set_zlim([-extent, extent])
 
 
 def main():
-    """Demonstrate boolean operations with 3D mesh visualization."""
-    sphere = Sphere(radius=1.5)
+    """Demonstrate transformations with 3D visualization."""
+    # Create base shapes
     box = Box(size=jnp.array([1.0, 1.0, 1.0]))
+    sphere = Sphere(radius=0.8)
     cylinder = Cylinder(radius=0.5, height=2.0)
 
-    # Boolean operations
-    union = sphere | box
-    intersection = sphere & box
-    difference = sphere - cylinder
-
-    # Create figure with 3D subplots
     fig = plt.figure(figsize=(18, 12))
 
     shapes = [
-        (sphere, "Sphere"),
-        (box, "Box"),
-        (cylinder, "Cylinder"),
-        (union, "Union: Sphere | Box"),
-        (intersection, "Intersection: Sphere & Box"),
-        (difference, "Difference: Sphere - Cylinder"),
+        (box, "Box (Original)"),
+        (box.translate(jnp.array([1.5, 0.0, 0.0])), "Translated"),
+        (box.rotate('z', jnp.pi / 4), "Rotated 45°"),
+        (sphere.scale(1.5), "Scaled 1.5x"),
+        (
+            cylinder
+            .rotate('y', jnp.pi / 4)
+            .translate(jnp.array([0.0, 0.0, 1.0])),
+            "Rotated + Translated"
+        ),
+        (
+            (sphere.scale(0.8) | box.rotate('z', jnp.pi / 4))
+            .translate(jnp.array([1.0, 1.0, 0.0])),
+            "Combined + Transformed"
+        ),
     ]
 
     for idx, (shape, title) in enumerate(shapes):
         ax = fig.add_subplot(2, 3, idx + 1, projection='3d')
         print(f"Generating mesh for: {title}...")
-        verts, faces = sdf_to_mesh(shape, extent=2.5, resolution=80)
+        verts, faces = sdf_to_mesh(shape, extent=3.0, resolution=70)
         plot_mesh(verts, faces, title, ax)
 
     plt.tight_layout()
-    plt.savefig("assets/boolean_operations.png", dpi=150, bbox_inches="tight")
-    print("Saved: assets/boolean_operations.png")
+    plt.savefig("assets/transforms.png", dpi=150, bbox_inches="tight")
+    print("Saved: assets/transforms.png")
     plt.show()
 
 

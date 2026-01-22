@@ -2,37 +2,67 @@
 
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
-from matplotlib import cm
+import numpy as np
+from skimage import measure
 
 from jaxcad.primitives import Box, Capsule, Cone, Cylinder, Sphere, Torus
 
 
-def plot_sdf_slice(sdf, title, ax, z_slice=0.0, extent=2.5, resolution=200):
-    """Plot a 2D slice of an SDF."""
-    x = jnp.linspace(-extent, extent, resolution)
-    y = jnp.linspace(-extent, extent, resolution)
-    X, Y = jnp.meshgrid(x, y)
-    Z = jnp.full_like(X, z_slice)
+def sdf_to_mesh(sdf, extent=2.5, resolution=100):
+    """Convert SDF to mesh using marching cubes.
 
-    points = jnp.stack([X.ravel(), Y.ravel(), Z.ravel()], axis=-1)
-    distances = sdf(points).reshape(X.shape)
+    Args:
+        sdf: SDF function to evaluate
+        extent: Spatial extent in each dimension
+        resolution: Grid resolution
 
-    # Plot with contours
-    levels = jnp.linspace(-2, 2, 21)
-    contour = ax.contourf(X, Y, distances, levels=levels, cmap="RdBu_r", extend="both")
-    ax.contour(X, Y, distances, levels=[0], colors="black", linewidths=2)
-    ax.set_title(title)
-    ax.set_aspect("equal")
+    Returns:
+        verts: Vertex positions (N, 3)
+        faces: Triangle faces (M, 3)
+    """
+    # Create 3D grid
+    x = np.linspace(-extent, extent, resolution)
+    y = np.linspace(-extent, extent, resolution)
+    z = np.linspace(-extent, extent, resolution)
+    X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
+
+    # Evaluate SDF on grid
+    points = np.stack([X.ravel(), Y.ravel(), Z.ravel()], axis=-1)
+    volume = np.array(sdf(jnp.array(points))).reshape(X.shape)
+
+    # Extract mesh at level=0 (surface)
+    verts, faces, _, _ = measure.marching_cubes(volume, level=0.0, spacing=(
+        x[1] - x[0], y[1] - y[0], z[1] - z[0]
+    ))
+
+    # Offset vertices to match grid coordinates
+    verts = verts + np.array([-extent, -extent, -extent])
+
+    return verts, faces
+
+
+def plot_mesh(verts, faces, title, ax):
+    """Plot mesh using matplotlib 3D."""
+    ax.plot_trisurf(
+        verts[:, 0], verts[:, 1], faces, verts[:, 2],
+        color='lightblue', edgecolor='darkblue', linewidth=0.1, alpha=0.8
+    )
+    ax.set_title(title, fontsize=12, fontweight="bold", pad=10)
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
+    ax.set_zlabel("Z")
+    ax.set_box_aspect([1, 1, 1])
 
-    return contour
+    # Set equal aspect ratio
+    extent = 2.5
+    ax.set_xlim([-extent, extent])
+    ax.set_ylim([-extent, extent])
+    ax.set_zlim([-extent, extent])
 
 
 def main():
-    """Visualize primitive shapes."""
-    fig, axes = plt.subplots(2, 3, figsize=(15, 10))
-    axes = axes.ravel()
+    """Visualize primitive shapes with 3D mesh visualization."""
+    fig = plt.figure(figsize=(18, 12))
 
     primitives = [
         (Sphere(radius=1.5), "Sphere"),
@@ -44,10 +74,10 @@ def main():
     ]
 
     for idx, (primitive, name) in enumerate(primitives):
-        contour = plot_sdf_slice(primitive, name, axes[idx])
-
-    # Add colorbar
-    fig.colorbar(contour, ax=axes, label="Signed Distance", shrink=0.8)
+        ax = fig.add_subplot(2, 3, idx + 1, projection='3d')
+        print(f"Generating mesh for: {name}...")
+        verts, faces = sdf_to_mesh(primitive, extent=2.5, resolution=80)
+        plot_mesh(verts, faces, name, ax)
 
     plt.tight_layout()
     plt.savefig("assets/primitives.png", dpi=150, bbox_inches="tight")

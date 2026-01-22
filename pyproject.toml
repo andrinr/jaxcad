@@ -28,6 +28,7 @@ dev = [
     "pytest>=7.0.0",
     "ruff>=0.8.0",
     "matplotlib>=3.7.0",
+    "scikit-image>=0.21.0",
 ]
 
 [tool.ruff]
