@@ -2,18 +2,74 @@
 
 > **⚠️ Experimental Project** - Not a full CAD system. A research exploration into differentiable geometry modeling with JAX.
 
-Differentiable signed distance functions (SDFs) for shape design and optimization. The goal is a simple, composable API for gradient-based geometry work.
+Differentiable signed distance functions (SDFs) for shape design and optimization. The goal is:
+
+- A **fluent API** for building complex 3D geometry that is easy to read and write.
+- Differentiability is enabled with a JIT compiler that translates a geometry description into functional JAX friendly code. 
+- A **parametric system** to mark which parameters are free/fixed for gradient-based optimization.
+- A set of constraints that can be composed to express design intent. The degrees of freedom for the parameters should be automatically inferred from the constraints.
+
+The dream:
+
+```python
+from jaxcad.primitives import Circle, Box
+from jaxcad.parametric import Point, Scalar, Line
+from jaxcad.constraints import Distance, Parallel
+
+# The @parametric decorator:
+# 1. Calls the function to build the compuatation graph
+# 2. Extracts all Parameter instances
+# 3. Extracts all Constraint instances
+# 4. Builds constrained optimization space by reducing dof based on constraints
+@jaccad.parametric
+def my_design():
+    A = Point([0, 0], free=True) # 3dof
+    B = Point([1, 0], free=True) # 3dof
+    L1 = Line([0, 1], [1, 1])  # no dof because fixed
+
+    distance = Distance(A, B, 1.0) # reduces dof of each point by 1
+    L2 = Line(start=A, end=B)
+    parallel = Parallel(L1, L2) # reduces dof of each point by 1
+
+    cylinder = cylinder_from_line(L2, radius=0.1)
+
+    return cylinder
+
+model = my_design()
+latent_params = model.init_latent_params()
+target_sdf = ...
+
+# Optimization happens in latent space
+def loss_fn(latent):
+    # Project latent → full params
+    full_params = model.project(latent)
+
+    # Evaluate model with full params
+    sdf_value = model.eval(full_params, query_point)
+
+    # Add soft constraint penalties for non-geometric constraints
+    penalty = soft_constraint_penalty(full_params, model.constraints)
+
+    return (sdf_value - target_sdf) ** 2 + penalty
+
+optimizer = optax.adam(learning_rate=0.01)
+opt_state = optimizer.init(latent_params)
+
+for step in range(100):
+    grads = jax.grad(loss_fn)(latent_params)
+    updates, opt_state = optimizer.update(grads, opt_state)
+    latent_params = optax.apply_updates(latent_params, updates)
+
+# Extract final full parameters
+final_params = model.project(latent_params)
+
+```
+
+## What currently works
 
 ![Showcase](assets/showcase_geometry.png)
 
-## Key Features
-
-- **Fluent API**: Build geometry with method chaining
-- **Full Differentiability**: Every parameter can be optimized with JAX gradients
-- **SDF-based CSG**: Smooth boolean operations using signed distance fields
-- **Parameter System**: Mark parameters as free/fixed for optimization control
-
-## Quick Start
+### Quick Start
 
 ```python
 import jax.numpy as jnp
@@ -82,8 +138,6 @@ params = shape.init_params()
 # params = {'radius': 1.0, 'pos': [0, 0, 0]}
 ```
 
-D**Parameter types**: `Scalar` (single values), `Point` (3D vectors). Aliases: `Distance`, `Angle`.
-
 **Example: Optimize position, keep size fixed**
 
 ```python
@@ -119,22 +173,6 @@ for _ in range(50):
 
 ```bash
 uv sync  # or: pip install -e .
-```
-
-## Examples
-
-```bash
-# Start here
-JAX_PLATFORMS=cpu uv run python examples/quickstart.py
-
-# See all primitives
-JAX_PLATFORMS=cpu uv run python examples/primitives.py
-
-# Boolean operations with visualization
-JAX_PLATFORMS=cpu uv run python examples/boolean_operations.py
-
-# Advanced parametric optimization
-JAX_PLATFORMS=cpu uv run python examples/decorator_api.py
 ```
 
 ## Acknowledgments
