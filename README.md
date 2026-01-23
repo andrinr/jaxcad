@@ -21,7 +21,7 @@ from jaxcad.constraints import Distance, Parallel
 # 2. Extracts all Parameter instances
 # 3. Extracts all Constraint instances
 # 4. Builds constrained optimization space by reducing dof based on constraints
-@jaccad.parametric
+@jaxcad.parametric
 def my_design():
     A = Point([0, 0], free=True) # 3dof
     B = Point([1, 0], free=True) # 3dof
