@@ -1,54 +1,65 @@
 # JaxCAD
 
-> **⚠️ Experimental Project** - Not a full CAD system. A fun exploration into differentiable geometry modeling with JAX. For now most of the code is vibe coded and very much a work in progress.
+> **⚠️ Experimental Project** - Still in early development, currently mostly collecting ideas and prototyping.
 
-Differentiable signed distance functions (SDFs) for shape design and optimization. The goal is:
+![Showcase](assets/showcase_geometry.png)
+
+Differentiable signed distance functions (SDFs) for shape design and optimization. The goals are:
 
 - A **fluent API** for building complex 3D geometry that is easy to read and write.
-- Differentiability is enabled with a JIT compiler that translates a geometry description into functional JAX friendly code. 
+- Differentiability is enabled with a JIT compiler that translates a geometry description into functional JAX friendly code.
 - A **parametric system** to mark which parameters are free/fixed for gradient-based optimization.
 - A set of constraints that can be composed to express design intent. The degrees of freedom for the parameters should be automatically inferred from the constraints.
+- **Shader compilation**: Leverage JAX's XLA/StableHLO IR to transpile SDF code into GLSL/Slang for real-time GPU rendering.
 
-The dream:
+```
+Design Code (Python/JAX)
+        ↓
+   Functional IR
+   (JAX pytree)
+        ↓
+   StableHLO IR
+   (SSA form)
+        ↓
+     ┌──┴──┐
+     ↓     ↓
+   XLA   GLSL/Slang
+(CPU/GPU) (Shaders)
+```
+
+## The Optimization Dream
 
 ```python
-from jaxcad.primitives import Circle, Box
-from jaxcad.parametric import Point, Scalar, Line
-from jaxcad.constraints import Distance, Parallel
+from jaxcad.primitives import Cylinder
+from jaxcad.constraints import Point, Scalar, Line, Distance, Parallel
 
-# The @parametric decorator:
-# 1. Calls the function to build the compuatation graph
-# 2. Extracts all Parameter instances
-# 3. Extracts all Constraint instances
-# 4. Builds constrained optimization space by reducing dof based on constraints
-@jaxcad.parametric
-def my_design():
-    A = Point([0, 0], free=True) # 3dof
-    B = Point([1, 0], free=True) # 3dof
-    L1 = Line([0, 1], [1, 1])  # no dof because fixed
+# Define parametric constraints
+A = Point([0, 0], free=True)  # 2 DOF
+B = Point([1, 0], free=True)  # 2 DOF
+L1 = Line([0, 1], [1, 1])     # Fixed, no DOF
 
-    distance = Distance(A, B, 1.0) # reduces dof of each point by 1
-    L2 = Line(start=A, end=B)
-    parallel = Parallel(L1, L2) # reduces dof of each point by 1
+# Constraints automatically reduce DOF
+Distance(A, B, 1.0)           # Reduces total DOF by 1
+L2 = Line(start=A, end=B)
+Parallel(L1, L2)              # Reduces total DOF by 1
 
-    cylinder = cylinder_from_line(L2, radius=0.1)
+# Build geometry - automatically tracks constraint dependencies
+cylinder = Cylinder.from_line(L2, radius=0.1)
 
-    return cylinder
-
-model = my_design()
-latent_params = model.init_latent_params()
+# Extract constrained parameter space (2 + 2 - 1 - 1 = 2 DOF)
+latent_params = cylinder.init_latent_params()
 target_sdf = ...
 
 # Optimization happens in latent space
 def loss_fn(latent):
-    # Project latent → full params
-    full_params = model.project(latent)
+    # Project latent → full params (satisfies geometric constraints)
+    full_params = cylinder.project(latent)
 
-    # Evaluate model with full params
-    sdf_value = model.eval(full_params, query_point)
+    # Evaluate SDF with full params
+    sdf_value = cylinder.eval(full_params, query_point)
 
     # Add soft constraint penalties for non-geometric constraints
-    penalty = soft_constraint_penalty(full_params, model.constraints)
+    penalty = cylinder.constraint_penalty(full_params)
 
     return (sdf_value - target_sdf) ** 2 + penalty
 
@@ -61,13 +72,40 @@ for step in range(100):
     latent_params = optax.apply_updates(latent_params, updates)
 
 # Extract final full parameters
-final_params = model.project(latent_params)
+final_params = cylinder.project(latent_params)
 
+```
+
+## The Compilation Dream
+
+Compile your JAX SDF geometry to real-time GPU shaders for interactive rendering:
+
+```python
+from jaxcad.primitives import Sphere, Box
+from jaxcad.compiler import compile_to_glsl
+
+# Build geometry with fluent API
+sphere = Sphere(radius=1.0).translate([2, 0, 0])
+box = Box(size=[1, 1, 1])
+shape = sphere | box
+
+# Compile to GLSL shader via JAX XLA/StableHLO IR
+glsl_code = compile_to_glsl(shape)
+# Output: GLSL fragment shader with sdf(vec3 p) function
+
+# Render in real-time using the generated shader
+from jaxcad.render import render_shader
+
+image = render_shader(
+    glsl_code,
+    resolution=(800, 600),
+    camera_pos=[5, 5, 5],
+    camera_target=[0, 0, 0]
+)
 ```
 
 ## What currently works
 
-![Showcase](assets/showcase_geometry.png)
 
 ### Quick Start
 
