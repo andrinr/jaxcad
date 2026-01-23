@@ -1,6 +1,6 @@
 # JaxCAD
 
-> **⚠️ Experimental Project** - Not a full CAD system. A research exploration into differentiable geometry modeling with JAX.
+> **⚠️ Experimental Project** - Not a full CAD system. A fun exploration into differentiable geometry modeling with JAX. For now most of the code is vibe coded and very much a work in progress.
 
 Differentiable signed distance functions (SDFs) for shape design and optimization. The goal is a simple, composable API for gradient-based geometry work.
 
