@@ -5,7 +5,7 @@
 Differentiable signed distance functions (SDFs) for shape design and optimization. The desired features are:
 
 - A **fluent API** for building complex 3D geometry that is easy to read and write.
-- Fully differentiable with a custom computational graph transofmration that maps a geometry description into functional JAX friendly code. 
+- Fully differentiable using a computational graph transformation mapping a geometry description into functional JAX friendly code. 
 - A **parametric system** to mark which parameters are free/fixed for gradient-based optimization.
 - A set of constraints that can be composed to express design intent. The degrees of freedom for the parameters should be automatically inferred from the constraints.
 - A way to compress designs into simple arithemtic sequences that can be imported and executed in other languages such as GLSL, Rust, Slang.
