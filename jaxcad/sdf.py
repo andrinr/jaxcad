@@ -1,8 +1,20 @@
-"""Base SDF (Signed Distance Function) class."""
+"""Base SDF (Signed Distance Function) class.
+
+Architecture:
+- Pure functions are the source of truth for SDF evaluation
+- SDF classes are thin wrappers providing fluent API (method chaining, operators)
+- Compilation unwraps classes to pure functions for JAX tracing
+"""
+
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import Callable, TYPE_CHECKING
 
 from jax import Array
+
+if TYPE_CHECKING:
+    from jaxcad.compiler.graph import SDFGraph, GraphNode
 
 
 class SDF(ABC):
@@ -14,12 +26,46 @@ class SDF(ABC):
     - f(p) = 0: point p is on the surface
     - f(p) > 0: point p is outside the shape
 
-    All primitives and CSG operations inherit from this class.
+    SDF classes are thin wrappers around pure functions:
+    - Provide fluent API: .translate().rotate() chaining
+    - Enable operators: sphere | box, sphere & box
+    - Store parameters for later compilation
+    - Actual computation happens in pure functions
+
+    Subclasses must implement:
+    - @staticmethod def sdf(...): Pure function for computation (CONVENTION)
+    - __call__(p): Evaluate SDF (delegates to sdf())
+    - to_functional(): Return the static sdf method
+
+    Pattern for primitives:
+        @staticmethod
+        def sdf(p: Array, param1: float, param2: float) -> Array:
+            # Pure computation here
+
+        def __call__(self, p: Array) -> Array:
+            return ClassName.sdf(p, self.param1.value, self.param2.value)
+
+        def to_functional(self):
+            return ClassName.sdf
+
+    Pattern for transforms:
+        @staticmethod
+        def sdf(child_sdf: Callable, p: Array, param: float) -> Array:
+            # Transform computation here
+
+        def __call__(self, p: Array) -> Array:
+            return ClassName.sdf(self.child_sdf, p, self.param.value)
+
+        def to_functional(self):
+            return ClassName.sdf
     """
 
     @abstractmethod
     def __call__(self, p: Array) -> Array:
         """Evaluate the signed distance at point(s) p.
+
+        This is for direct use only. During compilation, this is replaced
+        by the pure function from to_functional().
 
         Args:
             p: Point(s) to evaluate, shape (..., 3) for 3D or (..., 2) for 2D
@@ -29,36 +75,84 @@ class SDF(ABC):
         """
         pass
 
-    def __or__(self, other: "SDF") -> "SDF":
+    @abstractmethod
+    def to_functional(self) -> Callable:
+        """Return pure function for JAX tracing and compilation.
+
+        Returns:
+            Pure function with signature: (p: Array, **params) -> Array
+            where params are the primitive/transform parameters.
+
+        Example:
+            sphere = Sphere(radius=1.0)
+            func = sphere.to_functional()
+            # func(p, radius=1.0) -> Array
+        """
+        pass
+
+    @abstractmethod
+    def to_graph_node(self, graph: SDFGraph, walk_fn: Callable[[SDF], GraphNode]) -> GraphNode:
+        """Add this SDF operation to the computation graph.
+
+        Each SDF type knows how to serialize itself to a graph node.
+
+        Args:
+            graph: The graph to add this node to
+            walk_fn: Function to recursively walk child SDFs
+
+        Returns:
+            GraphNode representing this operation
+
+        Example:
+            # For primitives:
+            return graph.add_node(self.__class__, child_sdf=self)
+
+            # For transforms:
+            child = walk_fn(self.sdf)
+            return graph.add_node(self.__class__, children=[child], params={...})
+
+            # For booleans:
+            left = walk_fn(self.sdf1)
+            right = walk_fn(self.sdf2)
+            return graph.add_node(self.__class__, children=[left, right], params={...})
+        """
+        pass
+
+    def __or__(self, other: SDF) -> SDF:
         """Union operator: self | other"""
         from jaxcad.boolean import Union
         return Union(self, other)
 
-    def __and__(self, other: "SDF") -> "SDF":
+    def __and__(self, other: SDF) -> SDF:
         """Intersection operator: self & other"""
         from jaxcad.boolean import Intersection
         return Intersection(self, other)
 
-    def __sub__(self, other: "SDF") -> "SDF":
+    def __sub__(self, other: SDF) -> SDF:
         """Difference operator: self - other"""
         from jaxcad.boolean import Difference
         return Difference(self, other)
 
     @classmethod
-    def register_transform(cls, name: str, transform_class):
-        """Register a transform as a fluent API method.
+    def register(cls, name: str, sdf_class):
+        """Register an SDF class as a fluent API method.
+
+        This enables method chaining for both transforms and operations.
 
         Args:
             name: Method name to add to SDF class
-            transform_class: Transform class to instantiate
+            sdf_class: SDF class to instantiate
 
         Example:
-            SDF.register_transform('translate', Translate)
-            # Now you can do: sphere.translate([1, 0, 0])
+            SDF.register('translate', Translate)
+            SDF.register('smooth_union', SmoothUnion)
+            # Now you can do:
+            # sphere.translate([1, 0, 0])
+            # sphere.smooth_union(box, k=0.5)
         """
         def method(self, *args, **kwargs):
-            return transform_class(self, *args, **kwargs)
+            return sdf_class(self, *args, **kwargs)
 
         method.__name__ = name
-        method.__doc__ = transform_class.__doc__
+        method.__doc__ = sdf_class.__doc__
         setattr(cls, name, method)

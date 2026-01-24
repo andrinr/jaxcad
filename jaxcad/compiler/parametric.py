@@ -40,8 +40,8 @@ def compile_parametric(sdf: SDF, constraint_system: ConstraintSystem) -> Callabl
             extract_constraints(child)
 
         # Extract parameters from primitives
-        if node.op_type == OpType.PRIMITIVE and node.sdf_fn is not None:
-            prim = node.sdf_fn
+        if node.op_type == OpType.PRIMITIVE and node.child_sdf is not None:
+            prim = node.child_sdf
             prim_name = prim.__class__.__name__.lower()
 
             # Extract primitive-specific parameters
@@ -118,7 +118,7 @@ def compile_parametric(sdf: SDF, constraint_system: ConstraintSystem) -> Callabl
             """Rebuild SDF evaluation from graph with current parameter values."""
             if node.op_type == OpType.PRIMITIVE:
                 # Rebuild primitive with updated parameter values
-                prim = node.sdf_fn
+                prim = node.child_sdf
                 prim_class = prim.__class__
 
                 # Get updated parameters from constraints
@@ -149,7 +149,7 @@ def compile_parametric(sdf: SDF, constraint_system: ConstraintSystem) -> Callabl
                 if updated_kwargs:
                     return prim_class(**updated_kwargs)
                 else:
-                    return node.sdf_fn
+                    return node.child_sdf
 
             # Rebuild children
             if node.op_type == OpType.UNION:
@@ -230,12 +230,12 @@ def compile_parametric(sdf: SDF, constraint_system: ConstraintSystem) -> Callabl
 
             else:
                 # Fallback - just use original SDF
-                return lambda p: node.sdf_fn(p) if node.sdf_fn else 0.0
+                return lambda p: node.child_sdf(p) if node.child_sdf else 0.0
 
         # Rebuild and evaluate
         if graph.nodes:
-            sdf_fn = rebuild_sdf(graph.nodes[-1])
-            return sdf_fn(query_point)
+            child_sdf = rebuild_sdf(graph.nodes[-1])
+            return child_sdf(query_point)
         else:
             return jnp.array(0.0)
 

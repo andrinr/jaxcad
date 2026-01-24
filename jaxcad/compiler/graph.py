@@ -1,8 +1,7 @@
 """SDF expression graph representation and compilation."""
 
 from dataclasses import dataclass
-from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Type
 
 import jax
 from jax import Array
@@ -10,28 +9,11 @@ from jax import Array
 from jaxcad.sdf import SDF
 
 
-class OpType(Enum):
-    """Operation types in the SDF graph."""
-    PRIMITIVE = "primitive"
-    UNION = "union"
-    INTERSECTION = "intersection"
-    DIFFERENCE = "difference"
-    TRANSLATE = "translate"
-    ROTATE = "rotate"
-    SCALE = "scale"
-    TWIST = "twist"
-    BEND = "bend"
-    TAPER = "taper"
-    MIRROR = "mirror"
-    REPEAT_INFINITE = "repeat_infinite"
-    REPEAT_FINITE = "repeat_finite"
-
-
 @dataclass
 class GraphNode:
     """Node in the SDF computation graph."""
-    op_type: OpType
-    sdf_fn: Optional[Callable] = None  # For primitives
+    op_class: Type[SDF] | None  # The SDF class (Translate, Sphere, Union, etc.)
+    child_sdf: Optional[Callable] = None  # For primitives: the instance
     children: List['GraphNode'] = None  # For composite operations
     params: Dict[str, Any] = None  # Operation parameters
     node_id: Optional[int] = None
@@ -54,11 +36,11 @@ class SDFGraph:
         self.nodes: List[GraphNode] = []
         self.node_counter = 0
 
-    def add_node(self, op_type: OpType, sdf_fn=None, children=None, params=None) -> GraphNode:
+    def add_node(self, op_class: Type[SDF] | None, child_sdf=None, children=None, params=None) -> GraphNode:
         """Add a node to the graph."""
         node = GraphNode(
-            op_type=op_type,
-            sdf_fn=sdf_fn,
+            op_class=op_class,
+            child_sdf=child_sdf,
             children=children or [],
             params=params or {},
             node_id=self.node_counter
@@ -78,11 +60,14 @@ class SDFGraph:
         prefix = "  " * indent
 
         # Node description
-        if node.op_type == OpType.PRIMITIVE:
-            lines.append(f"{prefix}{node.op_type.value}: {node.sdf_fn.__class__.__name__}")
+        if node.child_sdf is not None:
+            # Primitive node
+            lines.append(f"{prefix}{node.op_class.__name__}: {node.child_sdf.__class__.__name__}")
         else:
+            # Transform/Boolean node
             param_str = ", ".join(f"{k}={v}" for k, v in node.params.items())
-            lines.append(f"{prefix}{node.op_type.value}({param_str})")
+            op_name = node.op_class.__name__ if node.op_class else "Unknown"
+            lines.append(f"{prefix}{op_name}({param_str})")
 
         # Children
         for child in node.children:
@@ -90,11 +75,12 @@ class SDFGraph:
 
         return "\n".join(lines)
 
-    def count_operations(self) -> Dict[OpType, int]:
+    def count_operations(self) -> Dict[Type[SDF], int]:
         """Count operations by type."""
         counts = {}
         for node in self.nodes:
-            counts[node.op_type] = counts.get(node.op_type, 0) + 1
+            if node.op_class:
+                counts[node.op_class] = counts.get(node.op_class, 0) + 1
         return counts
 
 
@@ -106,111 +92,11 @@ def extract_graph(sdf: SDF) -> SDFGraph:
     graph = SDFGraph()
 
     def walk(obj: SDF) -> GraphNode:
-        """Recursively walk SDF tree."""
-        # Check the type and extract structure
-        class_name = obj.__class__.__name__
+        """Recursively walk SDF tree.
 
-        # Boolean operations
-        if class_name == "Union":
-            left = walk(obj.sdf1)
-            right = walk(obj.sdf2)
-            return graph.add_node(
-                OpType.UNION,
-                children=[left, right],
-                params={"smoothness": obj.smoothness}
-            )
-        elif class_name == "Intersection":
-            left = walk(obj.sdf1)
-            right = walk(obj.sdf2)
-            return graph.add_node(
-                OpType.INTERSECTION,
-                children=[left, right],
-                params={"smoothness": obj.smoothness}
-            )
-        elif class_name == "Difference":
-            left = walk(obj.sdf1)
-            right = walk(obj.sdf2)
-            return graph.add_node(
-                OpType.DIFFERENCE,
-                children=[left, right],
-                params={"smoothness": obj.smoothness}
-            )
-
-        # Transforms
-        elif class_name == "Translate":
-            child = walk(obj.sdf)
-            # Extract value from parameter (supports both old .offset and new .offset_param)
-            offset = obj.offset_param.value if hasattr(obj, 'offset_param') else obj.offset
-            return graph.add_node(
-                OpType.TRANSLATE,
-                children=[child],
-                params={"offset": offset}
-            )
-        elif class_name == "Rotate":
-            child = walk(obj.sdf)
-            angle = obj.angle_param.value if hasattr(obj, 'angle_param') else obj.angle
-            return graph.add_node(
-                OpType.ROTATE,
-                children=[child],
-                params={"angle": angle, "matrix": obj.rotation_matrix}
-            )
-        elif class_name == "Scale":
-            child = walk(obj.sdf)
-            scale = obj.scale_param.value if hasattr(obj, 'scale_param') else obj.scale
-            return graph.add_node(
-                OpType.SCALE,
-                children=[child],
-                params={"scale": scale, "is_uniform": obj.is_uniform}
-            )
-        elif class_name == "Twist":
-            child = walk(obj.sdf)
-            strength = obj.strength_param.value if hasattr(obj, 'strength_param') else obj.strength
-            return graph.add_node(
-                OpType.TWIST,
-                children=[child],
-                params={"axis": obj.axis, "strength": strength}
-            )
-        elif class_name == "Bend":
-            child = walk(obj.sdf)
-            strength = obj.strength_param.value if hasattr(obj, 'strength_param') else obj.strength
-            return graph.add_node(
-                OpType.BEND,
-                children=[child],
-                params={"axis": obj.axis, "strength": strength}
-            )
-        elif class_name == "Taper":
-            child = walk(obj.sdf)
-            strength = obj.strength_param.value if hasattr(obj, 'strength_param') else obj.strength
-            return graph.add_node(
-                OpType.TAPER,
-                children=[child],
-                params={"axis": obj.axis, "strength": strength}
-            )
-        elif class_name == "Mirror":
-            child = walk(obj.sdf)
-            return graph.add_node(
-                OpType.MIRROR,
-                children=[child],
-                params={"axis": obj.axis, "offset": obj.offset}
-            )
-        elif class_name == "RepeatInfinite":
-            child = walk(obj.sdf)
-            return graph.add_node(
-                OpType.REPEAT_INFINITE,
-                children=[child],
-                params={"spacing": obj.spacing}
-            )
-        elif class_name == "RepeatFinite":
-            child = walk(obj.sdf)
-            return graph.add_node(
-                OpType.REPEAT_FINITE,
-                children=[child],
-                params={"spacing": obj.spacing, "count": obj.count}
-            )
-
-        # Primitives (leaf nodes)
-        else:
-            return graph.add_node(OpType.PRIMITIVE, sdf_fn=obj)
+        Each SDF knows how to serialize itself via to_graph_node().
+        """
+        return obj.to_graph_node(graph, walk)
 
     walk(sdf)
     return graph

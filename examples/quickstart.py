@@ -10,7 +10,7 @@ This example shows the basics:
 import jax
 import jax.numpy as jnp
 
-from jaxcad.constraints import Distance, Point
+from jaxcad.constraints import Distance, Vector
 from jaxcad.parametric import parametric
 from jaxcad.primitives import Sphere, Box
 
@@ -152,7 +152,7 @@ def example_free_parameters():
 
     # Create constraints explicitly
     radius = Distance(value=1.0, free=False, name='radius')  # Fixed
-    offset = Point(value=jnp.array([0.0, 0.0, 0.0]), free=True, name='offset')  # Free
+    offset = Vector(value=jnp.array([0.0, 0.0, 0.0]), free=True, name='offset')  # Free
 
     @parametric
     def constrained_shape():

@@ -13,29 +13,26 @@ Differentiable signed distance functions (SDFs) for shape design and optimizatio
 - **Shader compilation**: Leverage JAX's XLA/StableHLO IR to transpile SDF code into GLSL/Slang for real-time GPU rendering.
 
 ```
-Design Code (Python/JAX)
+    Design Code
         ↓
    Functional IR
-   (JAX pytree)
         ↓
    StableHLO IR
-   (SSA form)
         ↓
      ┌──┴──┐
      ↓     ↓
    XLA   GLSL/Slang
-(CPU/GPU) (Shaders)
 ```
 
 ## The Optimization Dream
 
 ```python
 from jaxcad.primitives import Cylinder
-from jaxcad.constraints import Point, Scalar, Line, Distance, Parallel
+from jaxcad.constraints import Vector, Scalar, Line, Distance, Parallel
 
 # Define parametric constraints
-A = Point([0, 0], free=True)  # 2 DOF
-B = Point([1, 0], free=True)  # 2 DOF
+A = Vector([0, 0], free=True)  # 2 DOF
+B = Vector([1, 0], free=True)  # 2 DOF
 L1 = Line([0, 1], [1, 1])     # Fixed, no DOF
 
 # Constraints automatically reduce DOF
@@ -161,11 +158,11 @@ sphere = Sphere(radius=1.0)  # Fixed, won't change during optimization
 
 **Free parameters** (can be optimized):
 ```python
-from jaxcad.constraints import Scalar, Point
+from jaxcad.constraints import Scalar, Vector
 from jaxcad.parametric import parametric
 
 radius = Scalar(value=1.0, free=True, name='radius')
-position = Point(value=[0, 0, 0], free=True, name='pos')
+position = Vector(value=[0, 0, 0], free=True, name='pos')
 
 @parametric
 def shape():
@@ -181,13 +178,13 @@ params = shape.init_params()
 ```python
 import jax
 import jax.numpy as jnp
-from jaxcad.constraints import Scalar, Point
+from jaxcad.constraints import Scalar, Vector
 from jaxcad.primitives import Sphere
 from jaxcad.parametric import parametric
 
 # Design intent: sphere size is fixed, but position can be optimized
 fixed_radius = Scalar(value=1.0, free=False)      # Cannot change
-free_position = Point(value=[0, 0, 0], free=True)   # Can be optimized
+free_position = Vector(value=[0, 0, 0], free=True)   # Can be optimized
 
 @parametric
 def constrained_design():

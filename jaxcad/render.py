@@ -27,7 +27,7 @@ def render_raymarched(
     Args:
         sdf: The SDF to render
         camera_pos: Camera position
-        look_at: Point to look at
+        look_at: Vector to look at
         resolution: Image resolution (height, width)
         max_steps: Maximum raymarching steps
         max_dist: Maximum ray distance

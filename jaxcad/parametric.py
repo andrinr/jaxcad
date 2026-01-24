@@ -10,7 +10,7 @@ from typing import Callable
 import jax.numpy as jnp
 from jax import Array
 
-from jaxcad.compiler.graph import extract_graph, GraphNode, OpType
+from jaxcad.compiler.graph import extract_graph, GraphNode
 from jaxcad.sdf import SDF
 
 
@@ -35,9 +35,9 @@ def parametric(sdf_or_builder):
 
     Or use directly on an SDF:
         sphere = Sphere(radius=1.0)
-        sdf_fn = parametric(sphere)
-        params = sdf_fn.init_params()
-        value = sdf_fn(params, point)
+        child_sdf = parametric(sphere)
+        params = child_sdf.init_params()
+        value = child_sdf(params, point)
     """
     # Handle both @parametric and @parametric() syntax
     if callable(sdf_or_builder):
@@ -97,7 +97,7 @@ def _compile_parametric(sdf_or_builder):
 def _extract_params_pytree(graph):
     """Extract parameters as a PyTree structure using JAX tree utilities.
 
-    Automatically finds all Parameter instances (Distance, Point, Angle)
+    Automatically finds all Parameter instances (Distance, Vector, Angle)
     in the graph by traversing the SDF object tree.
 
     Returns:
@@ -105,7 +105,7 @@ def _extract_params_pytree(graph):
         - params_tree: Dict with parameter values (JAX pytree)
         - param_map: Mapping from node_id to parameter keys
     """
-    from jaxcad.constraints import Parameter
+    from jaxcad.parameters import Parameter, Vector
 
     params = {}
     param_map = {}
@@ -116,8 +116,8 @@ def _extract_params_pytree(graph):
             extract_from_node(child)
 
         # Extract from primitives
-        if node.op_type == OpType.PRIMITIVE and node.sdf_fn:
-            prim = node.sdf_fn
+        if node.op_type == OpType.PRIMITIVE and node.child_sdf:
+            prim = node.child_sdf
             prim_name = prim.__class__.__name__.lower()
             node_key = f"{prim_name}_{node.node_id}"
 
@@ -127,7 +127,11 @@ def _extract_params_pytree(graph):
                 if isinstance(attr_value, Parameter):
                     # Extract just the attribute name (e.g., 'radius_param' -> 'radius')
                     param_name = attr_name.replace('_param', '')
-                    prim_params[param_name] = attr_value.value
+                    # For Vector parameters, extract only xyz (3D) not the full 4D homogeneous coords
+                    if isinstance(attr_value, Vector):
+                        prim_params[param_name] = attr_value.xyz
+                    else:
+                        prim_params[param_name] = attr_value.value
                     param_map[(node.node_id, param_name)] = (node_key, param_name)
 
             if prim_params:
@@ -139,7 +143,6 @@ def _extract_params_pytree(graph):
             OpType.ROTATE: 'angle',
             OpType.SCALE: 'scale',
             OpType.TWIST: 'strength',
-            OpType.TAPER: 'strength',
         }
 
         if node.op_type in transform_params:
@@ -171,16 +174,15 @@ def _build_eval_fn(graph, param_map):
 
     # Import all transforms once
     from jaxcad.transforms.affine import Translate, Rotate, Scale
-    from jaxcad.transforms.deformations import Twist, Taper
+    from jaxcad.transforms.deformations import Twist
     from jaxcad.boolean import smooth_min, smooth_max
 
-    # Mapping from OpType to (transform_class, param_name, eval_method)
+    # Mapping from OpType to (transform_class, param_name, pure_function)
     TRANSFORM_DISPATCH = {
-        OpType.TRANSLATE: (Translate, 'offset', Translate.eval),
-        OpType.ROTATE: (Rotate, 'angle', Rotate.eval_z),
-        OpType.SCALE: (Scale, 'scale', Scale.eval),
-        OpType.TWIST: (Twist, 'strength', Twist.eval),
-        OpType.TAPER: (Taper, 'strength', Taper.eval),
+        OpType.TRANSLATE: (Translate, 'offset', Translate.sdf),
+        OpType.ROTATE: (Rotate, 'angle', Rotate.sdf),
+        OpType.SCALE: (Scale, 'scale', Scale.sdf),
+        OpType.TWIST: (Twist, 'strength', Twist.sdf),
     }
 
     # Boolean operation dispatch
@@ -196,16 +198,33 @@ def _build_eval_fn(graph, param_map):
         def rebuild_sdf(node: GraphNode) -> Callable:
             """Rebuild SDF from graph using params pytree."""
 
-            # Primitives
+            # Primitives - use pure static sdf() method
             if node.op_type == OpType.PRIMITIVE:
-                prim = node.sdf_fn
+                prim = node.child_sdf
                 prim_class = prim.__class__
                 prim_name = prim.__class__.__name__.lower()
                 node_key = f"{prim_name}_{node.node_id}"
 
+                # Get the pure sdf function from the class
+                pure_sdf = prim_class.sdf
+
                 if node_key in params:
-                    return prim_class(**params[node_key])
-                return prim
+                    # Create closure with optimized parameters
+                    prim_params = params[node_key]
+                    return lambda p: pure_sdf(p, **prim_params)
+                else:
+                    # Use stored parameter values
+                    # Extract parameter values from the instance
+                    param_dict = {}
+                    for attr_name, attr_value in prim.__dict__.items():
+                        if attr_name.endswith('_param'):
+                            param_name = attr_name.replace('_param', '')
+                            from jaxcad.parameters import Vector
+                            if isinstance(attr_value, Vector):
+                                param_dict[param_name] = attr_value.xyz
+                            else:
+                                param_dict[param_name] = attr_value.value
+                    return lambda p: pure_sdf(p, **param_dict)
 
             # Boolean operations
             if node.op_type in BOOLEAN_DISPATCH:
@@ -233,8 +252,8 @@ def _build_eval_fn(graph, param_map):
             return lambda _: 0.0
 
         if graph.nodes:
-            sdf_fn = rebuild_sdf(graph.nodes[-1])
-            return sdf_fn(query_point)
+            child_sdf = rebuild_sdf(graph.nodes[-1])
+            return child_sdf(query_point)
         else:
             return jnp.array(0.0)
 

@@ -119,7 +119,7 @@ def test_complex_expression():
         return (
             sphere.translate(jnp.array([1.0, 0.0, 0.0]))
             | box.rotate('z', jnp.pi/4)
-        ).twist('z', 0.5)
+        ).twist(0.5)
 
     params = complex_sdf.init_params()
 
@@ -187,11 +187,11 @@ def test_direct_sdf_compilation():
     translated = sphere.translate(jnp.array([2.0, 0.0, 0.0]))
 
     # Apply parametric directly (not as decorator)
-    sdf_fn = parametric(translated)
+    child_sdf = parametric(translated)
 
-    params = sdf_fn.init_params()
+    params = child_sdf.init_params()
     point = jnp.array([2.0, 0.0, 0.0])
-    value = sdf_fn(params, point)
+    value = child_sdf(params, point)
 
     assert jnp.isfinite(value)
 

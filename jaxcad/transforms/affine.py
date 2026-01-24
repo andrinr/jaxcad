@@ -1,15 +1,17 @@
 """Affine transformations for SDFs."""
 
+from __future__ import annotations
+
 from typing import Union
 
 import jax.numpy as jnp
 from jax import Array
 
-from jaxcad.constraints import Point, Distance, Angle
-from jaxcad.sdf import SDF
+from jaxcad.parameters import Vector, Scalar
+from jaxcad.transforms.base import Transform
 
 
-class Translate(SDF):
+class Translate(Transform):
     """Translate an SDF by a vector offset.
 
     Note: For SDFs, we translate by applying the *inverse* transform to the
@@ -17,39 +19,42 @@ class Translate(SDF):
 
     Args:
         sdf: The SDF to translate
-        offset: Translation vector (Array or Point constraint)
+        offset: Translation vector (Array or Vector constraint)
     """
 
-    def __init__(self, sdf: SDF, offset: Union[Array, Point]):
+    def __init__(self, sdf: SDF, offset: Union[Array, Vector]):
         self.sdf = sdf
         # Accept both raw values and constraints
-        if isinstance(offset, Point):
+        if isinstance(offset, Vector):
             self.offset_param = offset
         else:
-            # Wrap raw value in a fixed Point constraint
-            self.offset_param = Point(value=jnp.asarray(offset), free=False)
-
-    def __call__(self, p: Array) -> Array:
-        """Evaluate translated SDF."""
-        # Use static functional method
-        return Translate.eval(self.sdf, p, self.offset_param.value)
+            # Wrap raw value in a fixed Vector constraint
+            self.offset_param = Vector(value=jnp.asarray(offset), free=False)
 
     @staticmethod
-    def eval(sdf_fn, p: Array, offset: Array) -> Array:
-        """Functional evaluation of translation.
+    def sdf(child_sdf, p: Array, offset: Array) -> Array:
+        """Pure function for translation.
 
         Args:
-            sdf_fn: SDF function to translate
+            child_sdf: SDF function to translate
             p: Query point(s)
-            offset: Translation vector
+            offset: Translation vector [x, y, z]
 
         Returns:
             Translated SDF value
         """
-        return sdf_fn(p - offset)
+        return child_sdf(p - offset)
+
+    def __call__(self, p: Array) -> Array:
+        """Evaluate translated SDF."""
+        return Translate.sdf(self.sdf, p, self.offset_param.xyz)
+
+    def to_functional(self):
+        """Return pure function for compilation."""
+        return Translate.sdf
 
 
-class Scale(SDF):
+class Scale(Transform):
     """Scale an SDF uniformly or non-uniformly.
 
     Note: Non-uniform scaling doesn't produce exact SDFs. For uniform scaling,
@@ -57,34 +62,29 @@ class Scale(SDF):
 
     Args:
         sdf: The SDF to scale
-        scale: Uniform scale factor (float/Distance) or per-axis scale (Array/Point)
+        scale: Uniform scale factor (float/Distance) or per-axis scale (Array/Vector)
     """
 
-    def __init__(self, sdf: SDF, scale: Union[float, Array, Distance, Point]):
+    def __init__(self, sdf: SDF, scale: Union[float, Array, Scalar, Vector]):
         self.sdf = sdf
-        # Accept both raw values and constraints
-        if isinstance(scale, (Distance, Point)):
+        # Accept both raw values and parameters
+        if isinstance(scale, (Scalar, Vector)):
             self.scale_param = scale
         elif isinstance(scale, (int, float)):
-            # Uniform scale - wrap in Distance constraint
-            self.scale_param = Distance(value=float(scale), free=False)
+            # Uniform scale - wrap in Scalar parameter
+            self.scale_param = Scalar(value=float(scale), free=False)
         else:
-            # Non-uniform scale - wrap in Point constraint
-            self.scale_param = Point(value=jnp.asarray(scale), free=False)
+            # Non-uniform scale - wrap in Vector parameter
+            self.scale_param = Vector(value=jnp.asarray(scale), free=False)
 
-        self.is_uniform = isinstance(self.scale_param, Distance)
-
-    def __call__(self, p: Array) -> Array:
-        """Evaluate scaled SDF."""
-        # Use static functional method
-        return Scale.eval(self.sdf, p, self.scale_param.value)
+        self.is_uniform = isinstance(self.scale_param, Scalar)
 
     @staticmethod
-    def eval(sdf_fn, p: Array, scale: float | Array) -> Array:
-        """Functional evaluation of scaling.
+    def sdf(child_sdf, p: Array, scale: float | Array) -> Array:
+        """Pure function for scaling.
 
         Args:
-            sdf_fn: SDF function to scale
+            child_sdf: SDF function to scale
             p: Query point(s)
             scale: Scale factor (uniform) or scale vector (non-uniform)
 
@@ -94,13 +94,22 @@ class Scale(SDF):
         is_uniform = isinstance(scale, (int, float)) or scale.ndim == 0
         if is_uniform:
             # Uniform scaling: divide point by scale, multiply distance by scale
-            return sdf_fn(p / scale) * scale
+            return child_sdf(p / scale) * scale
         else:
             # Non-uniform scaling: approximate (not exact SDF)
-            return sdf_fn(p / scale)
+            return child_sdf(p / scale)
+
+    def __call__(self, p: Array) -> Array:
+        """Evaluate scaled SDF."""
+        scale = self.scale_param.xyz if isinstance(self.scale_param, Vector) else self.scale_param.value
+        return Scale.sdf(self.sdf, p, scale)
+
+    def to_functional(self):
+        """Return pure function for compilation."""
+        return Scale.sdf
 
 
-class Rotate(SDF):
+class Rotate(Transform):
     """Rotate an SDF around an axis.
 
     Args:
@@ -109,30 +118,16 @@ class Rotate(SDF):
         angle: Rotation angle in radians (float or Angle constraint)
     """
 
-    def __init__(self, sdf: SDF, axis: str | Array, angle: Union[float, Angle]):
+    def __init__(self, sdf: SDF, axis: str | Array, angle: Union[float, Scalar]):
         self.sdf = sdf
         self.axis = axis
 
-        # Accept both raw values and constraints
-        if isinstance(angle, Angle):
+        # Accept both raw values and Scalar parameters
+        if isinstance(angle, Scalar):
             self.angle_param = angle
         else:
-            # Wrap raw value in a fixed Angle constraint
-            self.angle_param = Angle(value=float(angle), free=False)
-
-        # Compute rotation matrix for class-based API
-        if isinstance(axis, str):
-            if axis == 'x':
-                self.rotation_matrix = self._rotation_matrix_x(self.angle_param.value)
-            elif axis == 'y':
-                self.rotation_matrix = self._rotation_matrix_y(self.angle_param.value)
-            elif axis == 'z':
-                self.rotation_matrix = self._rotation_matrix_z(self.angle_param.value)
-            else:
-                raise ValueError(f"Invalid axis: {axis}. Use 'x', 'y', 'z' or provide axis vector")
-        else:
-            # Custom axis rotation using Rodrigues' formula
-            self.rotation_matrix = self._rotation_matrix_axis(jnp.asarray(axis), self.angle_param.value)
+            # Wrap raw value in a fixed Scalar parameter
+            self.angle_param = Scalar(value=float(angle), free=False)
 
     @staticmethod
     def _rotation_matrix_x(angle: float) -> Array:
@@ -178,17 +173,12 @@ class Rotate(SDF):
             [t*x*z - s*y, t*y*z + s*x, t*z*z + c]
         ])
 
-    def __call__(self, p: Array) -> Array:
-        """Evaluate rotated SDF."""
-        # Use static functional method
-        return Rotate.eval_z(self.sdf, p, self.angle_param.value)
-
     @staticmethod
-    def eval_z(sdf_fn, p: Array, angle: float) -> Array:
-        """Functional evaluation of Z-axis rotation.
+    def sdf(child_sdf, p: Array, angle: float) -> Array:
+        """Pure function for Z-axis rotation.
 
         Args:
-            sdf_fn: SDF function to rotate
+            child_sdf: SDF function to rotate
             p: Query point(s)
             angle: Rotation angle in radians
 
@@ -207,45 +197,12 @@ class Rotate(SDF):
             y = -p[..., 0] * s + p[..., 1] * c
             z = p[..., 2]
             p_rotated = jnp.stack([x, y, z], axis=-1)
-        return sdf_fn(p_rotated)
+        return child_sdf(p_rotated)
 
+    def __call__(self, p: Array) -> Array:
+        """Evaluate rotated SDF."""
+        return Rotate.sdf(self.sdf, p, self.angle_param.value)
 
-# Convenience functions
-def translate(sdf: SDF, offset: Array) -> Translate:
-    """Translate an SDF by offset vector.
-
-    Args:
-        sdf: SDF to translate
-        offset: Translation vector
-
-    Returns:
-        Translated SDF
-    """
-    return Translate(sdf, offset)
-
-
-def scale(sdf: SDF, scale: float | Array) -> Scale:
-    """Scale an SDF uniformly or non-uniformly.
-
-    Args:
-        sdf: SDF to scale
-        scale: Scale factor (uniform) or scale vector (non-uniform)
-
-    Returns:
-        Scaled SDF
-    """
-    return Scale(sdf, scale)
-
-
-def rotate(sdf: SDF, axis: str | Array, angle: float) -> Rotate:
-    """Rotate an SDF around an axis.
-
-    Args:
-        sdf: SDF to rotate
-        axis: Rotation axis ('x', 'y', 'z') or custom axis vector
-        angle: Rotation angle in radians
-
-    Returns:
-        Rotated SDF
-    """
-    return Rotate(sdf, axis, angle)
+    def to_functional(self):
+        """Return pure function for compilation."""
+        return Rotate.sdf

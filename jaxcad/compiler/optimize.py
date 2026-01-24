@@ -42,7 +42,7 @@ def fuse_transforms(graph: SDFGraph) -> SDFGraph:
             # Leaf node - copy as is
             return optimized.add_node(
                 node.op_type,
-                sdf_fn=node.sdf_fn,
+                child_sdf=node.child_sdf,
                 params=node.params
             )
 
@@ -77,7 +77,7 @@ def fuse_transforms(graph: SDFGraph) -> SDFGraph:
         # No fusion - return node with fused children
         return optimized.add_node(
             node.op_type,
-            sdf_fn=node.sdf_fn,
+            child_sdf=node.child_sdf,
             children=fused_children,
             params=node.params
         )
@@ -126,7 +126,7 @@ def eliminate_identity_transforms(graph: SDFGraph) -> SDFGraph:
             # Leaf node - copy as is
             return optimized.add_node(
                 node.op_type,
-                sdf_fn=node.sdf_fn,
+                child_sdf=node.child_sdf,
                 params=node.params
             )
 
@@ -141,7 +141,7 @@ def eliminate_identity_transforms(graph: SDFGraph) -> SDFGraph:
         # Not an identity - keep the node
         return optimized.add_node(
             node.op_type,
-            sdf_fn=node.sdf_fn,
+            child_sdf=node.child_sdf,
             children=processed_children,
             params=node.params
         )

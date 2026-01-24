@@ -1,33 +1,80 @@
 """Sphere primitive."""
 
+from __future__ import annotations
+
 from typing import Union
 
 import jax.numpy as jnp
 from jax import Array
 
-from jaxcad.constraints import Distance
-from jaxcad.sdf import SDF
+from jaxcad.parameters import Scalar
+from jaxcad.primitives.base import Primitive
 
 
-class Sphere(SDF):
+class Sphere(Primitive):
     """Sphere centered at origin with given radius.
 
+    This is a thin wrapper that provides:
+    - Fluent API: sphere.translate().rotate()
+    - Operator overloading: sphere | box
+    - Parameter storage for compilation
+
+    The actual SDF computation is in the static sdf() method.
+
     Args:
-        radius: Sphere radius (float or Distance constraint)
+        radius: Sphere radius (float or Scalar parameter)
+
+    Example:
+        # Direct creation
+        sphere = Sphere(radius=1.0)
+
+        # With parameter for optimization
+        from jaxcad.parameters import Scalar
+        radius = Scalar(value=1.0, free=True, name='radius')
+        sphere = Sphere(radius=radius)
+
+        # Fluent API
+        shape = Sphere(1.0).translate([1, 0, 0]).scale(2.0)
+
+        # Direct pure function call
+        distance = Sphere.sdf(point, radius=1.0)
     """
 
-    def __init__(self, radius: Union[float, Distance]):
-        # Accept both raw values and constraints
-        if isinstance(radius, Distance):
+    def __init__(self, radius: Union[float, Scalar]):
+        # Accept both raw values and Scalar parameters
+        if isinstance(radius, Scalar):
             self.radius_param = radius
-            self.radius = radius.value
         else:
-            # Wrap raw value in a fixed Distance constraint
-            # Don't use float() - keep as JAX array for traceability
-            self.radius_param = Distance(value=radius, free=False)
-            self.radius = self.radius_param.value
+            # Wrap raw value in a fixed Scalar parameter
+            self.radius_param = Scalar(value=radius, free=False)
+
+    @staticmethod
+    def sdf(p: Array, radius: float) -> Array:
+        """Pure SDF function for sphere.
+
+        This is the source of truth for sphere SDF computation.
+        Used directly during JAX compilation and tracing.
+
+        Args:
+            p: Point(s) to evaluate, shape (..., 3)
+            radius: Sphere radius
+
+        Returns:
+            Signed distance: ||p|| - radius
+        """
+        return jnp.linalg.norm(p, axis=-1) - radius
 
     def __call__(self, p: Array) -> Array:
-        """SDF: ||p|| - radius"""
-        # Always use .value from the parameter for JAX traceability
-        return jnp.linalg.norm(p, axis=-1) - self.radius_param.value
+        """Evaluate SDF at point(s) p.
+
+        Delegates to the pure function with stored parameters.
+        """
+        return Sphere.sdf(p, self.radius_param.value)
+
+    def to_functional(self):
+        """Return pure function for compilation.
+
+        Returns:
+            Pure function: Sphere.sdf(p, radius) -> sdf_value
+        """
+        return Sphere.sdf
