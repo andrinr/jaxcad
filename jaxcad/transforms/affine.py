@@ -58,12 +58,14 @@ class Scale(Transform):
 
     Args:
         sdf: The SDF to scale
-        scale: Per-axis scale as Array [sx, sy, sz] or Vector parameter
-               For uniform scaling, use [s, s, s]
+        scale: Per-axis scale as Array [sx, sy, sz], Vector parameter, or float for uniform scaling
     """
 
-    def __init__(self, sdf: SDF, scale: Union[Array, Vector]):
+    def __init__(self, sdf: SDF, scale: Union[float, Array, Vector]):
         self.sdf = sdf
+        # Convert scalar to uniform 3D scale vector before auto-cast
+        if isinstance(scale, (int, float)):
+            scale = jnp.array([scale, scale, scale])
         self.params = {'scale': scale}
 
     @staticmethod
@@ -78,17 +80,18 @@ class Scale(Transform):
         Returns:
             Scaled SDF value
         """
-        # Check if uniform by comparing components
-        is_uniform = jnp.allclose(scale[0], scale[1]) and jnp.allclose(scale[0], scale[2])
+        # Check if uniform by comparing all components to first
+        is_uniform = jnp.allclose(scale, scale[0])
 
-        if is_uniform:
-            # Uniform scaling: divide point by scale, multiply distance by scale
-            # This maintains exact SDF property
+        # Use jnp.where for JAX-compatible branching
+        def uniform_scale():
             s = scale[0]
             return child_sdf(p / s) * s
-        else:
-            # Non-uniform scaling: approximate (not exact SDF)
+
+        def nonuniform_scale():
             return child_sdf(p / scale)
+
+        return jnp.where(is_uniform, uniform_scale(), nonuniform_scale())
 
     def __call__(self, p: Array) -> Array:
         """Evaluate scaled SDF."""
@@ -104,13 +107,20 @@ class Rotate(Transform):
 
     Args:
         sdf: The SDF to rotate
-        axis: Rotation axis as Array [x, y, z] or Vector parameter
-              Common axes: [1,0,0] for X, [0,1,0] for Y, [0,0,1] for Z
+        axis: Rotation axis as Array [x, y, z], Vector parameter, or string ('x', 'y', 'z')
         angle: Rotation angle in radians (float or Scalar parameter)
     """
 
-    def __init__(self, sdf: SDF, axis: Union[Array, Vector], angle: Union[float, Scalar]):
+    def __init__(self, sdf: SDF, axis: Union[str, Array, Vector], angle: Union[float, Scalar]):
         self.sdf = sdf
+        # Convert string axis to vector before auto-cast
+        if isinstance(axis, str):
+            axis_map = {
+                'x': jnp.array([1.0, 0.0, 0.0]),
+                'y': jnp.array([0.0, 1.0, 0.0]),
+                'z': jnp.array([0.0, 0.0, 1.0])
+            }
+            axis = axis_map.get(axis.lower(), jnp.array([0.0, 0.0, 1.0]))
         self.params = {
             'axis': axis,
             'angle': angle

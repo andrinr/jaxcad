@@ -53,8 +53,9 @@ def test_rotate_gradient_functional():
     box = Box(size=jnp.array([1.0, 0.5, 0.5]))
 
     def loss_fn(angle):
-        # Point outside box that changes distance as we rotate
-        return Rotate.sdf(box, jnp.array([2.0, 1.0, 0.0]), angle) ** 2
+        # Point outside box that changes distance as we rotate around Z axis
+        axis = jnp.array([0.0, 0.0, 1.0])
+        return Rotate.sdf(box, jnp.array([2.0, 1.0, 0.0]), axis, angle) ** 2
 
     angle = 0.2  # Small non-zero angle
     grad_fn = jax.grad(loss_fn)

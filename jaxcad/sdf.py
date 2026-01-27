@@ -14,7 +14,6 @@ from typing import Callable, TYPE_CHECKING
 from jax import Array
 
 if TYPE_CHECKING:
-    from jaxcad.compiler.graph import SDFGraph, GraphNode
     from jaxcad.parameters import Parameter
 
 
@@ -99,6 +98,23 @@ class SDF(ABC):
             # already handles case where value is already a Parameter
             self.params[key] = as_parameter(value)
 
+    def _extract_param_values(self) -> dict:
+        """Extract raw numeric values from Parameter objects for graph compilation.
+
+        Returns:
+            Dictionary mapping parameter names to their raw values (arrays/floats).
+            Vector parameters are converted to 3D arrays (xyz), Scalars to floats.
+        """
+        from jaxcad.parameters import Vector
+
+        params = {}
+        for param_name, param in self.params.items():
+            if isinstance(param, Vector):
+                params[param_name] = param.xyz
+            else:
+                params[param_name] = param.value
+        return params
+
 
     @abstractmethod
     def __call__(self, p: Array) -> Array:
@@ -127,34 +143,6 @@ class SDF(ABC):
             sphere = Sphere(radius=1.0)
             func = sphere.to_functional()
             # func(p, radius=1.0) -> Array
-        """
-        pass
-
-    @abstractmethod
-    def to_graph_node(self, graph: SDFGraph, walk_fn: Callable[[SDF], GraphNode]) -> GraphNode:
-        """Add this SDF operation to the computation graph.
-
-        Each SDF type knows how to serialize itself to a graph node.
-
-        Args:
-            graph: The graph to add this node to
-            walk_fn: Function to recursively walk child SDFs
-
-        Returns:
-            GraphNode representing this operation
-
-        Example:
-            # For primitives:
-            return graph.add_node(self.__class__, child_sdf=self)
-
-            # For transforms:
-            child = walk_fn(self.sdf)
-            return graph.add_node(self.__class__, children=[child], params={...})
-
-            # For booleans:
-            left = walk_fn(self.sdf1)
-            right = walk_fn(self.sdf2)
-            return graph.add_node(self.__class__, children=[left, right], params={...})
         """
         pass
 

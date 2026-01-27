@@ -2,19 +2,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from jaxcad.sdf import SDF
-
-if TYPE_CHECKING:
-    from jaxcad.compiler.graph import SDFGraph, GraphNode
 
 
 class BooleanOp(SDF):
-    """Base class for boolean operation SDFs (binary operations in the computation graph).
+    """Base class for boolean operation SDFs (binary operations in the SDF tree).
 
     Boolean operations combine two SDFs - union, intersection, difference, etc.
-    They have two children in the computation graph.
+    They have two children.
 
     Subclasses must implement:
     - @staticmethod def sdf(child_sdf1, child_sdf2, p: Array, smoothness: float) -> Array
@@ -24,20 +19,5 @@ class BooleanOp(SDF):
     Subclasses should store:
     - self.sdf1: The first child SDF
     - self.sdf2: The second child SDF
-    - self.smoothness: The smoothness parameter
+    - self.params: Dictionary of Parameter objects
     """
-
-    def to_graph_node(self, graph: SDFGraph, walk_fn) -> GraphNode:
-        """Add this boolean operation to the computation graph.
-
-        Boolean operations have two children and store their parameters.
-        """
-        left = walk_fn(self.sdf1)
-        right = walk_fn(self.sdf2)
-
-        # Extract parameter values from self.params dictionary
-        params = {}
-        for param_name, param in self.params.items():
-            params[param_name] = param.value
-
-        return graph.add_node(self.__class__, children=[left, right], params=params)

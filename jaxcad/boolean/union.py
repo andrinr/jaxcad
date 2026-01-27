@@ -42,9 +42,8 @@ class Union(BooleanOp):
         """
         d1 = child_sdf1(p)
         d2 = child_sdf2(p)
-        if smoothness > 0:
-            return smooth_min(d1, d2, smoothness)
-        return jnp.minimum(d1, d2)
+        # Use jnp.where for JAX-compatible branching
+        return jnp.where(smoothness > 0, smooth_min(d1, d2, smoothness), jnp.minimum(d1, d2))
 
     def __call__(self, p: Array) -> Array:
         """Union: min(d1, d2) with smooth blending"""
