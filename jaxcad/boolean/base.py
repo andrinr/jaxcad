@@ -30,13 +30,14 @@ class BooleanOp(SDF):
     def to_graph_node(self, graph: SDFGraph, walk_fn) -> GraphNode:
         """Add this boolean operation to the computation graph.
 
-        Boolean operations have two children and store smoothness parameter.
+        Boolean operations have two children and store their parameters.
         """
         left = walk_fn(self.sdf1)
         right = walk_fn(self.sdf2)
 
+        # Extract parameter values from self.params dictionary
         params = {}
-        if hasattr(self, 'smoothness'):
-            params['smoothness'] = self.smoothness
+        for param_name, param in self.params.items():
+            params[param_name] = param.value
 
         return graph.add_node(self.__class__, children=[left, right], params=params)

@@ -23,10 +23,7 @@ class Box(Primitive):
     """
 
     def __init__(self, size: Union[Array, Vector]):
-        if isinstance(size, Vector):
-            self.size_param = size
-        else:
-            self.size_param = Vector(value=jnp.asarray(size), free=False)
+        self.params = {'size': size}
 
     @staticmethod
     def sdf(p: Array, size: Array) -> Array:
@@ -45,7 +42,7 @@ class Box(Primitive):
 
     def __call__(self, p: Array) -> Array:
         """Evaluate SDF at point(s) p."""
-        return Box.sdf(p, self.size_param.xyz)
+        return Box.sdf(p, self.params['size'].xyz)
 
     def to_functional(self):
         """Return pure function for compilation."""

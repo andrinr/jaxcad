@@ -20,8 +20,7 @@ class Torus(Primitive):
     """
 
     def __init__(self, major_radius: Union[float, Scalar], minor_radius: Union[float, Scalar]):
-        self.major_radius_param = major_radius if isinstance(major_radius, Scalar) else Scalar(value=major_radius, free=False)
-        self.minor_radius_param = minor_radius if isinstance(minor_radius, Scalar) else Scalar(value=minor_radius, free=False)
+        self.params = {'major_radius': major_radius, 'minor_radius': minor_radius}
 
     @staticmethod
     def sdf(p: Array, major_radius: float, minor_radius: float) -> Array:
@@ -41,7 +40,7 @@ class Torus(Primitive):
 
     def __call__(self, p: Array) -> Array:
         """Evaluate SDF at point(s) p."""
-        return Torus.sdf(p, self.major_radius_param.value, self.minor_radius_param.value)
+        return Torus.sdf(p, self.params['major_radius'].value, self.params['minor_radius'].value)
 
     def to_functional(self):
         """Return pure function for compilation."""

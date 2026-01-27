@@ -24,11 +24,7 @@ class Twist(Transform):
 
     def __init__(self, sdf: SDF, strength: Union[float, Scalar]):
         self.sdf = sdf
-        # Accept both raw values and Scalar parameters
-        if isinstance(strength, Scalar):
-            self.strength_param = strength
-        else:
-            self.strength_param = Scalar(value=float(strength), free=False)
+        self.params = {'strength': strength}
 
     @staticmethod
     def sdf(child_sdf, p: Array, strength: float) -> Array:
@@ -62,7 +58,7 @@ class Twist(Transform):
 
     def __call__(self, p: Array) -> Array:
         """Evaluate twisted SDF."""
-        return Twist.sdf(self.sdf, p, self.strength_param.value)
+        return Twist.sdf(self.sdf, p, self.params['strength'].value)
 
     def to_functional(self):
         """Return pure function for compilation."""

@@ -33,23 +33,18 @@ class Transform(SDF):
         """
         child = walk_fn(self.sdf)
 
-        # Extract parameters from *_param attributes
+        # Extract parameter values from self.params dictionary
         params = {}
-        for attr_name in dir(self):
-            if attr_name.endswith('_param') and not attr_name.startswith('_'):
-                param = getattr(self, attr_name)
-                param_name = attr_name.replace('_param', '')
-
-                # Extract value, handling Vector vs Scalar
-                from jaxcad.parameters import Vector
-                if isinstance(param, Vector):
-                    params[param_name] = param.xyz
+        from jaxcad.parameters import Vector, Parameter
+        for param_name, param_value in self.params.items():
+            # Extract value from Parameter objects, pass through other values (like axis)
+            if isinstance(param_value, Parameter):
+                if isinstance(param_value, Vector):
+                    params[param_name] = param_value.xyz
                 else:
-                    params[param_name] = param.value
-
-        # Add any non-parameter attributes (like is_uniform for Scale)
-        for attr_name in ['is_uniform', 'axis']:
-            if hasattr(self, attr_name):
-                params[attr_name] = getattr(self, attr_name)
+                    params[param_name] = param_value.value
+            else:
+                # Non-parameter metadata (like axis in Rotate)
+                params[param_name] = param_value
 
         return graph.add_node(self.__class__, children=[child], params=params)

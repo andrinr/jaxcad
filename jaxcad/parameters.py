@@ -9,6 +9,9 @@ Types:
 - Scalar: Single values (radius, distance, angle, scale, etc.)
 - Vector: 3D/4D vectors (positions, offsets, directions) with homogeneous coordinates
 
+Helpers:
+- as_parameter: Auto-convert raw values to Parameter objects
+
 For constraint systems (distances, angles, parallel, etc.), see constraints.py (future).
 """
 
@@ -161,3 +164,47 @@ jax.tree_util.register_pytree_node(
     Vector.tree_flatten,
     Vector.tree_unflatten
 )
+
+
+def as_parameter(value: Union[float, int, Array, Parameter], name: Optional[str] = None) -> Parameter:
+    """Convert a raw value to a Parameter object automatically.
+
+    If the value is already a Parameter, return it as-is.
+    Otherwise, wrap it in the appropriate Parameter type with free=False.
+
+    Args:
+        value: Value to convert (float, int, Array, or Parameter)
+        name: Optional name for the parameter (only used if creating new Parameter)
+
+    Returns:
+        Parameter object (Scalar or Vector)
+
+    Examples:
+        >>> as_parameter(1.5)
+        Scalar(value=1.5, free=False)
+
+        >>> as_parameter([1, 2, 3])
+        Vector(value=[1, 2, 3, 1], free=False)
+
+        >>> existing = Scalar(value=2.0, free=True, name='radius')
+        >>> as_parameter(existing)
+        Scalar(value=2.0, free=True, name='radius')  # unchanged
+    """
+    # If already a Parameter, return as-is
+    if isinstance(value, Parameter):
+        return value
+
+    # Convert to jax array first
+    arr = jnp.asarray(value)
+
+    # Scalar (0-d array or single value)
+    if arr.ndim == 0 or (arr.ndim == 1 and arr.shape[0] == 1):
+        return Scalar(value=arr if arr.ndim == 0 else arr[0], free=False, name=name)
+
+    # Vector (3D or 4D array)
+    elif arr.shape == (3,) or arr.shape == (4,):
+        return Vector(value=arr, free=False, name=name)
+
+    else:
+        raise ValueError(f"Cannot auto-convert value with shape {arr.shape} to Parameter. "
+                        f"Use Scalar for scalars or Vector for 3D/4D vectors.")

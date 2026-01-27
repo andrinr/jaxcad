@@ -41,12 +41,7 @@ class Sphere(Primitive):
     """
 
     def __init__(self, radius: Union[float, Scalar]):
-        # Accept both raw values and Scalar parameters
-        if isinstance(radius, Scalar):
-            self.radius_param = radius
-        else:
-            # Wrap raw value in a fixed Scalar parameter
-            self.radius_param = Scalar(value=radius, free=False)
+        self.params = {'radius': radius}
 
     @staticmethod
     def sdf(p: Array, radius: float) -> Array:
@@ -69,7 +64,7 @@ class Sphere(Primitive):
 
         Delegates to the pure function with stored parameters.
         """
-        return Sphere.sdf(p, self.radius_param.value)
+        return Sphere.sdf(p, self.params['radius'].value)
 
     def to_functional(self):
         """Return pure function for compilation.

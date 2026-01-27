@@ -15,6 +15,7 @@ from jax import Array
 
 if TYPE_CHECKING:
     from jaxcad.compiler.graph import SDFGraph, GraphNode
+    from jaxcad.parameters import Parameter
 
 
 class SDF(ABC):
@@ -26,11 +27,20 @@ class SDF(ABC):
     - f(p) = 0: point p is on the surface
     - f(p) > 0: point p is outside the shape
 
+    Attributes:
+        params: Dictionary of Parameter objects for this SDF operation
+
     SDF classes are thin wrappers around pure functions:
     - Provide fluent API: .translate().rotate() chaining
     - Enable operators: sphere | box, sphere & box
     - Store parameters for later compilation
     - Actual computation happens in pure functions
+
+    Each SDF instance should store its parameters in self.params dictionary:
+        self.params = {
+            'radius': Scalar(value=1.0, free=True, name='radius'),
+            'offset': Vector(value=[0, 0, 0], free=False),
+        }
 
     Subclasses must implement:
     - @staticmethod def sdf(...): Pure function for computation (CONVENTION)
@@ -43,7 +53,7 @@ class SDF(ABC):
             # Pure computation here
 
         def __call__(self, p: Array) -> Array:
-            return ClassName.sdf(p, self.param1.value, self.param2.value)
+            return ClassName.sdf(p, self.params['param1'].value, self.params['param2'].value)
 
         def to_functional(self):
             return ClassName.sdf
@@ -54,11 +64,41 @@ class SDF(ABC):
             # Transform computation here
 
         def __call__(self, p: Array) -> Array:
-            return ClassName.sdf(self.child_sdf, p, self.param.value)
+            return ClassName.sdf(self.child_sdf, p, self.params['param'].value)
 
         def to_functional(self):
             return ClassName.sdf
     """
+
+    params: dict[str, 'Parameter']
+
+    def __init_subclass__(cls, **kwargs):
+        """Automatically wrap __init__ to call _cast_params after initialization."""
+        super().__init_subclass__(**kwargs)
+        original_init = cls.__init__
+
+        def new_init(self, *args, **kwargs):
+            original_init(self, *args, **kwargs)
+            # Auto-cast params after initialization
+            if hasattr(self, 'params'):
+                self._cast_params()
+
+        cls.__init__ = new_init
+
+    def _cast_params(self) -> None:
+        """Convert all values in self.params to Parameter objects.
+
+        This is automatically called after __init__ via __init_subclass__.
+        Converts raw values (floats, ints, arrays) to Parameter objects,
+        while leaving existing Parameter objects unchanged.
+        """
+        from jaxcad.parameters import as_parameter
+
+        # Convert each value in the params dict
+        for key, value in self.params.items():
+            # already handles case where value is already a Parameter
+            self.params[key] = as_parameter(value)
+
 
     @abstractmethod
     def __call__(self, p: Array) -> Array:

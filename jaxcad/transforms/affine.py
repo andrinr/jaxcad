@@ -8,6 +8,7 @@ import jax.numpy as jnp
 from jax import Array
 
 from jaxcad.parameters import Vector, Scalar
+from jaxcad.sdf import SDF
 from jaxcad.transforms.base import Transform
 
 
@@ -24,12 +25,7 @@ class Translate(Transform):
 
     def __init__(self, sdf: SDF, offset: Union[Array, Vector]):
         self.sdf = sdf
-        # Accept both raw values and constraints
-        if isinstance(offset, Vector):
-            self.offset_param = offset
-        else:
-            # Wrap raw value in a fixed Vector constraint
-            self.offset_param = Vector(value=jnp.asarray(offset), free=False)
+        self.params = {'offset': offset}
 
     @staticmethod
     def sdf(child_sdf, p: Array, offset: Array) -> Array:
@@ -47,7 +43,7 @@ class Translate(Transform):
 
     def __call__(self, p: Array) -> Array:
         """Evaluate translated SDF."""
-        return Translate.sdf(self.sdf, p, self.offset_param.xyz)
+        return Translate.sdf(self.sdf, p, self.params['offset'].xyz)
 
     def to_functional(self):
         """Return pure function for compilation."""
@@ -55,54 +51,48 @@ class Translate(Transform):
 
 
 class Scale(Transform):
-    """Scale an SDF uniformly or non-uniformly.
+    """Scale an SDF component-wise.
 
     Note: Non-uniform scaling doesn't produce exact SDFs. For uniform scaling,
     we can divide the distance by the scale factor to maintain correctness.
 
     Args:
         sdf: The SDF to scale
-        scale: Uniform scale factor (float/Distance) or per-axis scale (Array/Vector)
+        scale: Per-axis scale as Array [sx, sy, sz] or Vector parameter
+               For uniform scaling, use [s, s, s]
     """
 
-    def __init__(self, sdf: SDF, scale: Union[float, Array, Scalar, Vector]):
+    def __init__(self, sdf: SDF, scale: Union[Array, Vector]):
         self.sdf = sdf
-        # Accept both raw values and parameters
-        if isinstance(scale, (Scalar, Vector)):
-            self.scale_param = scale
-        elif isinstance(scale, (int, float)):
-            # Uniform scale - wrap in Scalar parameter
-            self.scale_param = Scalar(value=float(scale), free=False)
-        else:
-            # Non-uniform scale - wrap in Vector parameter
-            self.scale_param = Vector(value=jnp.asarray(scale), free=False)
-
-        self.is_uniform = isinstance(self.scale_param, Scalar)
+        self.params = {'scale': scale}
 
     @staticmethod
-    def sdf(child_sdf, p: Array, scale: float | Array) -> Array:
-        """Pure function for scaling.
+    def sdf(child_sdf, p: Array, scale: Array) -> Array:
+        """Pure function for component-wise scaling.
 
         Args:
             child_sdf: SDF function to scale
             p: Query point(s)
-            scale: Scale factor (uniform) or scale vector (non-uniform)
+            scale: Scale vector [sx, sy, sz]
 
         Returns:
             Scaled SDF value
         """
-        is_uniform = isinstance(scale, (int, float)) or scale.ndim == 0
+        # Check if uniform by comparing components
+        is_uniform = jnp.allclose(scale[0], scale[1]) and jnp.allclose(scale[0], scale[2])
+
         if is_uniform:
             # Uniform scaling: divide point by scale, multiply distance by scale
-            return child_sdf(p / scale) * scale
+            # This maintains exact SDF property
+            s = scale[0]
+            return child_sdf(p / s) * s
         else:
             # Non-uniform scaling: approximate (not exact SDF)
             return child_sdf(p / scale)
 
     def __call__(self, p: Array) -> Array:
         """Evaluate scaled SDF."""
-        scale = self.scale_param.xyz if isinstance(self.scale_param, Vector) else self.scale_param.value
-        return Scale.sdf(self.sdf, p, scale)
+        return Scale.sdf(self.sdf, p, self.params['scale'].xyz)
 
     def to_functional(self):
         """Return pure function for compilation."""
@@ -114,20 +104,17 @@ class Rotate(Transform):
 
     Args:
         sdf: The SDF to rotate
-        axis: Rotation axis ('x', 'y', 'z') or custom axis vector
-        angle: Rotation angle in radians (float or Angle constraint)
+        axis: Rotation axis as Array [x, y, z] or Vector parameter
+              Common axes: [1,0,0] for X, [0,1,0] for Y, [0,0,1] for Z
+        angle: Rotation angle in radians (float or Scalar parameter)
     """
 
-    def __init__(self, sdf: SDF, axis: str | Array, angle: Union[float, Scalar]):
+    def __init__(self, sdf: SDF, axis: Union[Array, Vector], angle: Union[float, Scalar]):
         self.sdf = sdf
-        self.axis = axis
-
-        # Accept both raw values and Scalar parameters
-        if isinstance(angle, Scalar):
-            self.angle_param = angle
-        else:
-            # Wrap raw value in a fixed Scalar parameter
-            self.angle_param = Scalar(value=float(angle), free=False)
+        self.params = {
+            'axis': axis,
+            'angle': angle
+        }
 
     @staticmethod
     def _rotation_matrix_x(angle: float) -> Array:
@@ -174,34 +161,44 @@ class Rotate(Transform):
         ])
 
     @staticmethod
-    def sdf(child_sdf, p: Array, angle: float) -> Array:
-        """Pure function for Z-axis rotation.
+    def sdf(child_sdf, p: Array, axis: Array, angle: float) -> Array:
+        """Pure function for rotation around arbitrary axis.
 
         Args:
             child_sdf: SDF function to rotate
             p: Query point(s)
+            axis: Rotation axis [x, y, z]
             angle: Rotation angle in radians
 
         Returns:
             Rotated SDF value
         """
+        # Normalize axis
+        axis = axis / jnp.linalg.norm(axis)
+
+        # Rodrigues' rotation formula for arbitrary axis
         c, s = jnp.cos(angle), jnp.sin(angle)
+        t = 1 - c
+        x, y, z = axis[0], axis[1], axis[2]
+
+        # Build rotation matrix
+        R = jnp.array([
+            [t*x*x + c,   t*x*y - s*z, t*x*z + s*y],
+            [t*x*y + s*z, t*y*y + c,   t*y*z - s*x],
+            [t*x*z - s*y, t*y*z + s*x, t*z*z + c]
+        ])
+
         # Apply inverse rotation to point
         if p.ndim == 1:
-            x = p[0] * c + p[1] * s
-            y = -p[0] * s + p[1] * c
-            z = p[2]
-            p_rotated = jnp.array([x, y, z])
+            p_rotated = R.T @ p
         else:
-            x = p[..., 0] * c + p[..., 1] * s
-            y = -p[..., 0] * s + p[..., 1] * c
-            z = p[..., 2]
-            p_rotated = jnp.stack([x, y, z], axis=-1)
+            p_rotated = jnp.einsum('ij,...j->...i', R.T, p)
+
         return child_sdf(p_rotated)
 
     def __call__(self, p: Array) -> Array:
         """Evaluate rotated SDF."""
-        return Rotate.sdf(self.sdf, p, self.angle_param.value)
+        return Rotate.sdf(self.sdf, p, self.params['axis'].xyz, self.params['angle'].value)
 
     def to_functional(self):
         """Return pure function for compilation."""

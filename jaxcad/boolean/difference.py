@@ -7,6 +7,7 @@ from jax import Array
 
 from jaxcad.boolean.base import BooleanOp
 from jaxcad.boolean.smooth import smooth_max
+from jaxcad.parameters import Scalar
 from jaxcad.sdf import SDF
 
 
@@ -24,7 +25,7 @@ class Difference(BooleanOp):
     def __init__(self, sdf1: SDF, sdf2: SDF, smoothness: float = 0.1):
         self.sdf1 = sdf1
         self.sdf2 = sdf2
-        self.smoothness = smoothness
+        self.params = {'smoothness': smoothness}
 
     @staticmethod
     def sdf(child_sdf1, child_sdf2, p: Array, smoothness: float) -> Array:
@@ -47,7 +48,7 @@ class Difference(BooleanOp):
 
     def __call__(self, p: Array) -> Array:
         """Difference: max(d1, -d2) with smooth blending"""
-        return Difference.sdf(self.sdf1, self.sdf2, p, self.smoothness)
+        return Difference.sdf(self.sdf1, self.sdf2, p, self.params['smoothness'].value)
 
     def to_functional(self):
         """Return pure function for compilation."""

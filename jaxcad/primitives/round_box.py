@@ -20,15 +20,7 @@ class RoundBox(Primitive):
     """
 
     def __init__(self, size: Union[Array, Vector], radius: Union[float, Scalar]):
-        if isinstance(size, Vector):
-            self.size_param = size
-        else:
-            self.size_param = Vector(value=jnp.asarray(size), free=False)
-
-        if isinstance(radius, Scalar):
-            self.radius_param = radius
-        else:
-            self.radius_param = Scalar(value=radius, free=False)
+        self.params = {'size': size, 'radius': radius}
 
     @staticmethod
     def sdf(p: Array, size: Array, radius: float) -> Array:
@@ -48,7 +40,7 @@ class RoundBox(Primitive):
 
     def __call__(self, p: Array) -> Array:
         """Evaluate SDF at point(s) p."""
-        return RoundBox.sdf(p, self.size_param.xyz, self.radius_param.value)
+        return RoundBox.sdf(p, self.params['size'].xyz, self.params['radius'].value)
 
     def to_functional(self):
         """Return pure function for compilation."""

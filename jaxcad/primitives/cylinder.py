@@ -20,8 +20,7 @@ class Cylinder(Primitive):
     """
 
     def __init__(self, radius: Union[float, Scalar], height: Union[float, Scalar]):
-        self.radius_param = radius if isinstance(radius, Scalar) else Scalar(value=radius, free=False)
-        self.height_param = height if isinstance(height, Scalar) else Scalar(value=height, free=False)
+        self.params = {'radius': radius, 'height': height}
 
     @staticmethod
     def sdf(p: Array, radius: float, height: float) -> Array:
@@ -42,7 +41,7 @@ class Cylinder(Primitive):
 
     def __call__(self, p: Array) -> Array:
         """Evaluate SDF at point(s) p."""
-        return Cylinder.sdf(p, self.radius_param.value, self.height_param.value)
+        return Cylinder.sdf(p, self.params['radius'].value, self.params['height'].value)
 
     def to_functional(self):
         """Return pure function for compilation."""
