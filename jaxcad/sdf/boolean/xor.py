@@ -5,7 +5,7 @@ from __future__ import annotations
 import jax.numpy as jnp
 from jax import Array
 
-from jaxcad.boolean.base import BooleanOp
+from jaxcad.sdf.boolean.base import BooleanOp
 from jaxcad.sdf import SDF
 
 

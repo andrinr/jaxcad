@@ -1,8 +1,8 @@
 """Transformation operations for SDFs."""
 
-from jaxcad.sdf import SDF
-from jaxcad.transforms.affine import Translate, Rotate, Scale
-from jaxcad.transforms.deformations import Twist
+from jaxcad.sdf.base import SDF
+from jaxcad.sdf.transforms.affine import Translate, Rotate, Scale
+from jaxcad.sdf.transforms.deformations import Twist
 
 # Define transforms with their method names
 TRANSFORMS = {

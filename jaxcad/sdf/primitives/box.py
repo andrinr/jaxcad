@@ -8,7 +8,7 @@ import jax.numpy as jnp
 from jax import Array
 
 from jaxcad.parameters import Vector
-from jaxcad.primitives.base import Primitive
+from jaxcad.sdf.primitives.base import Primitive
 
 
 class Box(Primitive):

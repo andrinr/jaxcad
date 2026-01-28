@@ -148,17 +148,17 @@ class SDF(ABC):
 
     def __or__(self, other: SDF) -> SDF:
         """Union operator: self | other"""
-        from jaxcad.boolean import Union
+        from jaxcad.sdf.boolean import Union
         return Union(self, other)
 
     def __and__(self, other: SDF) -> SDF:
         """Intersection operator: self & other"""
-        from jaxcad.boolean import Intersection
+        from jaxcad.sdf.boolean import Intersection
         return Intersection(self, other)
 
     def __sub__(self, other: SDF) -> SDF:
         """Difference operator: self - other"""
-        from jaxcad.boolean import Difference
+        from jaxcad.sdf.boolean import Difference
         return Difference(self, other)
 
     @classmethod

@@ -9,7 +9,7 @@ from jax import Array
 
 from jaxcad.parameters import Vector, Scalar
 from jaxcad.sdf import SDF
-from jaxcad.transforms.base import Transform
+from jaxcad.sdf.transforms.base import Transform
 
 
 class Translate(Transform):

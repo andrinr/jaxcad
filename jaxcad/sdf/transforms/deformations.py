@@ -8,7 +8,7 @@ import jax.numpy as jnp
 from jax import Array
 
 from jaxcad.parameters import Scalar
-from jaxcad.transforms.base import Transform
+from jaxcad.sdf.transforms.base import Transform
 
 
 class Twist(Transform):

@@ -30,7 +30,7 @@ backwards compatibility.
 """
 
 # Re-export parameter types for backwards compatibility
-from jaxcad.parameters import (
+from jaxcad.geometry.parameters import (
     Parameter,
     Scalar,
     Vector,
