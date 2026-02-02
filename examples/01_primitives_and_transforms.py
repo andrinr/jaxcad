@@ -3,7 +3,7 @@
 This example demonstrates:
 - Creating basic SDF primitives (Sphere, Box, Cylinder)
 - Applying transforms (translate, scale)
-- Boolean operations (union, difference)
+- Boolean operations (union, difference, intersection)
 - 3D rendering using marching cubes
 """
 
@@ -11,104 +11,133 @@ import jax.numpy as jnp
 import matplotlib.pyplot as plt
 
 from jaxcad.sdf.primitives import Sphere, Box, Cylinder
-from jaxcad.sdf.boolean import Union, Difference
+from jaxcad.sdf.boolean import Union, Difference, Intersection
 from jaxcad.render import render_marching_cubes
 
 
-def create_scene():
-    """Create a scene with multiple primitives and transforms."""
-    print("Creating scene with primitives and transforms...")
+def create_scene1():
+    """Scene 1: Union - Platform with spheres."""
+    print("Creating scene 1: Union operations...")
 
-    # Base platform - large flat box
-    platform = Box(size=jnp.array([3.0, 3.0, 0.2]))
+    # Platform
+    platform = Box(size=jnp.array([3.0, 3.0, 0.3]))
     platform = platform.translate(offset=jnp.array([0.0, 0.0, -0.5]))
 
-    # Central sphere
-    sphere = Sphere(radius=0.8)
-    sphere = sphere.translate(offset=jnp.array([0.0, 0.0, 0.3]))
+    # Three spheres at different positions
+    sphere1 = Sphere(radius=0.6).translate(offset=jnp.array([-1.0, 0.0, 0.0]))
+    sphere2 = Sphere(radius=0.6).translate(offset=jnp.array([1.0, 0.0, 0.0]))
+    sphere3 = Sphere(radius=0.5).translate(offset=jnp.array([0.0, 0.0, 0.8]))
 
-    # Four pillars at corners (cylinders)
-    pillar = Cylinder(radius=0.15, height=0.6)
+    # Combine with union
+    scene = Union(platform, sphere1)
+    scene = Union(scene, sphere2)
+    scene = Union(scene, sphere3)
 
-    pillar1 = pillar.translate(offset=jnp.array([1.5, 1.5, -0.3]))
-    pillar2 = pillar.translate(offset=jnp.array([-1.5, 1.5, -0.3]))
-    pillar3 = pillar.translate(offset=jnp.array([1.5, -1.5, -0.3]))
-    pillar4 = pillar.translate(offset=jnp.array([-1.5, -1.5, -0.3]))
-
-    # Small box on top, scaled and translated
-    top_box = Box(size=jnp.array([0.3, 0.3, 0.3]))
-    top_box = top_box.scale(scale=1.5)
-    top_box = top_box.translate(offset=jnp.array([0.0, 0.0, 1.2]))
-
-    # Create hole in sphere using difference
-    hole = Cylinder(radius=0.4, height=1.0)
-    sphere_with_hole = Difference(sphere, hole)
-
-    # Union everything together
-    scene = Union(platform, pillar1)
-    scene = Union(scene, pillar2)
-    scene = Union(scene, pillar3)
-    scene = Union(scene, pillar4)
-    scene = Union(scene, sphere_with_hole)
-    scene = Union(scene, top_box)
-
-    print("✓ Scene created with 8 objects")
+    print("✓ Scene 1 created")
     return scene
 
 
-def render_scene(scene):
-    """Render the scene from multiple angles using marching cubes."""
-    print("Rendering scene with marching cubes...")
+def create_scene2():
+    """Scene 2: Difference - Sphere with cylindrical holes."""
+    print("Creating scene 2: Difference operations...")
 
-    fig = plt.figure(figsize=(15, 5))
+    # Large sphere
+    sphere = Sphere(radius=1.2)
 
-    # View 1: Front view
+    # Three cylinders as holes
+    hole1 = Cylinder(radius=0.4, height=3.0).translate(offset=jnp.array([0.0, 0.0, -1.5]))
+    hole2 = Cylinder(radius=0.4, height=3.0).translate(offset=jnp.array([0.0, -1.5, 0.0]))
+    hole3 = Cylinder(radius=0.4, height=3.0).translate(offset=jnp.array([-1.5, 0.0, 0.0]))
+
+    # Subtract holes from sphere
+    scene = Difference(sphere, hole1)
+    scene = Difference(scene, hole2)
+    scene = Difference(scene, hole3)
+
+    print("✓ Scene 2 created")
+    return scene
+
+
+def create_scene3():
+    """Scene 3: Intersection and scaling - Rounded cube."""
+    print("Creating scene 3: Intersection and scaling...")
+
+    # Box
+    box = Box(size=jnp.array([1.5, 1.5, 1.5]))
+
+    # Sphere to round the corners
+    sphere = Sphere(radius=1.3)
+
+    # Intersect to create rounded cube
+    rounded_cube = Intersection(box, sphere)
+
+    # Add a cylinder on top
+    cylinder = Cylinder(radius=0.3, height=0.8).translate(offset=jnp.array([0.0, 0.0, 0.75]))
+
+    # Union with cylinder
+    scene = Union(rounded_cube, cylinder)
+
+    print("✓ Scene 3 created")
+    return scene
+
+
+def render_scenes():
+    """Render three different scenes side by side."""
+    print("Rendering scenes with marching cubes...")
+
+    scene1 = create_scene1()
+    scene2 = create_scene2()
+    scene3 = create_scene3()
+
+    fig = plt.figure(figsize=(16, 5))
+
+    # Scene 1: Union
     ax1 = fig.add_subplot(131, projection='3d')
     render_marching_cubes(
-        scene,
-        bounds=(-3, -3, -1),
-        size=(6, 6, 3),
-        resolution=60,
+        scene1,
+        bounds=(-2, -2, -1),
+        size=(4, 4, 2.5),
+        resolution=50,
         ax=ax1,
         color='#06A77D',
         alpha=0.8
     )
-    ax1.set_title('Front View', fontsize=14, fontweight='bold')
-    ax1.view_init(elev=15, azim=45)
+    ax1.set_title('Union Operations', fontsize=14, fontweight='bold')
+    ax1.view_init(elev=20, azim=45)
     ax1.set_xlabel('X')
     ax1.set_ylabel('Y')
     ax1.set_zlabel('Z')
 
-    # View 2: Top view
+    # Scene 2: Difference
     ax2 = fig.add_subplot(132, projection='3d')
     render_marching_cubes(
-        scene,
-        bounds=(-3, -3, -1),
-        size=(6, 6, 3),
-        resolution=60,
+        scene2,
+        bounds=(-1.5, -1.5, -1.5),
+        size=(3, 3, 3),
+        resolution=50,
         ax=ax2,
         color='#2E86AB',
         alpha=0.8
     )
-    ax2.set_title('Top View', fontsize=14, fontweight='bold')
-    ax2.view_init(elev=90, azim=0)
+    ax2.set_title('Difference Operations', fontsize=14, fontweight='bold')
+    ax2.view_init(elev=20, azim=45)
     ax2.set_xlabel('X')
     ax2.set_ylabel('Y')
     ax2.set_zlabel('Z')
 
-    # View 3: Isometric view
+    # Scene 3: Intersection
     ax3 = fig.add_subplot(133, projection='3d')
     render_marching_cubes(
-        scene,
-        bounds=(-3, -3, -1),
-        size=(6, 6, 3),
-        resolution=60,
+        scene3,
+        bounds=(-1.5, -1.5, -1),
+        size=(3, 3, 2.5),
+        resolution=50,
         ax=ax3,
         color='#F18F01',
         alpha=0.8
     )
-    ax3.set_title('Isometric View', fontsize=14, fontweight='bold')
-    ax3.view_init(elev=30, azim=135)
+    ax3.set_title('Intersection & Transforms', fontsize=14, fontweight='bold')
+    ax3.view_init(elev=20, azim=45)
     ax3.set_xlabel('X')
     ax3.set_ylabel('Y')
     ax3.set_zlabel('Z')
@@ -126,9 +155,7 @@ def main():
     print("=" * 80)
     print()
 
-    scene = create_scene()
-    print()
-    render_scene(scene)
+    render_scenes()
 
     print()
     print("=" * 80)

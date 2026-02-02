@@ -40,42 +40,11 @@ def loss_fn(r):
 
 grad_fn = jax.grad(loss_fn)
 current_radius = 0.5
-for step in range(50):
+for step in range(8):
     gradient = grad_fn(current_radius)
     current_radius -= 0.1 * gradient
 
 print(f"Optimized radius: {current_radius}")
-```
-
-## Architecture
-
-jaxCAD is built with 5 independent layers:
-
-```
-┌─────────────────────────────────────┐
-│  Layer 1: Geometry                  │  Parametric primitives (Line, Circle, Rectangle)
-│  (jaxcad/geometry/)                 │  Parameters: Vector, Scalar (free or fixed)
-└────────────┬────────────────────────┘
-             │
-┌────────────┴────────────────────────┐
-│  Layer 2: Constraints               │  DistanceConstraint, AngleConstraint, etc.
-│  (jaxcad/constraints/)              │  ConstraintGraph manages DOF reduction
-└────────────┬────────────────────────┘
-             │
-┌────────────┴────────────────────────┐
-│  Layer 3: Construction              │  Bridges geometry → SDF
-│  (jaxcad/construction/)             │  extrude(), from_line(), from_circle()
-└────────────┬────────────────────────┘
-             │
-┌────────────┴────────────────────────┐
-│  Layer 4: Compiler                  │  Parameter extraction and compilation
-│  (jaxcad/compiler/)                 │  compile_to_function() → pure JAX
-└────────────┬────────────────────────┘
-             │
-┌────────────┴────────────────────────┐
-│  Layer 5: SDF                       │  Primitives, transforms, booleans
-│  (jaxcad/sdf/)                      │  Box, Sphere, Cylinder, etc.
-└─────────────────────────────────────┘
 ```
 
 ## Examples

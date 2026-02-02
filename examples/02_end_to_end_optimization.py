@@ -164,7 +164,7 @@ def run_optimization(sdf_fn, fixed_params):
 
     # Gradient descent
     learning_rate = 0.1
-    num_steps = 50
+    num_steps = 8
 
     radii_history = [initial_radii]
     loss_history = [initial_loss]
@@ -182,8 +182,7 @@ def run_optimization(sdf_fn, fixed_params):
         radii_history.append(current_radii)
         loss_history.append(loss)
 
-        if step % 10 == 0:
-            print(f"  Step {step:3d}: loss = {loss:.6f}, radii = {current_radii}")
+        print(f"  Step {step+1:3d}: loss = {loss:.6f}, radii = {current_radii}")
 
     final_loss = loss_history[-1]
     improvement = (1 - final_loss / initial_loss) * 100
@@ -277,7 +276,6 @@ def main():
 
     # Create initial scene
     scene, radii, centers, graph = create_scene()
-    initial_scene = scene  # Save for visualization
 
     # Compile
     sdf_fn, free_params, fixed_params = compile_scene(scene)
@@ -285,17 +283,29 @@ def main():
     # Optimize
     radii_history, loss_history, target_points = run_optimization(sdf_fn, fixed_params)
 
+    # Create initial scene for visualization (with initial radii)
+    initial_radii = radii_history[0]
+    radius1_init = Scalar(float(initial_radii[0]), free=False, name='r1_init')
+    radius2_init = Scalar(float(initial_radii[1]), free=False, name='r2_init')
+    radius3_init = Scalar(float(initial_radii[2]), free=False, name='r3_init')
+
+    sphere1_init = from_point(centers[0], radius1_init)
+    sphere2_init = from_point(centers[1], radius2_init)
+    sphere3_init = from_point(centers[2], radius3_init)
+    initial_scene = Union(sphere1_init, sphere2_init)
+    initial_scene = Union(initial_scene, sphere3_init)
+
     # Create final scene with optimized radii
     final_radii = radii_history[-1]
-    radii[0].value = final_radii[0]
-    radii[1].value = final_radii[1]
-    radii[2].value = final_radii[2]
+    radius1_final = Scalar(float(final_radii[0]), free=False, name='r1_final')
+    radius2_final = Scalar(float(final_radii[1]), free=False, name='r2_final')
+    radius3_final = Scalar(float(final_radii[2]), free=False, name='r3_final')
 
-    sphere1 = from_point(centers[0], radii[0])
-    sphere2 = from_point(centers[1], radii[1])
-    sphere3 = from_point(centers[2], radii[2])
-    final_scene = Union(sphere1, sphere2)
-    final_scene = Union(final_scene, sphere3)
+    sphere1_final = from_point(centers[0], radius1_final)
+    sphere2_final = from_point(centers[1], radius2_final)
+    sphere3_final = from_point(centers[2], radius3_final)
+    final_scene = Union(sphere1_final, sphere2_final)
+    final_scene = Union(final_scene, sphere3_final)
 
     # Visualize
     visualize_results(radii_history, loss_history, target_points, initial_scene, final_scene)
