@@ -16,7 +16,7 @@ For constraint systems (distances, angles, parallel, etc.), see constraints.py (
 """
 
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Optional, Union, TypeVar, overload
 
 import jax
 import jax.numpy as jnp
@@ -130,6 +130,23 @@ class Vector(Parameter):
         else:
             raise ValueError(f"Vector must be 3D or 4D, got shape {self.value.shape}")
 
+    def norm(self) -> float:
+        """Compute Euclidean norm of the 3D part (ignoring w)."""
+        return jnp.linalg.norm(self.xyz)
+    
+    def normalize(self) -> 'Vector':
+        """Return a normalized Vector (unit length in 3D part)."""
+        norm = self.norm()
+        if norm < 1e-8:
+            raise ValueError("Cannot normalize zero-length vector.")
+        normalized_xyz = self.xyz / norm
+
+        return Vector(
+            value=jnp.append(normalized_xyz, self.w), 
+            free=self.free, 
+            name=self.name, 
+            bounds=self.bounds)
+    
     @property
     def xyz(self) -> Array:
         """Get 3D cartesian coordinates (x, y, z)."""
@@ -149,22 +166,6 @@ class Vector(Parameter):
     def is_direction(self) -> bool:
         """True if this is a direction vector (w=0)."""
         return jnp.abs(self.w) < 1e-6
-
-    def extract_value(self) -> Array:
-        """Extract raw 3D coordinate value for computation.
-
-        Returns xyz coordinates (dropping homogeneous w).
-
-        Returns:
-            3D array [x, y, z]
-        """
-        return self.xyz
-
-
-# Backwards compatibility aliases
-Distance = Scalar  # Distance is just a Scalar with semantic meaning
-Angle = Scalar     # Angle is just a Scalar with semantic meaning
-Point = Vector     # Point is an alias for Vector for backwards compatibility
 
 
 # Register as JAX pytrees
@@ -186,19 +187,24 @@ jax.tree_util.register_pytree_node(
     Vector.tree_unflatten
 )
 
+@overload
+def as_parameter(value: Union[float, Scalar], name: Optional[str] = None) -> Scalar: ...
 
-def as_parameter(value: Union[float, int, Array, Parameter], name: Optional[str] = None) -> Parameter:
+@overload
+def as_parameter(value: Union[Array, Vector], name: Optional[str] = None) -> Vector: ...
+
+def as_parameter(value: Union[float, Array, Scalar, Vector], name: Optional[str] = None) -> Union[Scalar, Vector]:
     """Convert a raw value to a Parameter object automatically.
 
     If the value is already a Parameter, return it as-is.
     Otherwise, wrap it in the appropriate Parameter type with free=False.
 
     Args:
-        value: Value to convert (float, int, Array, or Parameter)
-        name: Optional name for the parameter (only used if creating new Parameter)
+        value: Value to convert
+        name: Optional name for the parameter
 
     Returns:
-        Parameter object (Scalar or Vector)
+        Parameter object
 
     Examples:
         >>> as_parameter(1.5)

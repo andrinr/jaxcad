@@ -1,239 +1,236 @@
-# JaxCAD
+# JAXcad
 
-> **⚠️ Experimental Project** - Still in early development, currently mostly collecting ideas and prototyping.
+> **⚠️ Experimental Project** - Still in early development, currently collecting ideas and prototyping.
 
-![Showcase](assets/showcase_geometry.png)
+**Differentiable CAD** built on JAX and Signed Distance Functions (SDFs).
 
-Differentiable signed distance functions (SDFs) for shape design and optimization. The goals are:
+JAXcad combines parametric geometry, geometric constraints, and automatic differentiation to enable gradient-based shape optimization with a clean, layered architecture.
 
-- A **fluent API** for building complex 3D geometry that is easy to read and write.
-- Differentiability is enabled with a JIT compiler that translates a geometry description into functional JAX friendly code.
-- A **parametric system** to mark which parameters are free/fixed for gradient-based optimization.
-- A set of constraints that can be composed to express design intent. The degrees of freedom for the parameters should be automatically inferred from the constraints.
-- **Shader compilation**: Leverage JAX's XLA/StableHLO IR to transpile SDF code into GLSL/Slang for real-time GPU rendering.
+## Features
 
-```
-    Design Code
-        ↓
-   Functional IR
-        ↓
-   StableHLO IR
-        ↓
-     ┌──┴──┐
-     ↓     ↓
-   XLA   GLSL/Slang
-```
+- **Layered Architecture**: Clean separation between geometry, constraints, construction, and compilation
+- **Parametric Design**: Define shapes with free and fixed parameters
+- **Geometric Constraints**: Distance, angle, parallel, perpendicular constraints with automatic DOF reduction
+- **Construction System**: Bridge from geometric primitives to SDFs
+- **JAX Integration**: Automatic differentiation for gradient-based optimization
+- **3D Rendering**: Marching cubes visualization with matplotlib
 
-## The Optimization Dream
-
-```python
-from jaxcad.primitives import Cylinder
-from jaxcad.constraints import Vector, Scalar, Line, Distance, Parallel
-
-# Define parametric constraints
-A = Vector([0, 0], free=True)  # 2 DOF
-B = Vector([1, 0], free=True)  # 2 DOF
-L1 = Line([0, 1], [1, 1])     # Fixed, no DOF
-
-# Constraints automatically reduce DOF
-Distance(A, B, 1.0)           # Reduces total DOF by 1
-L2 = Line(start=A, end=B)
-Parallel(L1, L2)              # Reduces total DOF by 1
-
-# Build geometry - automatically tracks constraint dependencies
-cylinder = Cylinder.from_line(L2, radius=0.1)
-
-# Extract constrained parameter space (2 + 2 - 1 - 1 = 2 DOF)
-latent_params = cylinder.init_latent_params()
-target_sdf = ...
-
-# Optimization happens in latent space
-def loss_fn(latent):
-    # Project latent → full params (satisfies geometric constraints)
-    full_params = cylinder.project(latent)
-
-    # Evaluate SDF with full params
-    sdf_value = cylinder.eval(full_params, query_point)
-
-    # Add soft constraint penalties for non-geometric constraints
-    penalty = cylinder.constraint_penalty(full_params)
-
-    return (sdf_value - target_sdf) ** 2 + penalty
-
-optimizer = optax.adam(learning_rate=0.01)
-opt_state = optimizer.init(latent_params)
-
-for step in range(100):
-    grads = jax.grad(loss_fn)(latent_params)
-    updates, opt_state = optimizer.update(grads, opt_state)
-    latent_params = optax.apply_updates(latent_params, updates)
-
-# Extract final full parameters
-final_params = cylinder.project(latent_params)
-
-```
-
-## The Compilation Dream
-
-Compile your JAX SDF geometry to real-time GPU shaders for interactive rendering:
-
-```python
-from jaxcad.primitives import Sphere, Box
-from jaxcad.compiler import compile_to_glsl
-
-# Build geometry with fluent API
-sphere = Sphere(radius=1.0).translate([2, 0, 0])
-box = Box(size=[1, 1, 1])
-shape = sphere | box
-
-# Compile to GLSL shader via JAX XLA/StableHLO IR
-glsl_code = compile_to_glsl(shape)
-# Output: GLSL fragment shader with sdf(vec3 p) function
-
-# Render in real-time using the generated shader
-from jaxcad.render import render_shader
-
-image = render_shader(
-    glsl_code,
-    resolution=(800, 600),
-    camera_pos=[5, 5, 5],
-    camera_target=[0, 0, 0]
-)
-```
-
-## What currently works
-
-
-### Quick Start
-
-```python
-import jax.numpy as jnp
-from jaxcad.primitives import Sphere, Box
-
-# Build shapes with fluent API
-sphere = Sphere(radius=1.0).translate([2, 0, 0])
-box = Box(size=[1, 1, 1])
-
-# Combine with boolean operators
-shape = sphere | box  # Union
-shape = sphere & box  # Intersection
-shape = sphere - box  # Difference
-
-# Evaluate signed distance at any point
-point = jnp.array([0.5, 0.0, 0.0])
-distance = shape(point)  # Returns SDF value
-```
-
-### Parametric Optimization
-
-```python
-import jax
-from jaxcad.parametric import parametric
-
-# Define parametric shape
-@parametric
-def my_shape():
-    sphere = Sphere(radius=1.0)
-    return sphere.translate([0.0, 0.0, 0.0])
-
-# Optimize to make surface pass through target
-params = my_shape.init_params()
-target = jnp.array([2.5, 0.0, 0.0])
-
-for _ in range(30):
-    grad = jax.grad(lambda p: my_shape(p, target) ** 2)(params)
-    params = jax.tree_util.tree_map(lambda p, g: p - 0.1 * g, params, grad)
-
-# Result: sphere moves to target point!
-```
-
-## Parameters and Optimization
-
-Control which values can be optimized during gradient descent:
-
-**Raw values** (fixed by default):
-```python
-sphere = Sphere(radius=1.0)  # Fixed, won't change during optimization
-```
-
-**Free parameters** (can be optimized):
-```python
-from jaxcad.constraints import Scalar, Vector
-from jaxcad.parametric import parametric
-
-radius = Scalar(value=1.0, free=True, name='radius')
-position = Vector(value=[0, 0, 0], free=True, name='pos')
-
-@parametric
-def shape():
-    return Sphere(radius=radius).translate(position)
-
-# Optimize with JAX gradients
-params = shape.init_params()
-# params = {'radius': 1.0, 'pos': [0, 0, 0]}
-```
-
-**Example: Optimize position, keep size fixed**
+## Quick Example
 
 ```python
 import jax
 import jax.numpy as jnp
-from jaxcad.constraints import Scalar, Vector
-from jaxcad.primitives import Sphere
-from jaxcad.parametric import parametric
+from jaxcad.geometry.parameters import Vector, Scalar
+from jaxcad.constraints import DistanceConstraint, ConstraintGraph
+from jaxcad.construction import from_point
+from jaxcad.compiler import extract_parameters, compile_to_function
 
-# Design intent: sphere size is fixed, but position can be optimized
-fixed_radius = Scalar(value=1.0, free=False)      # Cannot change
-free_position = Vector(value=[0, 0, 0], free=True)   # Can be optimized
+# Layer 1: Geometry - Create parametric spheres
+center1 = Vector([0.0, 0.0, 0.0], free=True, name='c1')
+center2 = Vector([2.0, 0.0, 0.0], free=True, name='c2')
 
-@parametric
-def constrained_design():
-    sphere = Sphere(radius=fixed_radius)
-    return sphere.translate(free_position)
+# Layer 2: Constraints - Fix distance between centers
+graph = ConstraintGraph()
+graph.add_constraint(DistanceConstraint(center1, center2, distance=2.0))
 
-# Optimize position to fit a target point, but radius stays 1.0
-params = constrained_design.init_params()
-target = jnp.array([3.0, 1.0, 0.0])
+# Layer 3: Construction - Create SDF from geometry
+radius = Scalar(0.5, free=True, name='radius')
+sphere1 = from_point(center1, radius)
+sphere2 = from_point(center2, radius)
+scene = sphere1 | sphere2  # Union
 
-for _ in range(50):
-    grad = jax.grad(lambda p: constrained_design(p, target) ** 2)(params)
-    params = jax.tree_util.tree_map(lambda p, g: p - 0.1 * g, params, grad)
+# Layer 4: Compiler - Extract and compile
+sdf_fn = compile_to_function(scene)
 
-# Result: position optimized to [2.0, 1.0, 0.0], radius remains 1.0!
+# Layer 5: Optimization - Use JAX gradients
+def loss_fn(r):
+    params = {'union_0.sphere_0.radius': r}
+    target = jnp.array([0.8, 0.0, 0.0])
+    dist = sdf_fn(target, params, {})
+    return dist ** 2
+
+# Optimize with automatic differentiation
+grad_fn = jax.grad(loss_fn)
+current_radius = 0.5
+for step in range(50):
+    gradient = grad_fn(current_radius)
+    current_radius -= 0.1 * gradient
+
+print(f"Optimized radius: {current_radius}")
 ```
 
----
+## Architecture
+
+JAXcad is built with a clean layered architecture:
+
+```
+┌─────────────────────────────────────┐
+│  Layer 1: Geometry                  │  Parametric primitives (Line, Circle, Rectangle)
+│  (jaxcad/geometry/)                 │  Parameters: Vector, Scalar (free or fixed)
+└────────────┬────────────────────────┘
+             │
+┌────────────┴────────────────────────┐
+│  Layer 2: Constraints               │  DistanceConstraint, AngleConstraint, etc.
+│  (jaxcad/constraints/)              │  ConstraintGraph manages DOF reduction
+└────────────┬────────────────────────┘
+             │
+┌────────────┴────────────────────────┐
+│  Layer 3: Construction              │  Bridges geometry → SDF
+│  (jaxcad/construction/)             │  extrude(), from_line(), from_circle()
+└────────────┬────────────────────────┘
+             │
+┌────────────┴────────────────────────┐
+│  Layer 4: Compiler                  │  Parameter extraction and compilation
+│  (jaxcad/compiler/)                 │  compile_to_function() → pure JAX
+└────────────┬────────────────────────┘
+             │
+┌────────────┴────────────────────────┐
+│  Layer 5: SDF                       │  Primitives, transforms, booleans
+│  (jaxcad/sdf/)                      │  Box, Sphere, Cylinder, etc.
+└─────────────────────────────────────┘
+```
+
+Each layer is independent and can be used standalone!
+
+## Examples
+
+### Example 1: Primitives and Transforms
+
+Create and render 3D scenes with primitives, transforms, and boolean operations:
+
+```python
+from jaxcad.sdf.primitives import Sphere, Box, Cylinder
+from jaxcad.sdf.boolean import Union, Difference
+from jaxcad.render import render_marching_cubes
+
+# Create scene
+platform = Box(size=[3, 3, 0.2]).translate([0, 0, -0.5])
+sphere = Sphere(radius=0.8).translate([0, 0, 0.3])
+pillar = Cylinder(radius=0.15, height=0.6).translate([1.5, 1.5, -0.3])
+
+# Boolean operations
+hole = Cylinder(radius=0.4, height=1.0)
+sphere_with_hole = Difference(sphere, hole)
+
+# Combine
+scene = Union(platform, pillar)
+scene = Union(scene, sphere_with_hole)
+
+# Render with marching cubes
+render_marching_cubes(scene, resolution=60)
+```
+
+Run with: `python examples/01_primitives_and_transforms.py`
+
+### Example 2: End-to-End Optimization
+
+Complete pipeline from parametric geometry to gradient-based optimization:
+
+```python
+# 1. Create parametric geometry with constraints
+center1 = Vector([0, 0, 0], free=True, name='c1')
+center2 = Vector([2, 0, 0], free=True, name='c2')
+
+graph = ConstraintGraph()
+graph.add_constraint(DistanceConstraint(center1, center2, distance=2.0))
+
+# 2. Build SDF scene
+radius1 = Scalar(0.5, free=True, name='r1')
+sphere1 = from_point(center1, radius1)
+scene = sphere1 | sphere2 | sphere3
+
+# 3. Compile to pure JAX
+sdf_fn = compile_to_function(scene)
+
+# 4. Optimize with JAX gradients
+def loss_fn(radii):
+    # Evaluate SDF at target points
+    return sum_of_squared_distances_to_targets
+
+grad_fn = jax.grad(loss_fn)
+for step in range(50):
+    radii -= 0.1 * grad_fn(radii)
+
+# Result: Spheres grow to reach targets while maintaining constraints!
+```
+
+Run with: `python examples/02_end_to_end_optimization.py`
+
+### Example 3: Layered Construction Demo
+
+Comprehensive demonstration of all layers working together:
+
+```python
+# Shows complete workflow:
+# - Parametric geometry with free parameters
+# - Distance and perpendicular constraints
+# - Construction functions (from_line, extrude, from_circle)
+# - Constraint-aware parameter extraction
+# - Optimization in reduced DOF space
+```
+
+Run with: `python examples/layered_construction_demo.py`
 
 ## Installation
 
 ```bash
-uv sync  # or: pip install -e .
+# Clone the repository
+git clone https://github.com/yourusername/jaxcad.git
+cd jaxcad
+
+# Install dependencies
+uv sync
+
+# Or with pip
+pip install -e .
 ```
+
+Requirements:
+- Python 3.10+
+- JAX
+- NumPy
+- Matplotlib
+- scikit-image (for marching cubes rendering)
+
+## Testing
+
+Comprehensive test suite with 161 tests covering all layers:
+
+```bash
+# Run all tests
+JAX_PLATFORMS=cpu uv run pytest tests/ -v
+
+# Run specific test suites
+pytest tests/geometry/      # Geometry primitives (36 tests)
+pytest tests/constraints/   # Constraint system (42 tests)
+pytest tests/construction/  # Construction layer (23 tests)
+pytest tests/compiler/      # Compiler system (10 tests)
+pytest tests/test_integration_e2e.py  # Integration tests (9 tests)
+```
+
+## Roadmap
+
+- [x] Layered architecture (geometry, constraints, construction, compiler, SDF)
+- [x] Parametric system with free/fixed parameters
+- [x] Geometric constraints (distance, angle, parallel, perpendicular)
+- [x] Construction functions (extrude, from_line, from_circle, from_point)
+- [x] JAX compilation and automatic differentiation
+- [x] 3D rendering with marching cubes
+- [ ] Transform system (rotate, scale) fully integrated with construction
+- [ ] More geometric primitives (Polygon, Bezier curves, etc.)
+- [ ] Shader compilation (JAX → StableHLO → GLSL)
+- [ ] Real-time GPU rendering
+- [ ] Advanced constraints (tangent, coincident, etc.)
+- [ ] Mesh export (STL, OBJ)
 
 ## Acknowledgments
 
-Primitive SDFs and operations based on [Inigo Quilez's distance functions](https://iquilezles.org/articles/distfunctions/).
+- Primitive SDFs based on [Inigo Quilez's distance functions](https://iquilezles.org/articles/distfunctions/)
+- Marching cubes algorithm from scikit-image
+- Built with JAX for automatic differentiation
 
 ## License
 
-MIT License
+MIT License - see LICENSE file for details
 
-Copyright (c) 2025 JaxCAD Contributors
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Copyright (c) 2025 JAXcad Contributors

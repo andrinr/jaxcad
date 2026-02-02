@@ -13,6 +13,7 @@ import jax.numpy as jnp
 from jax import Array
 
 from jaxcad.geometry.parameters import Vector, Scalar
+from jaxcad.geometry.parameters import as_parameter
 
 
 @dataclass
@@ -52,62 +53,40 @@ class Rectangle:
     center: Vector
     width: Scalar
     height: Scalar
-    normal: Vector = None
-    u_axis: Vector = None
+    normal: Vector
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Convert raw values to parameter types and compute local frame."""
-        from jaxcad.geometry.parameters import as_parameter
-
         self.center = as_parameter(self.center)
         self.width = as_parameter(self.width)
         self.height = as_parameter(self.height)
+        self.normal = as_parameter(self.normal).normalize()
 
-        # Default normal is +Z
-        if self.normal is None:
-            self.normal = as_parameter([0.0, 0.0, 1.0, 0.0])
-        else:
-            self.normal = as_parameter(self.normal)
+        self._compute_local_frame()
 
-        # Compute local coordinate frame if u_axis not provided
-        if self.u_axis is None:
-            self._compute_local_frame()
-        else:
-            self.u_axis = as_parameter(self.u_axis)
-
-    def _compute_local_frame(self):
+    def _compute_local_frame(self) -> None:
         """Compute orthonormal local frame (U, V, N) from normal vector.
 
         U: width direction
         V: height direction
         N: normal direction
         """
-        normal = self.normal.xyz
-        normal = normal / jnp.linalg.norm(normal)
 
         # Find a vector not parallel to normal
         up = jnp.array([0.0, 0.0, 1.0])
-        if jnp.abs(jnp.dot(normal, up)) > 0.99:
+        if jnp.abs(jnp.dot(self.normal.xyz, up)) > 0.99:
             up = jnp.array([1.0, 0.0, 0.0])
 
         # Compute U (width) axis
-        u = jnp.cross(up, normal)
+        u = jnp.cross(up, self.normal.xyz)
         u = u / jnp.linalg.norm(u)
 
         # Store as Vector parameter
-        from jaxcad.geometry.parameters import as_parameter
         self.u_axis = as_parameter(jnp.append(u, 0.0))  # Direction vector (w=0)
 
-    def v_axis(self) -> Array:
-        """Compute V (height) axis from normal and U axis.
+        v = jnp.cross(self.normal.xyz, u)
+        self.v_axis = as_parameter(v).normalize()  # Direction vector (w=0)
 
-        Returns:
-            3D direction vector for height axis
-        """
-        normal = self.normal.xyz / jnp.linalg.norm(self.normal.xyz)
-        u = self.u_axis.xyz
-        v = jnp.cross(normal, u)
-        return v / jnp.linalg.norm(v)
 
     def sample(self, u: Union[float, Array], v: Union[float, Array]) -> Array:
         """Sample point on the rectangle at parameters (u, v).
@@ -127,7 +106,7 @@ class Rectangle:
         v_offset = (v - 0.5) * self.height.value
 
         u_vec = self.u_axis.xyz
-        v_vec = self.v_axis()
+        v_vec = self.v_axis.xyz
 
         return self.center.xyz + u_offset * u_vec + v_offset * v_vec
 
@@ -161,53 +140,6 @@ class Rectangle:
         """
         return jnp.stack([self.corner(i) for i in range(4)])
 
-    def area(self) -> float:
-        """Get the area of the rectangle.
-
-        Returns:
-            Area (width * height)
-        """
-        return self.width.value * self.height.value
-
-    def perimeter(self) -> float:
-        """Get the perimeter of the rectangle.
-
-        Returns:
-            Perimeter (2 * (width + height))
-        """
-        return 2 * (self.width.value + self.height.value)
-
-    def contains_point(self, p: Array, tolerance: float = 1e-6) -> bool:
-        """Check if a point lies within the rectangle (in its plane).
-
-        Args:
-            p: Query point [x, y, z]
-            tolerance: Distance tolerance for plane and bounds checking
-
-        Returns:
-            True if point is within rectangle bounds
-        """
-        p = jnp.asarray(p)
-
-        # Project point onto rectangle's local frame
-        p_rel = p - self.center.xyz
-        u_vec = self.u_axis.xyz
-        v_vec = self.v_axis()
-        normal = self.normal.xyz / jnp.linalg.norm(self.normal.xyz)
-
-        # Check if point is in plane
-        dist_to_plane = jnp.abs(jnp.dot(p_rel, normal))
-        if dist_to_plane > tolerance:
-            return False
-
-        # Check if within bounds
-        u_coord = jnp.dot(p_rel, u_vec)
-        v_coord = jnp.dot(p_rel, v_vec)
-
-        u_in_bounds = jnp.abs(u_coord) <= (self.width.value / 2 + tolerance)
-        v_in_bounds = jnp.abs(v_coord) <= (self.height.value / 2 + tolerance)
-
-        return u_in_bounds and v_in_bounds
 
     def __repr__(self) -> str:
         return f"Rectangle(center={self.center.xyz}, width={self.width.value}, height={self.height.value})"

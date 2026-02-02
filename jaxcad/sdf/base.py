@@ -13,8 +13,7 @@ from typing import Callable, TYPE_CHECKING
 
 from jax import Array
 
-if TYPE_CHECKING:
-    from jaxcad.parameters import Parameter
+from jaxcad.geometry.parameters import as_parameter, Vector, Scalar
 
 
 class SDF(ABC):
@@ -91,7 +90,6 @@ class SDF(ABC):
         Converts raw values (floats, ints, arrays) to Parameter objects,
         while leaving existing Parameter objects unchanged.
         """
-        from jaxcad.parameters import as_parameter
 
         # Convert each value in the params dict
         for key, value in self.params.items():
@@ -105,7 +103,6 @@ class SDF(ABC):
             Dictionary mapping parameter names to their raw values (arrays/floats).
             Vector parameters are converted to 3D arrays (xyz), Scalars to floats.
         """
-        from jaxcad.parameters import Vector
 
         params = {}
         for param_name, param in self.params.items():
