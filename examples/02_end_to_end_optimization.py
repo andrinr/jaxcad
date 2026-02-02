@@ -140,10 +140,11 @@ def run_optimization(sdf_fn, fixed_params):
     # Loss function: minimize distance from targets to surfaces
     def loss_fn(params_array):
         r1, r2, r3 = params_array
+        # Use the parameter names from extraction
         params = {
-            'union_0.sphere_0.radius': r1,
-            'union_0.union_1.sphere_0.radius': r2,
-            'union_0.union_1.union_2.sphere_0.radius': r3,
+            'sphere_2.radius': r1,
+            'sphere_3.radius': r2,
+            'sphere_4.radius': r3,
         }
 
         losses = []
