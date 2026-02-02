@@ -6,15 +6,7 @@
 
 JAXcad combines parametric geometry, geometric constraints, and automatic differentiation to enable gradient-based shape optimization with a clean, layered architecture.
 
-## Features
-
-- **Layered Architecture**: Clean separation between geometry, constraints, construction, and compilation
-- **Parametric Design**: Define shapes with free and fixed parameters
-- **Geometric Constraints**: Distance, angle, parallel, perpendicular with automatic DOF reduction
-- **JAX Integration**: Automatic differentiation for gradient-based optimization
-- **3D Rendering**: Marching cubes visualization
-
-## Quick Example
+## Quick Start
 
 ```python
 import jax
@@ -88,17 +80,30 @@ JAXcad is built with 5 independent layers:
 
 ## Examples
 
-**Primitives and Transforms** - 3D rendering with marching cubes:
+### Primitives and Transforms
+
+3D rendering with marching cubes showing primitives, transforms, and boolean operations:
+
 ```bash
 python examples/01_primitives_and_transforms.py
 ```
 
-**End-to-End Optimization** - Complete pipeline with gradient-based optimization:
+![Primitives and Transforms](examples/output/primitives_and_transforms.png)
+
+### End-to-End Optimization
+
+Complete pipeline from parametric geometry to gradient-based optimization:
+
 ```bash
 python examples/02_end_to_end_optimization.py
 ```
 
-**Layered Construction** - Full workflow with all layers:
+![End-to-End Optimization](examples/output/end_to_end_optimization.png)
+
+### Layered Construction
+
+Full workflow demonstrating all layers working together:
+
 ```bash
 python examples/layered_construction_demo.py
 ```
