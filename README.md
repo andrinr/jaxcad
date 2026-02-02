@@ -1,10 +1,10 @@
-# JAXcad
+# jaxCAD
 
 > **⚠️ Experimental Project** - Early development, collecting ideas and prototyping.
 
 **Differentiable CAD** built on JAX and Signed Distance Functions (SDFs).
 
-JAXcad combines parametric geometry, geometric constraints, and automatic differentiation to enable gradient-based shape optimization with a clean, layered architecture.
+jaxCAD combines parametric geometry, geometric constraints, and automatic differentiation to enable gradient-based shape optimization with a clean, layered architecture.
 
 ## Quick Start
 
@@ -49,7 +49,7 @@ print(f"Optimized radius: {current_radius}")
 
 ## Architecture
 
-JAXcad is built with 5 independent layers:
+jaxCAD is built with 5 independent layers:
 
 ```
 ┌─────────────────────────────────────┐
@@ -154,5 +154,3 @@ Inspired by [Fidget](https://www.mattkeeter.com/projects/fidget/) by Matt Keeter
 ## License
 
 MIT License - see LICENSE file for details
-
-Copyright (c) 2025 JAXcad Contributors
