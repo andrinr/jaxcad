@@ -12,7 +12,7 @@ jaxCAD combines parametric geometry, geometric constraints, and automatic differ
 import jax
 import jax.numpy as jnp
 from jaxcad.geometry.parameters import Vector, Scalar
-from jaxcad.constraints import DistanceConstraint, ConstraintGraph
+from jaxcad.constraints import DistanceConstraint
 from jaxcad.construction import from_point
 from jaxcad.compiler import compile_to_function
 
@@ -20,8 +20,8 @@ from jaxcad.compiler import compile_to_function
 center1 = Vector([0.0, 0.0, 0.0], free=True, name='c1')
 center2 = Vector([2.0, 0.0, 0.0], free=True, name='c2')
 
-graph = ConstraintGraph()
-graph.add_constraint(DistanceConstraint(center1, center2, distance=2.0))
+# Apply constraint (automatically registers on parameters)
+DistanceConstraint(center1, center2, distance=2.0)
 
 # Build SDF scene
 radius = Scalar(0.5, free=True, name='radius')

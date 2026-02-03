@@ -15,12 +15,15 @@ Helpers:
 For constraint systems (distances, angles, parallel, etc.), see constraints.py (future).
 """
 
-from dataclasses import dataclass
-from typing import Optional, Union, TypeVar, overload
+from dataclasses import dataclass, field
+from typing import Optional, Union, TypeVar, overload, List, TYPE_CHECKING
 
 import jax
 import jax.numpy as jnp
 from jax import Array
+
+if TYPE_CHECKING:
+    from jaxcad.constraints.base import Constraint
 
 
 @dataclass
@@ -34,14 +37,34 @@ class Parameter:
         free: Whether this parameter is free (optimizable). Default: False
         name: Optional name for debugging
         bounds: Optional (min, max) bounds for optimization
+        _constraints: Internal list of constraints that reference this parameter
     """
     value: Union[float, Array]
     free: bool = False  # FIXED by default
     name: Optional[str] = None
     bounds: Optional[tuple] = None
+    _constraints: List['Constraint'] = field(default_factory=list, repr=False, compare=False)
 
     def __post_init__(self):
         self.value = jnp.asarray(self.value)
+
+    def add_constraint(self, constraint: 'Constraint') -> None:
+        """Register a constraint that references this parameter.
+
+        Args:
+            constraint: Constraint to register
+        """
+        # Use object identity to avoid JAX array comparison issues
+        if not any(c is constraint for c in self._constraints):
+            self._constraints.append(constraint)
+
+    def get_constraints(self) -> List['Constraint']:
+        """Get all constraints that reference this parameter.
+
+        Returns:
+            List of Constraint objects
+        """
+        return self._constraints.copy()
 
     @property
     def fixed(self) -> bool:

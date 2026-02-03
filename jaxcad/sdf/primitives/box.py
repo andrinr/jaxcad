@@ -7,7 +7,7 @@ from typing import Union
 import jax.numpy as jnp
 from jax import Array
 
-from jaxcad.parameters import Vector
+from jaxcad.geometry.parameters import Vector
 from jaxcad.sdf.primitives.base import Primitive
 
 

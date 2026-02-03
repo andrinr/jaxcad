@@ -45,7 +45,7 @@ def compile_to_function(sdf: SDF) -> Callable:
 
     def extract_value(val: Any) -> Any:
         """Extract raw numeric value from Parameter or pass through raw values."""
-        from jaxcad.parameters import Parameter
+        from jaxcad.geometry.parameters import Parameter
         if isinstance(val, Parameter):
             return val.extract_value()
         return val

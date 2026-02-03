@@ -710,6 +710,7 @@ name = "jaxcad"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "imageio" },
     { name = "jax", version = "0.4.30", source = { registry = "https://pypi.org/simple" }, extra = ["cuda12"], marker = "python_full_version < '3.10'" },
     { name = "jax", version = "0.6.2", source = { registry = "https://pypi.org/simple" }, extra = ["cuda12"], marker = "python_full_version == '3.10.*'" },
     { name = "jax", version = "0.8.2", source = { registry = "https://pypi.org/simple" }, extra = ["cuda12"], marker = "python_full_version >= '3.11'" },
@@ -740,6 +741,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "imageio", specifier = ">=2.37.2" },
     { name = "jax", extras = ["cuda12"], specifier = ">=0.4.20" },
     { name = "matplotlib", marker = "extra == 'dev'", specifier = ">=3.7.0" },
     { name = "numpy", specifier = ">=1.24.0" },

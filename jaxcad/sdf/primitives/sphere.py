@@ -7,7 +7,7 @@ from typing import Union
 import jax.numpy as jnp
 from jax import Array
 
-from jaxcad.parameters import Scalar
+from jaxcad.geometry.parameters import Scalar
 from jaxcad.sdf.primitives.base import Primitive
 
 
@@ -29,7 +29,7 @@ class Sphere(Primitive):
         sphere = Sphere(radius=1.0)
 
         # With parameter for optimization
-        from jaxcad.parameters import Scalar
+        from jaxcad.geometry.parameters import Scalar
         radius = Scalar(value=1.0, free=True, name='radius')
         sphere = Sphere(radius=radius)
 

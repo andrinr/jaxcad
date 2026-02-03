@@ -7,7 +7,7 @@ from jax import Array
 
 from jaxcad.sdf.boolean.base import BooleanOp
 from jaxcad.sdf.boolean.smooth import smooth_max
-from jaxcad.parameters import Scalar
+from jaxcad.geometry.parameters import Scalar
 from jaxcad.sdf import SDF
 
 

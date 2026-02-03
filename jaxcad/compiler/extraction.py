@@ -16,7 +16,7 @@ def extract_parameters(sdf: SDF) -> tuple[Dict[str, Any], Dict[str, Any]]:
         parameter paths to Parameter objects.
         Parameter paths are in format: "node_id.param_name" (e.g., "sphere_0.radius")
     """
-    from jaxcad.parameters import Parameter
+    from jaxcad.geometry.parameters import Parameter
     from jaxcad.sdf.transforms.base import Transform
     from jaxcad.sdf.boolean.base import BooleanOp
 

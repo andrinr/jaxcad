@@ -7,7 +7,7 @@ from typing import Union
 import jax.numpy as jnp
 from jax import Array
 
-from jaxcad.parameters import Vector, Scalar
+from jaxcad.geometry.parameters import Vector, Scalar
 from jaxcad.sdf import SDF
 from jaxcad.sdf.transforms.base import Transform
 

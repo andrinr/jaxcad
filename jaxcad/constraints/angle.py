@@ -39,10 +39,20 @@ class AngleConstraint(Constraint):
     angle: Scalar | float
 
     def __post_init__(self):
-        """Convert angle to Scalar if needed."""
+        """Convert angle to Scalar and populate params dict."""
         from jaxcad.geometry.parameters import as_parameter
         if not isinstance(self.angle, Scalar):
             self.angle = as_parameter(self.angle)
+
+        # Store in params dict for Fluent pattern
+        self.params = {
+            'vector1': self.vector1,
+            'vector2': self.vector2,
+            'angle': self.angle,
+        }
+
+        # Register constraint on parameters
+        self._register_constraint()
 
     def compute_residual(self, param_values: Dict[str, Array]) -> Array:
         """Compute angle constraint residual: arccos(v1·v2/(||v1||||v2||)) - θ.
