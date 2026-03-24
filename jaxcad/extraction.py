@@ -15,9 +15,9 @@ def extract_parameters(sdf: SDF) -> tuple[dict[str, Any], dict[str, Any]]:
         sdf: The SDF to extract parameters from
 
     Returns:
-        Tuple of (free_params, fixed_params) where each is a dict mapping
-        parameter paths to Parameter objects.
-        Parameter paths are in format: "node_id.param_name" (e.g., "sphere_0.radius")
+        free_params (dict): Dict mapping parameter paths to free Parameter objects.
+            Paths are in format "node_id.param_name" (e.g., "sphere_0.radius").
+        fixed_params (dict): Dict mapping parameter paths to fixed Parameter objects.
     """
     from jaxcad.sdf.boolean.base import BooleanOp
     from jaxcad.sdf.transforms.base import Transform
@@ -62,11 +62,10 @@ def extract_parameters_with_constraints(
         sdf: The SDF tree to extract parameters from.
 
     Returns:
-        Tuple of:
-        - reduced_params: Reduced DOF vector (size = total_dof - constraint_dof)
-        - null_space: Matrix mapping reduced → full parameter space
-        - base_point: Current parameter values as a flat array
-        - param_list: Ordered list of free Parameter objects
+        reduced_params (Array): Reduced DOF vector (size = total_dof - constraint_dof).
+        null_space (Array): Matrix mapping reduced → full parameter space.
+        base_point (Array): Current parameter values as a flat array.
+        param_list (list): Ordered list of free Parameter objects.
 
     Example:
         reduced, null_space, base, params = extract_parameters_with_constraints(scene)

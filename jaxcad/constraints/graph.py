@@ -188,9 +188,8 @@ class ConstraintGraph:
             parameters: List of Parameter objects (should be free=True)
 
         Returns:
-            Tuple of:
-            - reduced_params: Reduced DOF vector (size = original_dof - constraint_dof)
-            - null_space: Null space matrix for projecting reduced → full params
+            reduced_params (Array): Reduced DOF vector (size = original_dof - constraint_dof).
+            null_space (Array): Null space matrix for projecting reduced → full params.
 
         Example:
             p1 = Vector([0, 0, 0], free=True, name='p1')
