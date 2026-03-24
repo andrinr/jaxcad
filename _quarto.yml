@@ -21,7 +21,7 @@ website:
         href: reference/index.qmd
     right:
       - icon: github
-        href: https://github.com/your-org/jaxcad  # update to your repo
+        href: https://github.com/andrinr/jaxcad
 
 format:
   html:
