@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>functionalize.functionalize – jaxCAD</title>
+<title>Constrained Optimization in JAXCad – jaxCAD</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -180,106 +180,171 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#jaxcad.functionalize.functionalize" id="toc-jaxcad.functionalize.functionalize" class="nav-link active" data-scroll-target="#jaxcad.functionalize.functionalize">functionalize.functionalize</a>
-  <ul class="collapse">
-  <li><a href="#returns-a-curried-function-with-signature" id="toc-returns-a-curried-function-with-signature" class="nav-link" data-scroll-target="#returns-a-curried-function-with-signature">Returns a curried function with signature</a></li>
-  <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">Parameters</a></li>
-  <li><a href="#returns" id="toc-returns" class="nav-link" data-scroll-target="#returns">Returns</a></li>
-  <li><a href="#example" id="toc-example" class="nav-link" data-scroll-target="#example">Example</a></li>
-  </ul></li>
+  <li><a href="#scene-and-constraint" id="toc-scene-and-constraint" class="nav-link active" data-scroll-target="#scene-and-constraint">Scene and constraint</a></li>
+  <li><a href="#optimizing-on-the-constraint-manifold" id="toc-optimizing-on-the-constraint-manifold" class="nav-link" data-scroll-target="#optimizing-on-the-constraint-manifold">Optimizing on the constraint manifold</a></li>
+  <li><a href="#trajectory" id="toc-trajectory" class="nav-link" data-scroll-target="#trajectory">Trajectory</a></li>
+  <li><a href="#render-before-and-after" id="toc-render-before-and-after" class="nav-link" data-scroll-target="#render-before-and-after">Render before and after</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
   </ul>
 </nav>
     </div>
 <!-- main -->
-<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Constrained Optimization in JAXCad</h1>
+</div>
 
 
 
+<div class="quarto-title-meta">
 
-<section id="jaxcad.functionalize.functionalize" class="level1">
-<h1>functionalize.functionalize</h1>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>functionalize.functionalize(sdf)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Compile an SDF to a pure function with free and fixed parameters.</p>
-<section id="returns-a-curried-function-with-signature" class="level2 doc-section doc-section-returns-a-curried-function-with-signature">
-<h2 class="doc-section doc-section-returns-a-curried-function-with-signature anchored" data-anchor-id="returns-a-curried-function-with-signature">Returns a curried function with signature</h2>
-<p>sdf_fn(free_params, fixed_params) -&gt; (point -&gt; distance)</p>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>Constraints and gradient-based optimization address complementary aspects of a design problem: constraints define a feasible region, the optimizer finds the best design within it.</p>
+<p>This notebook combines both: a distance constraint pins a sphere’s center to a 2D manifold, and gradient descent with explicit projection finds the point on that manifold closest to a target.</p>
+<div id="23867a81" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax.numpy <span class="im">as</span> jnp</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.constraints <span class="im">import</span> DistanceConstraint</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.geometry <span class="im">import</span> Vector</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.render <span class="im">import</span> render_marching_cubes</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.sdf <span class="im">import</span> Sphere, Translate</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="scene-and-constraint" class="level2">
+<h2 class="anchored" data-anchor-id="scene-and-constraint">Scene and constraint</h2>
+<p>The sphere’s center <code>p</code> is free but constrained to remain at distance 2 from the origin. The target lies inside the constraint sphere - not on the manifold - so the optimal solution is the point on the sphere surface closest to the target.</p>
+<div id="fd48eb51" class="cell" data-execution_count="9">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>anchor <span class="op">=</span> Vector(jnp.array([<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>]), free<span class="op">=</span><span class="va">False</span>, name<span class="op">=</span><span class="st">"anchor"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> Vector(jnp.array([<span class="fl">2.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>]), free<span class="op">=</span><span class="va">True</span>, name<span class="op">=</span><span class="st">"p"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>DistanceConstraint(p, anchor, <span class="fl">2.0</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>scene <span class="op">=</span> Translate(Sphere(radius<span class="op">=</span><span class="fl">0.3</span>), offset<span class="op">=</span>p)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>target <span class="op">=</span> jnp.array([<span class="fl">1.0</span>, <span class="fl">1.5</span>, <span class="fl">0.0</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
 </section>
-<section id="parameters" class="level2 doc-section doc-section-parameters">
-<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-<th>Default</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>sdf</td>
-<td>SDF</td>
-<td>The SDF to compile</td>
-<td><em>required</em></td>
-</tr>
-</tbody>
-</table>
+<section id="optimizing-on-the-constraint-manifold" class="level2">
+<h2 class="anchored" data-anchor-id="optimizing-on-the-constraint-manifold">Optimizing on the constraint manifold</h2>
+<p>Each step takes a gradient descent step in the ambient space, then projects back onto the constraint manifold (the sphere of radius 2). The projection is analytic for a distance constraint: <code>p &lt;- 2 * p / ||p||</code>.</p>
+<div id="072bbfaf" class="cell" data-execution_count="10">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> obj(q):</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> jnp.<span class="bu">sum</span>((q <span class="op">-</span> target) <span class="op">**</span> <span class="dv">2</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>lr <span class="op">=</span> <span class="fl">0.15</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>p_current <span class="op">=</span> jnp.array([<span class="fl">2.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>])</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>trajectory <span class="op">=</span> [p_current]</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> step <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">60</span>):</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    value, grad <span class="op">=</span> jax.value_and_grad(obj)(p_current)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    p_new <span class="op">=</span> p_current <span class="op">-</span> lr <span class="op">*</span> grad</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    p_current <span class="op">=</span> <span class="fl">2.0</span> <span class="op">*</span> p_new <span class="op">/</span> jnp.linalg.norm(p_new)  <span class="co"># project onto sphere</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    trajectory.append(p_current)</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> step <span class="op">%</span> <span class="dv">15</span> <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"step </span><span class="sc">{</span>step<span class="sc">:3d}</span><span class="ss">  loss=</span><span class="sc">{</span>value<span class="sc">:.4f}</span><span class="ss">  ||p||=</span><span class="sc">{</span>jnp<span class="sc">.</span>linalg<span class="sc">.</span>norm(p_current)<span class="sc">:.4f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>step   0  loss=3.2500  ||p||=2.0000
+step  15  loss=0.0391  ||p||=2.0000
+step  30  loss=0.0389  ||p||=2.0000
+step  45  loss=0.0389  ||p||=2.0000</code></pre>
+</div>
+</div>
+<div id="2a0d79e5" class="cell" data-execution_count="11">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>optimized <span class="op">=</span> p_current</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Optimized center:     </span><span class="sc">{</span>optimized<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Distance from anchor: </span><span class="sc">{</span>jnp<span class="sc">.</span>linalg<span class="sc">.</span>norm(optimized)<span class="sc">:.6f}</span><span class="ss">  (should be 2.0)"</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Distance from target: </span><span class="sc">{</span>jnp<span class="sc">.</span>linalg<span class="sc">.</span>norm(optimized <span class="op">-</span> target)<span class="sc">:.6f}</span><span class="ss">"</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Analytic optimum: closest point on sphere to target</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>p_star <span class="op">=</span> <span class="fl">2.0</span> <span class="op">*</span> target <span class="op">/</span> jnp.linalg.norm(target)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Analytic optimum:     </span><span class="sc">{</span>p_star<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Optimized center:     [1.1094005 1.6641004 0.       ]
+Distance from anchor: 2.000000  (should be 2.0)
+Distance from target: 0.197224
+Analytic optimum:     [1.1094004 1.6641006 0.       ]</code></pre>
+</div>
+</div>
 </section>
-<section id="returns" class="level2 doc-section doc-section-returns">
-<h2 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h2>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 9%">
-<col style="width: 11%">
-<col style="width: 79%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td></td>
-<td>Callable</td>
-<td>Pure function that takes:</td>
-</tr>
-<tr class="even">
-<td></td>
-<td>Callable</td>
-<td>- free_params: Dict[str, Array] - free parameter values</td>
-</tr>
-<tr class="odd">
-<td></td>
-<td>Callable</td>
-<td>- fixed_params: Dict[str, Array] - fixed parameter values</td>
-</tr>
-<tr class="even">
-<td></td>
-<td>Callable</td>
-<td>and returns an SDF callable: point: Array (3,) -&gt; distance: Array ()</td>
-</tr>
-</tbody>
-</table>
+<section id="trajectory" class="level2">
+<h2 class="anchored" data-anchor-id="trajectory">Trajectory</h2>
+<p>The trajectory stays on the circle (constraint manifold projected to the XY plane) and converges to the closest point to the target.</p>
+<div id="867ec68b" class="cell" data-execution_count="12">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>traj <span class="op">=</span> np.array(trajectory)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>theta <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">2</span> <span class="op">*</span> np.pi, <span class="dv">200</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>cx, cy <span class="op">=</span> <span class="dv">2</span> <span class="op">*</span> np.cos(theta), <span class="dv">2</span> <span class="op">*</span> np.sin(theta)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">5</span>))</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>ax.plot(cx, cy, <span class="st">"--"</span>, color<span class="op">=</span><span class="st">"steelblue"</span>, alpha<span class="op">=</span><span class="fl">0.4</span>, label<span class="op">=</span><span class="st">"constraint manifold"</span>)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>ax.plot(</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    traj[:, <span class="dv">0</span>], traj[:, <span class="dv">1</span>], <span class="st">"o-"</span>, color<span class="op">=</span><span class="st">"orange"</span>, markersize<span class="op">=</span><span class="dv">4</span>, linewidth<span class="op">=</span><span class="fl">1.2</span>, label<span class="op">=</span><span class="st">"trajectory"</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>ax.plot(<span class="op">*</span>traj[<span class="dv">0</span>, :<span class="dv">2</span>], <span class="st">"s"</span>, color<span class="op">=</span><span class="st">"orange"</span>, markersize<span class="op">=</span><span class="dv">9</span>, zorder<span class="op">=</span><span class="dv">5</span>, label<span class="op">=</span><span class="st">"start"</span>)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>ax.plot(<span class="op">*</span>target[:<span class="dv">2</span>], <span class="st">"*"</span>, color<span class="op">=</span><span class="st">"crimson"</span>, markersize<span class="op">=</span><span class="dv">14</span>, zorder<span class="op">=</span><span class="dv">6</span>, label<span class="op">=</span><span class="st">"target"</span>)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>ax.plot(<span class="op">*</span>traj[<span class="op">-</span><span class="dv">1</span>, :<span class="dv">2</span>], <span class="st">"^"</span>, color<span class="op">=</span><span class="st">"steelblue"</span>, markersize<span class="op">=</span><span class="dv">9</span>, zorder<span class="op">=</span><span class="dv">5</span>, label<span class="op">=</span><span class="st">"optimized"</span>)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>ax.set_aspect(<span class="st">"equal"</span>)</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>ax.legend(fontsize<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"Optimization on the constraint manifold"</span>)</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"x"</span>)</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"y"</span>)</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="constrained_optimization_files/figure-html/cell-6-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
 </section>
-<section id="example" class="level2 doc-section doc-section-example">
-<h2 class="doc-section doc-section-example anchored" data-anchor-id="example">Example</h2>
-<blockquote class="blockquote">
-<blockquote class="blockquote">
-<blockquote class="blockquote">
-<p>from jaxcad.sdf.primitives import Sphere from jaxcad.geometry import Scalar</p>
-<p>radius = Scalar(value=1.0, free=True, name=‘radius’) sphere = Sphere(radius=radius)</p>
-<p>sdf_fn = functionalize(sphere)</p>
-<h1 id="query-with-specific-parameter-values">Query with specific parameter values</h1>
-<p>free_vals = {‘sphere_0.radius’: 2.0} fixed_vals = {} distance = sdf_fn(free_vals, fixed_vals)(jnp.array([0., 0., 0.]))</p>
-</blockquote>
-</blockquote>
-</blockquote>
+<section id="render-before-and-after" class="level2">
+<h2 class="anchored" data-anchor-id="render-before-and-after">Render before and after</h2>
+<div id="578bebb1" class="cell" data-execution_count="13">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">4</span>))</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>ax1 <span class="op">=</span> fig.add_subplot(<span class="dv">121</span>, projection<span class="op">=</span><span class="st">"3d"</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>render_marching_cubes(Translate(Sphere(radius<span class="op">=</span><span class="fl">0.3</span>), offset<span class="op">=</span>traj[<span class="dv">0</span>]), ax<span class="op">=</span>ax1, title<span class="op">=</span><span class="st">"Initial"</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>ax2 <span class="op">=</span> fig.add_subplot(<span class="dv">122</span>, projection<span class="op">=</span><span class="st">"3d"</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>render_marching_cubes(Translate(Sphere(radius<span class="op">=</span><span class="fl">0.3</span>), offset<span class="op">=</span>optimized), ax<span class="op">=</span>ax2, title<span class="op">=</span><span class="st">"Optimized"</span>)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="constrained_optimization_files/figure-html/cell-7-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<p>The workflow:</p>
+<ol type="1">
+<li><strong>Attach constraints</strong> - <code>DistanceConstraint</code> defines the feasible manifold.</li>
+<li><strong>Gradient step</strong> in the ambient space using <code>jax.grad</code>.</li>
+<li><strong>Project</strong> back onto the manifold after each step - for a sphere constraint the projection is <code>p &lt;- r * p / ||p||</code>.</li>
+</ol>
+<p>This pattern generalizes: any differentiable constraint has an associated projection or retraction that can be composed with gradient descent to stay feasible throughout optimization.</p>
 
 
-</section>
 </section>
 
 </main> <!-- /main -->

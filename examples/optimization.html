@@ -147,6 +147,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <a class="dropdown-item" href="../examples/optimization.html">
  <span class="dropdown-text">Optimization</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="../examples/constrained_optimization.html">
+ <span class="dropdown-text">Constrained Optimization</span></a>
+  </li>  
     </ul>
   </li>
   <li class="nav-item">
@@ -252,7 +256,7 @@ Gradient w.r.t p2: [1.9764318e+00 8.1956387e-07 8.0093946e-07]</code></pre>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>sphere2 <span class="op">=</span> Translate(Sphere(radius<span class="op">=</span><span class="fl">1.0</span>), offset<span class="op">=</span>p2)</span>
 <span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>double_sphere_ <span class="op">=</span> Union(sphere1, sphere2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>extract_parameters</code> walks the SDF tree and returns two dictionaries — one for free (differentiable) parameters and one for fixed parameters.</p>
+<p><code>extract_parameters</code> walks the SDF tree and returns two dictionaries - one for free (differentiable) parameters and one for fixed parameters.</p>
 <div id="b4247ab3" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>free_params, fixed_params <span class="op">=</span> extract_parameters(double_sphere_)</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -287,7 +291,7 @@ Gradient w.r.t p2: [1.9764318e+00 8.1956387e-07 8.0093946e-07]</code></pre>
  'translate_3.offset': Vector(value=Array([1.9764318e+00, 8.1956387e-07, 8.0093946e-07], dtype=float32), free=True, name='p2', bounds=None)}</code></pre>
 </div>
 </div>
-<p>For simple scenes the two approaches are equivalent. The parameter-extraction workflow becomes essential as scenes grow: any node in the tree can declare its parameters free, and the compiler collects them automatically — no changes needed to the loss or optimizer.</p>
+<p>For simple scenes the two approaches are equivalent. The parameter-extraction workflow becomes essential as scenes grow: any node in the tree can declare its parameters free, and the compiler collects them automatically - no changes needed to the loss or optimizer.</p>
 
 
 
