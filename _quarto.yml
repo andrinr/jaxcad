@@ -1,0 +1,68 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: jaxCAD
+  description: Differentiable CAD with JAX and SDFs
+  navbar:
+    left:
+      - text: Get Started
+        href: docs/getting-started.qmd
+      - text: Examples
+        menu:
+          - text: Basics
+            href: examples/basics.ipynb
+          - text: Constraints
+            href: examples/constraints.ipynb
+          - text: Optimization
+            href: examples/optimization.ipynb
+      - text: API Reference
+        href: reference/index.qmd
+    right:
+      - icon: github
+        href: https://github.com/your-org/jaxcad  # update to your repo
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    code-copy: true
+
+execute:
+  enabled: false  # render stored outputs, don't re-execute
+
+quartodoc:
+  package: jaxcad
+  dir: reference
+  sections:
+    - title: Parameter Extraction
+      contents:
+        - extraction.extract_parameters
+        - extraction.extract_parameters_with_constraints
+    - title: Functionalize
+      contents:
+        - functionalize.functionalize
+    - title: Constraints
+      contents:
+        - constraints.solve.solve_constraints
+        - constraints.solve.newton_raphson
+        - constraints.distance.DistanceConstraint
+        - constraints.angle.AngleConstraint
+        - constraints.parallel.ParallelConstraint
+        - constraints.perpendicular.PerpendicularConstraint
+        - constraints.graph.ConstraintGraph
+    - title: Construction
+      contents:
+        - construction.from_point.from_point
+        - construction.from_line.from_line
+        - construction.from_circle.from_circle
+        - construction.extrude.extrude
+    - title: Geometry
+      contents:
+        - geometry.parameters.Vector
+        - geometry.parameters.Scalar
+    - title: Render
+      contents:
+        - render.render_marching_cubes

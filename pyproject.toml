@@ -19,6 +19,10 @@ dev = [
     "pytest>=7.0.0",
     "matplotlib>=3.7.0",
 ]
+docs = [
+    "quartodoc>=0.7",
+    "griffe<1.0",
+]
 
 [tool.setuptools.packages.find]
 where = ["."]
