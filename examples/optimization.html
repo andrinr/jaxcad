@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Differentiability in JAXCad – jaxCAD</title>
+<title>Differentiability in jaxCAD – jaxCAD</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -183,7 +183,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Differentiability in JAXCad</h1>
+<h1 class="title">Differentiability in jaxCAD</h1>
 </div>
 
 
@@ -200,7 +200,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>JAXCad is a fully differentiable CAD system: every SDF is a pure JAX function, so gradients flow through geometry just like through any other computation. This makes it straightforward to optimize shape parameters directly with respect to any loss.</p>
+<p>jaxCAD is a fully differentiable CAD system: every SDF is a pure JAX function, so gradients flow through geometry just like through any other computation. This makes it straightforward to optimize shape parameters directly with respect to any loss.</p>
 <div id="d7882962" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax.numpy <span class="im">as</span> jnp</span>
@@ -231,7 +231,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p>JAXCad provides a <code>volume</code> function that integrates an SDF over a bounding volume. We can use it as a loss and differentiate with respect to the sphere positions using <code>jax.value_and_grad</code>.</p>
+<p>jaxCAD provides a <code>volume</code> function that integrates an SDF over a bounding volume. We can use it as a loss and differentiate with respect to the sphere positions using <code>jax.value_and_grad</code>.</p>
 <div id="41479e83" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> loss(p1: jax.Array, p2: jax.Array) <span class="op">-&gt;</span> jax.Array:</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> volume(double_sphere(p1, p2))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -248,7 +248,7 @@ Gradient w.r.t p1: [-1.8908089e+00  2.6822090e-07  5.8858257e-07]
 Gradient w.r.t p2: [1.9764318e+00 8.1956387e-07 8.0093946e-07]</code></pre>
 </div>
 </div>
-<p>Passing positions explicitly works, but scales poorly: complex scenes may have dozens of parameters scattered across the tree. JAXCad lets you tag parameters as <em>free</em> directly on the geometry objects, then extract them automatically as a flat dictionary that JAX can differentiate through.</p>
+<p>Passing positions explicitly works, but scales poorly: complex scenes may have dozens of parameters scattered across the tree. jaxCAD lets you tag parameters as <em>free</em> directly on the geometry objects, then extract them automatically as a flat dictionary that JAX can differentiate through.</p>
 <div id="64c3eea2" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>p1 <span class="op">=</span> Vector(jnp.array([<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>]), free<span class="op">=</span><span class="va">True</span>, name<span class="op">=</span><span class="st">"p1"</span>)</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>p2 <span class="op">=</span> Vector(jnp.array([<span class="fl">1.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>]), free<span class="op">=</span><span class="va">True</span>, name<span class="op">=</span><span class="st">"p2"</span>)</span>
