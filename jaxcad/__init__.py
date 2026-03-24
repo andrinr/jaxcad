@@ -1,4 +1,4 @@
-"""JaxCAD: Differentiable CAD with SDFs and CSG."""
+"""jaxCAD: Differentiable CAD with SDFs and CSG."""
 
 from jaxcad.constraints.solve import solve_constraints
 from jaxcad.extraction import extract_parameters, extract_parameters_with_constraints
