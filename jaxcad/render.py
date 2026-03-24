@@ -178,7 +178,7 @@ def render_marching_cubes(
         from skimage import measure
     except ImportError as err:
         raise ImportError(
-            "render_marching_cubes requires scikit-image. " "Install with: pip install scikit-image"
+            "render_marching_cubes requires scikit-image. Install with: pip install scikit-image"
         ) from err
 
     if ax is None:

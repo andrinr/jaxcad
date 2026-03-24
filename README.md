@@ -1,5 +1,7 @@
 # jaxCAD
 
+![primitives](examples/primitives.png)
+
 Differentiable CAD built on JAX and Signed Distance Functions.
 
 Parametric geometry, geometric constraints, and automatic differentiation — composable with `jax.grad`, `jax.jit`, and `jax.vmap`.

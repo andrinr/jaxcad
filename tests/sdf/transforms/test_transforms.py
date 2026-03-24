@@ -33,7 +33,7 @@ def test_uniform_scale():
 def test_rotate_z():
     """Test rotation around Z axis."""
     box = Box(size=jnp.array([2.0, 1.0, 1.0]))
-    rotated = Rotate(box, 'z', jnp.pi / 2)
+    rotated = Rotate(box, "z", jnp.pi / 2)
 
     # Box has half-extents [2.0, 1.0, 1.0], so it extends ±2 in X, ±1 in Y/Z
     # After 90° rotation around Z, the X axis becomes Y axis

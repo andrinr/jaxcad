@@ -115,11 +115,13 @@ class TestVectorization:
     def test_batch_evaluation(self):
         """SDFs should work with batched points"""
         sphere = Sphere(radius=1.0)
-        points = jnp.array([
-            [0.0, 0.0, 0.0],
-            [1.0, 0.0, 0.0],
-            [2.0, 0.0, 0.0],
-        ])
+        points = jnp.array(
+            [
+                [0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0],
+                [2.0, 0.0, 0.0],
+            ]
+        )
         distances = sphere(points)
         assert distances.shape == (3,)
         assert jnp.isclose(distances[0], -1.0)
