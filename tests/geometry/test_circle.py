@@ -1,17 +1,17 @@
 """Tests for Circle geometric entity."""
 
-import pytest
 import jax.numpy as jnp
+import pytest
 
-from jaxcad.geometry.parameters import Vector, Scalar
+from jaxcad.geometry.parameters import Scalar, Vector
 from jaxcad.geometry.primitives import Circle
 
 
 def test_circle_basic():
     """Test basic circle creation."""
-    center = Vector([0, 0, 0], name='c')
-    radius = Scalar(1.0, name='r')
-    normal = Vector([0, 0, 1], name='n')
+    center = Vector([0, 0, 0], name="c")
+    radius = Scalar(1.0, name="r")
+    normal = Vector([0, 0, 1], name="n")
 
     circle = Circle(center=center, radius=radius, normal=normal)
 
@@ -21,11 +21,7 @@ def test_circle_basic():
 
 def test_circle_from_scalars():
     """Test circle creation from scalar values."""
-    circle = Circle(
-        center=[0, 0, 0],
-        radius=2.5,
-        normal=[0, 0, 1]
-    )
+    circle = Circle(center=[0, 0, 0], radius=2.5, normal=[0, 0, 1])
 
     assert isinstance(circle.center, Vector)
     assert isinstance(circle.radius, Scalar)
@@ -34,11 +30,7 @@ def test_circle_from_scalars():
 
 def test_circle_sample():
     """Test sampling points on circle."""
-    circle = Circle(
-        center=[0, 0, 0],
-        radius=1.0,
-        normal=[0, 0, 1]
-    )
+    circle = Circle(center=[0, 0, 0], radius=1.0, normal=[0, 0, 1])
 
     # Sample at angle 0
     p0 = circle.sample(0.0)
@@ -55,11 +47,7 @@ def test_circle_sample():
 
 def test_circle_sample_uniform():
     """Test uniform sampling around circle."""
-    circle = Circle(
-        center=[0, 0, 0],
-        radius=2.0,
-        normal=[0, 0, 1]
-    )
+    circle = Circle(center=[0, 0, 0], radius=2.0, normal=[0, 0, 1])
 
     points = circle.sample_uniform(8)
     assert points.shape == (8, 3)
@@ -72,11 +60,7 @@ def test_circle_sample_uniform():
 
 def test_circle_tangent():
     """Test tangent vector calculation."""
-    circle = Circle(
-        center=[0, 0, 0],
-        radius=1.0,
-        normal=[0, 0, 1]
-    )
+    circle = Circle(center=[0, 0, 0], radius=1.0, normal=[0, 0, 1])
 
     # Tangent at angle 0
     t0 = circle.tangent(0.0)
@@ -91,11 +75,7 @@ def test_circle_tangent():
 
 def test_circle_area():
     """Test circle area calculation."""
-    circle = Circle(
-        center=[0, 0, 0],
-        radius=2.0,
-        normal=[0, 0, 1]
-    )
+    circle = Circle(center=[0, 0, 0], radius=2.0, normal=[0, 0, 1])
 
     area = circle.area()
     expected_area = jnp.pi * 4.0  # π * r²
@@ -104,11 +84,7 @@ def test_circle_area():
 
 def test_circle_circumference():
     """Test circle circumference calculation."""
-    circle = Circle(
-        center=[0, 0, 0],
-        radius=3.0,
-        normal=[0, 0, 1]
-    )
+    circle = Circle(center=[0, 0, 0], radius=3.0, normal=[0, 0, 1])
 
     circumference = circle.circumference()
     expected = 2 * jnp.pi * 3.0
@@ -117,11 +93,7 @@ def test_circle_circumference():
 
 def test_circle_closest_point():
     """Test finding closest point on circle."""
-    circle = Circle(
-        center=[0, 0, 0],
-        radius=1.0,
-        normal=[0, 0, 1]
-    )
+    circle = Circle(center=[0, 0, 0], radius=1.0, normal=[0, 0, 1])
 
     # Point outside circle in the plane
     closest = circle.closest_point(jnp.array([3, 0, 0]))
@@ -134,11 +106,7 @@ def test_circle_closest_point():
 
 def test_circle_distance_to_point():
     """Test distance from point to circle."""
-    circle = Circle(
-        center=[0, 0, 0],
-        radius=1.0,
-        normal=[0, 0, 1]
-    )
+    circle = Circle(center=[0, 0, 0], radius=1.0, normal=[0, 0, 1])
 
     # Point on the circle
     dist = circle.distance_to_point(jnp.array([1, 0, 0]))
@@ -155,11 +123,7 @@ def test_circle_distance_to_point():
 
 def test_circle_local_frame():
     """Test that circle computes orthonormal local frame."""
-    circle = Circle(
-        center=[0, 0, 0],
-        radius=1.0,
-        normal=[0, 0, 1]
-    )
+    circle = Circle(center=[0, 0, 0], radius=1.0, normal=[0, 0, 1])
 
     u = circle.u_axis.xyz
     v = circle.v_axis.xyz
@@ -179,11 +143,7 @@ def test_circle_local_frame():
 def test_circle_tilted():
     """Test circle with tilted normal."""
     # Circle in YZ plane (normal along X)
-    circle = Circle(
-        center=[0, 0, 0],
-        radius=2.0,
-        normal=[1, 0, 0]
-    )
+    circle = Circle(center=[0, 0, 0], radius=2.0, normal=[1, 0, 0])
 
     # Sample points should have x ≈ 0 (in YZ plane)
     for theta in jnp.linspace(0, 2 * jnp.pi, 8):
@@ -193,14 +153,10 @@ def test_circle_tilted():
 
 def test_circle_with_free_parameters():
     """Test circle with free parameters."""
-    center = Vector([0, 0, 0], free=True, name='center')
-    radius = Scalar(1.5, free=True, name='radius')
+    center = Vector([0, 0, 0], free=True, name="center")
+    radius = Scalar(1.5, free=True, name="radius")
 
-    circle = Circle(
-        center=center,
-        radius=radius,
-        normal=[0, 0, 1]
-    )
+    circle = Circle(center=center, radius=radius, normal=[0, 0, 1])
 
     assert circle.center.free
     assert circle.radius.free
@@ -208,11 +164,7 @@ def test_circle_with_free_parameters():
 
 def test_circle_offset_center():
     """Test circle with offset center."""
-    circle = Circle(
-        center=[10, 20, 30],
-        radius=5.0,
-        normal=[0, 0, 1]
-    )
+    circle = Circle(center=[10, 20, 30], radius=5.0, normal=[0, 0, 1])
 
     # Sample point
     point = circle.sample(0.0)
@@ -224,11 +176,7 @@ def test_circle_offset_center():
 
 def test_circle_large_radius():
     """Test circle with large radius."""
-    circle = Circle(
-        center=[0, 0, 0],
-        radius=100.0,
-        normal=[0, 0, 1]
-    )
+    circle = Circle(center=[0, 0, 0], radius=100.0, normal=[0, 0, 1])
 
     area = circle.area()
     expected_area = jnp.pi * 10000.0
@@ -237,11 +185,7 @@ def test_circle_large_radius():
 
 def test_circle_small_radius():
     """Test circle with small radius."""
-    circle = Circle(
-        center=[0, 0, 0],
-        radius=0.01,
-        normal=[0, 0, 1]
-    )
+    circle = Circle(center=[0, 0, 0], radius=0.01, normal=[0, 0, 1])
 
     circumference = circle.circumference()
     expected = 2 * jnp.pi * 0.01

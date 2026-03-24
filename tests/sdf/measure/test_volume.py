@@ -2,11 +2,9 @@
 
 import jax
 import jax.numpy as jnp
-import pytest
 
-from jaxcad.sdf.primitives import Sphere, Box
 from jaxcad.sdf.measure import volume
-
+from jaxcad.sdf.primitives import Box, Sphere
 
 BOUNDS = (-2, -2, -2)
 SIZE = (4, 4, 4)
@@ -24,7 +22,9 @@ def test_box_volume_accuracy():
 
     Box takes half-extents, so (0.5, 0.5, 0.5) → 1×1×1 cube, volume = 1.
     """
-    v = volume(Box(size=jnp.array([0.5, 0.5, 0.5])), bounds=BOUNDS, size=SIZE, resolution=RESOLUTION)
+    v = volume(
+        Box(size=jnp.array([0.5, 0.5, 0.5])), bounds=BOUNDS, size=SIZE, resolution=RESOLUTION
+    )
     assert jnp.isclose(v, 1.0, atol=0.05)
 
 
@@ -37,6 +37,7 @@ def test_larger_sphere_volume():
 
 def test_volume_differentiable_wrt_radius():
     """jax.grad should work through volume and give dV/dr ≈ 4πr²."""
+
     def vol_fn(r):
         return volume(Sphere(radius=r), bounds=BOUNDS, size=SIZE, resolution=RESOLUTION)
 
@@ -61,6 +62,10 @@ def test_epsilon_convergence():
     """Smaller epsilon should give a more accurate volume estimate."""
     sphere = Sphere(radius=1.0)
     analytical = 4 / 3 * jnp.pi
-    err_large = abs(volume(sphere, bounds=BOUNDS, size=SIZE, resolution=50, epsilon=0.5) - analytical)
-    err_small = abs(volume(sphere, bounds=BOUNDS, size=SIZE, resolution=50, epsilon=0.01) - analytical)
+    err_large = abs(
+        volume(sphere, bounds=BOUNDS, size=SIZE, resolution=50, epsilon=0.5) - analytical
+    )
+    err_small = abs(
+        volume(sphere, bounds=BOUNDS, size=SIZE, resolution=50, epsilon=0.01) - analytical
+    )
     assert err_small < err_large

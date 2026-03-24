@@ -7,35 +7,35 @@ This module contains all SDF-related functionality:
 - Transforms (Translate, Rotate, Scale, Twist)
 """
 
+from jaxcad.sdf import measure
 from jaxcad.sdf.base import SDF
+from jaxcad.sdf.boolean import (
+    BooleanOp,
+    Difference,
+    Intersection,
+    Union,
+    Xor,
+    difference,
+    intersection,
+    smooth_max,
+    smooth_min,
+    union,
+    xor,
+)
+from jaxcad.sdf.measure import volume
 from jaxcad.sdf.primitives import (
-    Primitive,
     Box,
     Capsule,
     Cylinder,
+    Primitive,
     RoundBox,
     Sphere,
     Torus,
 )
-from jaxcad.sdf.boolean import (
-    BooleanOp,
-    Union,
-    Intersection,
-    Difference,
-    Xor,
-    smooth_min,
-    smooth_max,
-    union,
-    intersection,
-    difference,
-    xor,
-)
-from jaxcad.sdf import measure
-from jaxcad.sdf.measure import volume
 from jaxcad.sdf.transforms import (
-    Translate,
     Rotate,
     Scale,
+    Translate,
     Twist,
 )
 

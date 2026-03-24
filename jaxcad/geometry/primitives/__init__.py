@@ -11,12 +11,12 @@ Entities:
 - Circle: Parametric circle in 3D
 """
 
+from jaxcad.geometry.primitives.circle import Circle
 from jaxcad.geometry.primitives.line import Line
 from jaxcad.geometry.primitives.rectangle import Rectangle
-from jaxcad.geometry.primitives.circle import Circle
 
 __all__ = [
-    'Line',
-    'Rectangle',
-    'Circle',
+    "Line",
+    "Rectangle",
+    "Circle",
 ]

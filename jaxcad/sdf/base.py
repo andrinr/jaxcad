@@ -9,11 +9,14 @@ Architecture:
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Callable, TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from jax import Array
 
 from jaxcad.fluent import Fluent
+
+if TYPE_CHECKING:
+    from jaxcad.geometry.parameters import Parameter
 
 
 class SDF(Fluent):
@@ -68,7 +71,7 @@ class SDF(Fluent):
             return ClassName.sdf
     """
 
-    params: dict[str, 'Parameter']
+    params: dict[str, Parameter]
 
     def __init_subclass__(cls, **kwargs):
         """Automatically wrap __init__ to call _cast_params after initialization."""
@@ -78,7 +81,7 @@ class SDF(Fluent):
         def new_init(self, *args, **kwargs):
             original_init(self, *args, **kwargs)
             # Auto-cast params after initialization
-            if hasattr(self, 'params'):
+            if hasattr(self, "params"):
                 self._cast_params()
 
         cls.__init__ = new_init
@@ -116,25 +119,29 @@ class SDF(Fluent):
     def __or__(self, other: SDF) -> SDF:
         """Union operator: self | other"""
         from jaxcad.sdf.boolean import Union
+
         return Union((self, other))
 
     def __add__(self, other: SDF) -> SDF:
         """Union operator: self + other"""
         from jaxcad.sdf.boolean import Union
+
         return Union((self, other))
 
     def __and__(self, other: SDF) -> SDF:
         """Intersection operator: self & other"""
         from jaxcad.sdf.boolean import Intersection
+
         return Intersection((self, other))
 
     def __sub__(self, other: SDF) -> SDF:
         """Difference operator: self - other"""
         from jaxcad.sdf.boolean import Difference
+
         return Difference((self, other))
 
     def __xor__(self, other: SDF) -> SDF:
         """Xor operator: self ^ other"""
         from jaxcad.sdf.boolean import Xor
-        return Xor((self, other))
 
+        return Xor((self, other))

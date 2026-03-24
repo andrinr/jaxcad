@@ -1,14 +1,14 @@
 """Constraint solving via Newton-Raphson."""
 
-from typing import Any, Callable, Dict
+from typing import Any, Callable
 
 import jax
 import jax.numpy as jnp
 from jax import Array
 
-from jaxcad.sdf import SDF
 from jaxcad.constraints.graph import ConstraintGraph
-from jaxcad.geometry.parameters import Vector, Scalar
+from jaxcad.geometry.parameters import Scalar, Vector
+from jaxcad.sdf import SDF
 
 
 def newton_raphson(
@@ -58,7 +58,7 @@ def solve_constraints(
     *,
     tol: float = 1e-6,
     max_iter: int = 100,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Solve geometric constraints attached to a scene's free parameters.
 
     Extracts free parameters from the SDF tree, discovers all constraints
@@ -84,6 +84,7 @@ def solve_constraints(
     """
     # Local import avoids a circular dependency: constraints.solve → jaxcad → constraints
     from jaxcad.extraction import extract_parameters
+
     free_params_dict, _ = extract_parameters(sdf)
 
     # Deduplicate free params by name to get an ordered list
@@ -110,7 +111,7 @@ def solve_constraints(
         raise ValueError(f"Over-constrained by {-remaining} equations.")
 
     # Collect fixed params referenced by constraints (e.g. anchors not in the SDF tree)
-    fixed_by_name: Dict[str, Array] = {}
+    fixed_by_name: dict[str, Array] = {}
     for constraint in graph.constraints:
         for cp in constraint.get_parameters():
             if cp.name is not None and not cp.free and cp.name not in fixed_by_name:
@@ -122,36 +123,38 @@ def solve_constraints(
         offset = 0
         for p in param_list:
             size = p.value.size
-            val = x_flat[offset:offset + size]
+            val = x_flat[offset : offset + size]
             param_values[p.name] = val[0] if isinstance(p, Scalar) else val
             offset += size
-        return jnp.concatenate([
-            jnp.atleast_1d(c.compute_residual(param_values))
-            for c in graph.constraints
-        ])
+        return jnp.concatenate(
+            [jnp.atleast_1d(c.compute_residual(param_values)) for c in graph.constraints]
+        )
 
-    x0 = jnp.concatenate([
-        p.xyz if isinstance(p, Vector) else jnp.atleast_1d(p.value)
-        for p in param_list
-    ])
+    x0 = jnp.concatenate(
+        [p.xyz if isinstance(p, Vector) else jnp.atleast_1d(p.value) for p in param_list]
+    )
 
     x = newton_raphson(residual_fn, x0, tol=tol, max_iter=max_iter)
 
     # Reconstruct the solved free_params dict
-    name_to_solved: Dict[str, Array] = {}
+    name_to_solved: dict[str, Array] = {}
     offset = 0
     for p in param_list:
         size = p.value.size
-        name_to_solved[p.name] = x[offset:offset + size]
+        name_to_solved[p.name] = x[offset : offset + size]
         if isinstance(p, Scalar):
             name_to_solved[p.name] = name_to_solved[p.name][0]
         offset += size
 
     return {
         path: (
-            Vector(value=name_to_solved[param.name], free=True, name=param.name, bounds=param.bounds)
-            if isinstance(param, Vector) else
-            Scalar(value=name_to_solved[param.name], free=True, name=param.name, bounds=param.bounds)
+            Vector(
+                value=name_to_solved[param.name], free=True, name=param.name, bounds=param.bounds
+            )
+            if isinstance(param, Vector)
+            else Scalar(
+                value=name_to_solved[param.name], free=True, name=param.name, bounds=param.bounds
+            )
         )
         for path, param in free_params_dict.items()
     }

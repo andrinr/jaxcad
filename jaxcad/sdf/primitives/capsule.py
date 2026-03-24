@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Union
-
 import jax.numpy as jnp
 from jax import Array
 
@@ -19,8 +17,8 @@ class Capsule(Primitive):
         height: Half-height of cylindrical section (float or Scalar)
     """
 
-    def __init__(self, radius: Union[float, Scalar], height: Union[float, Scalar]):
-        self.params = {'radius': radius, 'height': height}
+    def __init__(self, radius: float | Scalar, height: float | Scalar):
+        self.params = {"radius": radius, "height": height}
 
     @staticmethod
     def sdf(p: Array, radius: float, height: float) -> Array:
@@ -42,7 +40,7 @@ class Capsule(Primitive):
 
     def __call__(self, p: Array) -> Array:
         """Evaluate SDF at point(s) p."""
-        return Capsule.sdf(p, self.params['radius'].value, self.params['height'].value)
+        return Capsule.sdf(p, self.params["radius"].value, self.params["height"].value)
 
     def to_functional(self):
         """Return pure function for compilation."""

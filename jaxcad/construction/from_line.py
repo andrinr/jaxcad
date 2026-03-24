@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Union
+from typing import TYPE_CHECKING
 
 from jaxcad.geometry.parameters import Scalar, as_parameter
 from jaxcad.geometry.primitives import Line
 
+if TYPE_CHECKING:
+    from jaxcad.sdf.base import SDF
 
-def from_line(line: Line, radius: Union[float, Scalar]) -> 'SDF':
+
+def from_line(line: Line, radius: float | Scalar) -> SDF:
     """Create a capsule from a line segment.
 
     Creates an axis-aligned capsule and applies transforms to orient it
@@ -28,8 +31,8 @@ def from_line(line: Line, radius: Union[float, Scalar]) -> 'SDF':
         capsule = from_line(line, radius=0.5)
         # Capsule connects p1 and p2 with radius 0.5
     """
+
     from jaxcad.sdf.primitives.capsule import Capsule
-    import jax.numpy as jnp
 
     radius = as_parameter(radius)
 
@@ -41,8 +44,8 @@ def from_line(line: Line, radius: Union[float, Scalar]) -> 'SDF':
     capsule = Capsule(radius=radius, height=half_height)
 
     # Get line direction and midpoint
-    direction = line.direction(normalized=True)  # Unit vector
-    midpoint = line.midpoint()
+    line.direction(normalized=True)  # Unit vector
+    line.midpoint()
 
     # For now, just return the capsule without transforms
     # TODO: Add rotation transform to align with line direction
@@ -51,6 +54,6 @@ def from_line(line: Line, radius: Union[float, Scalar]) -> 'SDF':
 
     # Store reference to source geometry
     capsule._source_geometry = line
-    capsule._construction_method = 'from_line'
+    capsule._construction_method = "from_line"
 
     return capsule

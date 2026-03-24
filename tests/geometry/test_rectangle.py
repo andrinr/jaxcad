@@ -1,18 +1,17 @@
 """Tests for Rectangle geometric entity."""
 
-import pytest
 import jax.numpy as jnp
 
-from jaxcad.geometry.parameters import Vector, Scalar
+from jaxcad.geometry.parameters import Scalar, Vector
 from jaxcad.geometry.primitives import Rectangle
 
 
 def test_rectangle_basic():
     """Test basic rectangle creation."""
-    center = Vector([0, 0, 0], name='c')
-    width = Scalar(2.0, name='w')
-    height = Scalar(1.0, name='h')
-    normal = Vector([0, 0, 1], name='n')  # XY plane
+    center = Vector([0, 0, 0], name="c")
+    width = Scalar(2.0, name="w")
+    height = Scalar(1.0, name="h")
+    normal = Vector([0, 0, 1], name="n")  # XY plane
 
     rect = Rectangle(center=center, width=width, height=height, normal=normal)
 
@@ -23,12 +22,7 @@ def test_rectangle_basic():
 
 def test_rectangle_from_scalars():
     """Test rectangle creation from scalar values."""
-    rect = Rectangle(
-        center=[0, 0, 0],
-        width=4.0,
-        height=2.0,
-        normal=[0, 0, 1]
-    )
+    rect = Rectangle(center=[0, 0, 0], width=4.0, height=2.0, normal=[0, 0, 1])
 
     assert isinstance(rect.center, Vector)
     assert isinstance(rect.width, Scalar)
@@ -39,12 +33,7 @@ def test_rectangle_from_scalars():
 
 def test_rectangle_sample_center():
     """Test sampling at rectangle center."""
-    rect = Rectangle(
-        center=[5, 5, 5],
-        width=2.0,
-        height=1.0,
-        normal=[0, 0, 1]
-    )
+    rect = Rectangle(center=[5, 5, 5], width=2.0, height=1.0, normal=[0, 0, 1])
 
     center_point = rect.sample(0.5, 0.5)
     assert jnp.allclose(center_point, jnp.array([5, 5, 5]))
@@ -52,12 +41,7 @@ def test_rectangle_sample_center():
 
 def test_rectangle_corners():
     """Test rectangle corner calculation."""
-    rect = Rectangle(
-        center=[0, 0, 0],
-        width=2.0,
-        height=1.0,
-        normal=[0, 0, 1]
-    )
+    rect = Rectangle(center=[0, 0, 0], width=2.0, height=1.0, normal=[0, 0, 1])
 
     corners = rect.corners()
     assert corners.shape == (4, 3)
@@ -65,10 +49,10 @@ def test_rectangle_corners():
     # Check that corners are roughly at the right positions
     # For a 2x1 rectangle centered at origin in XY plane:
     # corners should be at (±1, ±0.5, 0)
-    corner_0 = rect.corner(0)
-    corner_1 = rect.corner(1)
-    corner_2 = rect.corner(2)
-    corner_3 = rect.corner(3)
+    rect.corner(0)
+    rect.corner(1)
+    rect.corner(2)
+    rect.corner(3)
 
     # Each corner should be on the rectangle's plane
     for i in range(4):
@@ -81,12 +65,7 @@ def test_rectangle_corners():
 
 def test_rectangle_sample_corners():
     """Test sampling at rectangle corners using parameters."""
-    rect = Rectangle(
-        center=[0, 0, 0],
-        width=2.0,
-        height=2.0,
-        normal=[0, 0, 1]
-    )
+    rect = Rectangle(center=[0, 0, 0], width=2.0, height=2.0, normal=[0, 0, 1])
 
     # Sample at corners using (u, v) parameters
     corner_00 = rect.sample(0.0, 0.0)  # Bottom-left
@@ -102,12 +81,7 @@ def test_rectangle_sample_corners():
 
 def test_rectangle_local_frame():
     """Test that rectangle computes orthonormal local frame."""
-    rect = Rectangle(
-        center=[0, 0, 0],
-        width=1.0,
-        height=1.0,
-        normal=[0, 0, 1]
-    )
+    rect = Rectangle(center=[0, 0, 0], width=1.0, height=1.0, normal=[0, 0, 1])
 
     # U and V axes should be orthonormal
     u = rect.u_axis.xyz
@@ -128,12 +102,7 @@ def test_rectangle_local_frame():
 def test_rectangle_tilted():
     """Test rectangle with tilted normal."""
     # Rectangle in YZ plane (normal along X)
-    rect = Rectangle(
-        center=[0, 0, 0],
-        width=2.0,
-        height=1.0,
-        normal=[1, 0, 0]
-    )
+    rect = Rectangle(center=[0, 0, 0], width=2.0, height=1.0, normal=[1, 0, 0])
 
     # Center should still be at origin
     center = rect.sample(0.5, 0.5)
@@ -147,16 +116,11 @@ def test_rectangle_tilted():
 
 def test_rectangle_with_free_parameters():
     """Test rectangle with free parameters."""
-    center = Vector([0, 0, 0], free=True, name='center')
-    width = Scalar(3.0, free=True, name='width')
-    height = Scalar(2.0, free=True, name='height')
+    center = Vector([0, 0, 0], free=True, name="center")
+    width = Scalar(3.0, free=True, name="width")
+    height = Scalar(2.0, free=True, name="height")
 
-    rect = Rectangle(
-        center=center,
-        width=width,
-        height=height,
-        normal=[0, 0, 1]
-    )
+    rect = Rectangle(center=center, width=width, height=height, normal=[0, 0, 1])
 
     assert rect.center.free
     assert rect.width.free
@@ -165,12 +129,7 @@ def test_rectangle_with_free_parameters():
 
 def test_rectangle_sample_grid():
     """Test sampling a grid of points on rectangle."""
-    rect = Rectangle(
-        center=[0, 0, 0],
-        width=4.0,
-        height=2.0,
-        normal=[0, 0, 1]
-    )
+    rect = Rectangle(center=[0, 0, 0], width=4.0, height=2.0, normal=[0, 0, 1])
 
     # Sample a 3x3 grid
     for u in [0.0, 0.5, 1.0]:

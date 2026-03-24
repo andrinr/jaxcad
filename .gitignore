@@ -31,3 +31,4 @@ ENV/
 _site/
 /.quarto/
 /reference/
+**/*.quarto_ipynb

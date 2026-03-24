@@ -3,14 +3,14 @@
 import jax
 import jax.numpy as jnp
 from jax import Array
-from typing import Tuple
+
 from jaxcad.sdf.base import SDF
 
 
 def volume(
     sdf: SDF,
-    bounds: Tuple[float, float, float] = (-3, -3, -3),
-    size: Tuple[float, float, float] = (6, 6, 6),
+    bounds: tuple[float, float, float] = (-3, -3, -3),
+    size: tuple[float, float, float] = (6, 6, 6),
     resolution: int = 50,
     epsilon: float = 0.01,
 ) -> Array:
@@ -34,7 +34,7 @@ def volume(
     x = jnp.linspace(bounds[0], bounds[0] + size[0], resolution)
     y = jnp.linspace(bounds[1], bounds[1] + size[1], resolution)
     z = jnp.linspace(bounds[2], bounds[2] + size[2], resolution)
-    X, Y, Z = jnp.meshgrid(x, y, z, indexing='ij')
+    X, Y, Z = jnp.meshgrid(x, y, z, indexing="ij")
     points = jnp.stack([X.ravel(), Y.ravel(), Z.ravel()], axis=1)
 
     distances = jax.vmap(sdf)(points)

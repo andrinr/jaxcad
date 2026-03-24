@@ -18,19 +18,19 @@ from jaxcad.geometry.parameters import (
 
 # Geometric primitives
 from jaxcad.geometry.primitives import (
+    Circle,
     Line,
     Rectangle,
-    Circle,
 )
 
 __all__ = [
     # Parameters
-    'Parameter',
-    'Scalar',
-    'Vector',
-    'as_parameter',
+    "Parameter",
+    "Scalar",
+    "Vector",
+    "as_parameter",
     # Primitives
-    'Line',
-    'Rectangle',
-    'Circle',
+    "Line",
+    "Rectangle",
+    "Circle",
 ]

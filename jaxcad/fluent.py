@@ -30,7 +30,7 @@ class Fluent(ABC):
     Subclasses define self.params dict and handle their own __init_subclass__.
     """
 
-    params: dict[str, 'Parameter']
+    params: dict[str, Parameter]
 
     def _cast_params(self) -> None:
         """Convert all values in self.params to Parameter objects.

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Union
-
 from jax import Array
 
 from jaxcad.geometry.parameters import Vector
@@ -22,9 +20,9 @@ class Translate(Transform):
         offset: Translation vector (Array or Vector constraint)
     """
 
-    def __init__(self, sdf: SDF, offset: Union[Array, Vector]):
+    def __init__(self, sdf: SDF, offset: Array | Vector):
         self.sdf = sdf
-        self.params = {'offset': offset}
+        self.params = {"offset": offset}
 
     @staticmethod
     def sdf(child_sdf, p: Array, offset: Array) -> Array:
@@ -42,7 +40,7 @@ class Translate(Transform):
 
     def __call__(self, p: Array) -> Array:
         """Evaluate translated SDF."""
-        return Translate.sdf(self.sdf, p, self.params['offset'].xyz)
+        return Translate.sdf(self.sdf, p, self.params["offset"].xyz)
 
     def to_functional(self):
         """Return pure function for compilation."""

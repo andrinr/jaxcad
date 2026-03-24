@@ -17,6 +17,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
+    "pre-commit>=3.0.0",
     "matplotlib>=3.7.0",
 ]
 docs = [
@@ -32,6 +33,7 @@ include = ["jaxcad*"]
 dev = [
     "pytest>=7.0.0",
     "ruff>=0.8.0",
+    "pre-commit>=3.0.0",
     "matplotlib>=3.7.0",
     "scikit-image>=0.21.0",
 ]

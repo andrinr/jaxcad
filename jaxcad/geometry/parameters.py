@@ -16,7 +16,7 @@ For constraint systems (distances, angles, parallel, etc.), see constraints.py (
 """
 
 from dataclasses import dataclass, field
-from typing import Optional, Union, TypeVar, overload, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Union, overload
 
 import jax
 import jax.numpy as jnp
@@ -39,16 +39,17 @@ class Parameter:
         bounds: Optional (min, max) bounds for optimization
         _constraints: Internal list of constraints that reference this parameter
     """
+
     value: Union[float, Array]
     free: bool = False  # FIXED by default
     name: Optional[str] = None
     bounds: Optional[tuple] = None
-    _constraints: List['Constraint'] = field(default_factory=list, repr=False, compare=False)
+    _constraints: list["Constraint"] = field(default_factory=list, repr=False, compare=False)
 
     def __post_init__(self):
         self.value = jnp.asarray(self.value)
 
-    def add_constraint(self, constraint: 'Constraint') -> None:
+    def add_constraint(self, constraint: "Constraint") -> None:
         """Register a constraint that references this parameter.
 
         Args:
@@ -58,7 +59,7 @@ class Parameter:
         if not any(c is constraint for c in self._constraints):
             self._constraints.append(constraint)
 
-    def get_constraints(self) -> List['Constraint']:
+    def get_constraints(self) -> list["Constraint"]:
         """Get all constraints that reference this parameter.
 
         Returns:
@@ -92,20 +93,24 @@ class Parameter:
         """Flatten for JAX pytree."""
         if self.free:
             children = (self.value,)
-            aux_data = {'free': True, 'name': self.name, 'bounds': self.bounds}
+            aux_data = {"free": True, "name": self.name, "bounds": self.bounds}
         else:
             children = ()
-            aux_data = {'free': False, 'name': self.name, 'bounds': self.bounds, 'value': self.value}
+            aux_data = {
+                "free": False,
+                "name": self.name,
+                "bounds": self.bounds,
+                "value": self.value,
+            }
         return children, aux_data
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
         """Unflatten from JAX pytree."""
-        if aux_data['free']:
-            value = children[0]
-        else:
-            value = aux_data['value']
-        return cls(value=value, free=aux_data['free'], name=aux_data['name'], bounds=aux_data['bounds'])
+        value = children[0] if aux_data["free"] else aux_data["value"]
+        return cls(
+            value=value, free=aux_data["free"], name=aux_data["name"], bounds=aux_data["bounds"]
+        )
 
 
 @dataclass
@@ -144,7 +149,7 @@ class Vector(Parameter):
         """Compute Euclidean norm."""
         return jnp.linalg.norm(self.value)
 
-    def normalize(self) -> 'Vector':
+    def normalize(self) -> "Vector":
         """Return a normalized Vector (unit length)."""
         norm = self.norm()
         if norm < 1e-8:
@@ -158,31 +163,24 @@ class Vector(Parameter):
 
 
 # Register as JAX pytrees
-jax.tree_util.register_pytree_node(
-    Parameter,
-    Parameter.tree_flatten,
-    Parameter.tree_unflatten
-)
+jax.tree_util.register_pytree_node(Parameter, Parameter.tree_flatten, Parameter.tree_unflatten)
 
-jax.tree_util.register_pytree_node(
-    Scalar,
-    Scalar.tree_flatten,
-    Scalar.tree_unflatten
-)
+jax.tree_util.register_pytree_node(Scalar, Scalar.tree_flatten, Scalar.tree_unflatten)
 
-jax.tree_util.register_pytree_node(
-    Vector,
-    Vector.tree_flatten,
-    Vector.tree_unflatten
-)
+jax.tree_util.register_pytree_node(Vector, Vector.tree_flatten, Vector.tree_unflatten)
+
 
 @overload
 def as_parameter(value: Union[float, Scalar], name: Optional[str] = None) -> Scalar: ...
 
+
 @overload
 def as_parameter(value: Union[Array, Vector], name: Optional[str] = None) -> Vector: ...
 
-def as_parameter(value: Union[float, Array, Scalar, Vector], name: Optional[str] = None) -> Union[Scalar, Vector]:
+
+def as_parameter(
+    value: Union[float, Array, Scalar, Vector], name: Optional[str] = None
+) -> Union[Scalar, Vector]:
     """Convert a raw value to a Parameter object automatically.
 
     If the value is already a Parameter, return it as-is.
@@ -222,5 +220,7 @@ def as_parameter(value: Union[float, Array, Scalar, Vector], name: Optional[str]
         return Vector(value=arr, free=False, name=name)
 
     else:
-        raise ValueError(f"Cannot auto-convert value with shape {arr.shape} to Parameter. "
-                        f"Use Scalar for scalars or Vector for 3D vectors.")
+        raise ValueError(
+            f"Cannot auto-convert value with shape {arr.shape} to Parameter. "
+            f"Use Scalar for scalars or Vector for 3D vectors."
+        )

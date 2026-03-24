@@ -6,7 +6,6 @@ import jax.numpy as jnp
 from jax import Array
 
 from jaxcad.sdf.boolean.base import BooleanOp
-from jaxcad.sdf import SDF
 
 
 class Xor(BooleanOp):

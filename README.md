@@ -1,125 +1,90 @@
 # jaxCAD
 
-> **⚠️ Experimental Project** - Early development, collecting ideas and prototyping.
+Differentiable CAD built on JAX and Signed Distance Functions.
 
-**Differentiable CAD** built on JAX and Signed Distance Functions (SDFs).
+Parametric geometry, geometric constraints, and automatic differentiation — composable with `jax.grad`, `jax.jit`, and `jax.vmap`.
 
-jaxCAD combines parametric geometry, geometric constraints, and automatic differentiation to enable gradient-based shape optimization with a clean, layered architecture.
+---
 
-## Quick Start
+
+## Development install
+
+Clone this repo and
+```bash
+cd jaxcad
+uv sync
+```
+
+## Tests
+
+```bash
+pytest tests/
+```
+
+## Docs
+
+Requires [Quarto](https://quarto.org/docs/get-started/) and the `docs` extras:
+
+```bash
+pip install -e ".[docs]"
+quartodoc build   # generate API reference from docstrings
+quarto preview    # serve locally at localhost:4321
+```
+
+---
+
+## Example
+
+**Build a parametric scene and evaluate it:**
+
+```python
+import jax.numpy as jnp
+from jaxcad.geometry.parameters import Scalar
+from jaxcad.sdf.primitives import Sphere
+from jaxcad import extract_parameters, functionalize
+
+radius = Scalar(1.0, free=True, name='radius')
+sphere = Sphere(radius=radius)
+
+free_params, fixed_params = extract_parameters(sphere)
+sdf_fn = functionalize(sphere)(free_params, fixed_params)
+
+print(sdf_fn(jnp.array([0.0, 0.0, 0.0])))  # -1.0 (inside sphere)
+```
+
+**Differentiate through parameters:**
 
 ```python
 import jax
-import jax.numpy as jnp
-from jaxcad.geometry.parameters import Vector, Scalar
-from jaxcad.constraints import DistanceConstraint
-from jaxcad.construction import from_point
-from jaxcad.compiler import compile_to_function
 
-# Create parametric spheres with constraints
-center1 = Vector([0.0, 0.0, 0.0], free=True, name='c1')
-center2 = Vector([2.0, 0.0, 0.0], free=True, name='c2')
+def loss(r):
+    target = jnp.array([2.0, 0.0, 0.0])
+    return functionalize(sphere)({'sphere_0.radius': r}, {})(target) ** 2
 
-# Apply constraint (automatically registers on parameters)
-DistanceConstraint(center1, center2, distance=2.0)
-
-# Build SDF scene
-radius = Scalar(0.5, free=True, name='radius')
-sphere1 = from_point(center1, radius)
-sphere2 = from_point(center2, radius)
-scene = sphere1 | sphere2  # Union
-
-# Compile and optimize
-sdf_fn = compile_to_function(scene)
-
-def loss_fn(r):
-    params = {'sphere_2.radius': r}
-    target = jnp.array([0.8, 0.0, 0.0])
-    dist = sdf_fn(target, params, {})
-    return dist ** 2
-
-grad_fn = jax.grad(loss_fn)
-current_radius = 0.5
-for step in range(8):
-    gradient = grad_fn(current_radius)
-    current_radius -= 0.1 * gradient
-
-print(f"Optimized radius: {current_radius}")
+print(jax.grad(loss)(1.0))
 ```
 
-## Examples
+**Solve geometric constraints:**
 
-### Primitives and Transforms
+```python
+from jaxcad.geometry.parameters import Vector
+from jaxcad.sdf.transforms import Translate
+from jaxcad.constraints import DistanceConstraint, solve_constraints
 
-3D rendering with marching cubes showing primitives, transforms, and boolean operations:
+p = Vector([0.5, 0.5, 0.0], free=True, name='p')
+scene = Translate(Sphere(radius=0.5), offset=p)
 
-```bash
-python examples/01_primitives_and_transforms.py
+anchor_a = Vector([0.0, 0.0, 0.0], free=False, name='a')
+anchor_b = Vector([4.0, 0.0, 0.0], free=False, name='b')
+anchor_c = Vector([2.0, 3.0, 0.0], free=False, name='c')
+
+DistanceConstraint(p, anchor_a, 2.236)
+DistanceConstraint(p, anchor_b, 2.236)
+DistanceConstraint(p, anchor_c, 2.0)
+
+solved = solve_constraints(scene)
 ```
 
-![Primitives and Transforms](examples/output/primitives_and_transforms.png)
+---
 
-### End-to-End Optimization
-
-Complete pipeline from parametric geometry to gradient-based optimization:
-
-```bash
-python examples/02_end_to_end_optimization.py
-```
-
-![End-to-End Optimization](examples/output/end_to_end_optimization.png)
-
-### Layered Construction
-
-Full workflow demonstrating all layers working together:
-
-```bash
-python examples/layered_construction_demo.py
-```
-
-## Installation
-
-```bash
-git clone https://github.com/yourusername/jaxcad.git
-cd jaxcad
-uv sync  # or: pip install -e .
-```
-
-Requires: Python 3.10+, JAX, NumPy, Matplotlib, scikit-image
-
-## Testing
-
-```bash
-# Run all tests (161 tests)
-JAX_PLATFORMS=cpu uv run pytest tests/ -v
-
-# Run by layer
-pytest tests/geometry/       # 36 tests
-pytest tests/constraints/    # 42 tests
-pytest tests/construction/   # 23 tests
-pytest tests/compiler/       # 10 tests
-pytest tests/test_integration_e2e.py  # 9 tests
-```
-
-## Roadmap
-
-- [x] Layered architecture (geometry, constraints, construction, compiler, SDF)
-- [x] Parametric system with free/fixed parameters
-- [x] Geometric constraints (distance, angle, parallel, perpendicular)
-- [x] Construction functions (extrude, from_line, from_circle, from_point)
-- [x] JAX compilation and automatic differentiation
-- [x] 3D rendering with marching cubes
-- [ ] Transform system fully integrated with construction
-- [ ] More geometric primitives (Polygon, Bezier curves)
-- [ ] Shader compilation (JAX → StableHLO → GLSL)
-- [ ] Real-time GPU rendering
-- [ ] Advanced constraints (tangent, coincident)
-- [ ] Mesh export (STL, OBJ)
-
-## Acknowledgments
-
-Inspired by [Fidget](https://www.mattkeeter.com/projects/fidget/) by Matt Keeter and [Inigo Quilez's distance functions](https://iquilezles.org/articles/distfunctions/)
-
-## License
-
-MIT License - see LICENSE file for details
+Inspired by [Fidget](https://www.mattkeeter.com/projects/fidget/) and [Inigo Quilez's distance functions](https://iquilezles.org/articles/distfunctions/).

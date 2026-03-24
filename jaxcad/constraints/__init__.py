@@ -30,15 +30,19 @@ Example:
 
 from __future__ import annotations
 
+from jaxcad.constraints.angle import AngleConstraint
+
 # Import all constraint types
 from jaxcad.constraints.base import Constraint
 from jaxcad.constraints.distance import DistanceConstraint
-from jaxcad.constraints.angle import AngleConstraint
+from jaxcad.constraints.graph import ConstraintGraph
 from jaxcad.constraints.parallel import ParallelConstraint
 from jaxcad.constraints.perpendicular import PerpendicularConstraint
-from jaxcad.constraints.graph import ConstraintGraph
-from jaxcad.constraints.solve import solve_constraints, newton_raphson
+from jaxcad.constraints.solve import newton_raphson, solve_constraints
 from jaxcad.extraction import extract_parameters_with_constraints
+
+# Re-export parameter types for convenience
+from jaxcad.geometry.parameters import Parameter, Scalar, Vector
 
 # Convenience aliases (for backward compatibility with planned API)
 Distance = DistanceConstraint
@@ -46,34 +50,31 @@ Angle = AngleConstraint
 Parallel = ParallelConstraint
 Perpendicular = PerpendicularConstraint
 
-# Re-export parameter types for convenience
-from jaxcad.geometry.parameters import Parameter, Scalar, Vector
-
 # Type alias for Point (just a Vector)
 Point = Vector
 
 __all__ = [
     # Base class
-    'Constraint',
+    "Constraint",
     # Constraint types
-    'DistanceConstraint',
-    'AngleConstraint',
-    'ParallelConstraint',
-    'PerpendicularConstraint',
+    "DistanceConstraint",
+    "AngleConstraint",
+    "ParallelConstraint",
+    "PerpendicularConstraint",
     # Graph
-    'ConstraintGraph',
+    "ConstraintGraph",
     # Solver
-    'solve_constraints',
-    'newton_raphson',
-    'extract_parameters_with_constraints',
+    "solve_constraints",
+    "newton_raphson",
+    "extract_parameters_with_constraints",
     # Aliases
-    'Distance',
-    'Angle',
-    'Parallel',
-    'Perpendicular',
+    "Distance",
+    "Angle",
+    "Parallel",
+    "Perpendicular",
     # Re-exports
-    'Parameter',
-    'Scalar',
-    'Vector',
-    'Point',
+    "Parameter",
+    "Scalar",
+    "Vector",
+    "Point",
 ]

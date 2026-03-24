@@ -9,7 +9,7 @@ import jax
 import jax.numpy as jnp
 
 from jaxcad.sdf.primitives import Box, Sphere
-from jaxcad.sdf.transforms import Translate, Rotate, Scale, Twist
+from jaxcad.sdf.transforms import Rotate, Translate, Twist
 
 
 def test_translate_gradient_functional():
@@ -90,7 +90,7 @@ def test_optimization_example_functional():
     def loss_fn(offset):
         # Want the sphere surface to pass through target_point
         distance = Translate.sdf(sphere, target_point, offset)
-        return distance ** 2
+        return distance**2
 
     # Start with initial guess
     offset = jnp.array([0.0, 0.0, 0.0])

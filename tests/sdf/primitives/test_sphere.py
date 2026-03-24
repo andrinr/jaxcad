@@ -1,20 +1,23 @@
 """Tests for Sphere SDF primitive."""
 
-import pytest
 import jax.numpy as jnp
+import pytest
 
 from jaxcad.sdf.primitives import Sphere
 
 
-@pytest.mark.parametrize("radius,point,expected_sign", [
-    (1.0, [0.0, 0.0, 0.0], "negative"),  # Center
-    (1.0, [1.0, 0.0, 0.0], "zero"),      # Surface (x-axis)
-    (1.0, [0.0, 1.0, 0.0], "zero"),      # Surface (y-axis)
-    (1.0, [0.0, 0.0, 1.0], "zero"),      # Surface (z-axis)
-    (1.0, [2.0, 0.0, 0.0], "positive"),  # Outside
-    (2.5, [0.0, 0.0, 0.0], "negative"),  # Larger radius, center
-    (2.5, [2.5, 0.0, 0.0], "zero"),      # Larger radius, surface
-])
+@pytest.mark.parametrize(
+    "radius,point,expected_sign",
+    [
+        (1.0, [0.0, 0.0, 0.0], "negative"),  # Center
+        (1.0, [1.0, 0.0, 0.0], "zero"),  # Surface (x-axis)
+        (1.0, [0.0, 1.0, 0.0], "zero"),  # Surface (y-axis)
+        (1.0, [0.0, 0.0, 1.0], "zero"),  # Surface (z-axis)
+        (1.0, [2.0, 0.0, 0.0], "positive"),  # Outside
+        (2.5, [0.0, 0.0, 0.0], "negative"),  # Larger radius, center
+        (2.5, [2.5, 0.0, 0.0], "zero"),  # Larger radius, surface
+    ],
+)
 def test_sphere_distance(radius, point, expected_sign):
     """Test that sphere SDF returns correct sign."""
     sphere = Sphere(radius=radius)

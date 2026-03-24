@@ -7,13 +7,11 @@ dimensions (width and height), and an orientation (normal vector).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Union
 
 import jax.numpy as jnp
 from jax import Array
 
-from jaxcad.geometry.parameters import Vector, Scalar
-from jaxcad.geometry.parameters import as_parameter
+from jaxcad.geometry.parameters import Scalar, Vector, as_parameter
 
 
 @dataclass
@@ -87,8 +85,7 @@ class Rectangle:
         v = jnp.cross(self.normal.xyz, u)
         self.v_axis = as_parameter(v).normalize()  # Direction vector (w=0)
 
-
-    def sample(self, u: Union[float, Array], v: Union[float, Array]) -> Array:
+    def sample(self, u: float | Array, v: float | Array) -> Array:
         """Sample point on the rectangle at parameters (u, v).
 
         Args:
@@ -139,7 +136,6 @@ class Rectangle:
             Array of shape (4, 3) with corner positions
         """
         return jnp.stack([self.corner(i) for i in range(4)])
-
 
     def __repr__(self) -> str:
         return f"Rectangle(center={self.center.xyz}, width={self.width.value}, height={self.height.value})"

@@ -37,11 +37,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install ruff
-        run: pip install ruff
+      - name: Install pre-commit
+        run: pip install pre-commit
 
-      - name: Lint
-        run: ruff check .
-
-      - name: Format check
-        run: ruff format --check .
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files

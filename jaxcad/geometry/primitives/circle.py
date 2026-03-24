@@ -7,13 +7,12 @@ and normal vector defining the plane orientation.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Union
 
 import jax
 import jax.numpy as jnp
 from jax import Array
 
-from jaxcad.geometry.parameters import Vector, Scalar, as_parameter
+from jaxcad.geometry.parameters import Scalar, Vector, as_parameter
 
 
 @dataclass
@@ -83,7 +82,7 @@ class Circle:
         v = jnp.cross(self.normal.xyz, u)
         self.v_axis = as_parameter(v).normalize()
 
-    def sample(self, theta: Union[float, Array]) -> Array:
+    def sample(self, theta: float | Array) -> Array:
         """Sample point on the circle at angle theta.
 
         Args:
@@ -116,7 +115,7 @@ class Circle:
         theta = jnp.linspace(0, 2 * jnp.pi, n_points, endpoint=False)
         return jax.vmap(self.sample)(theta)
 
-    def tangent(self, theta: Union[float, Array]) -> Array:
+    def tangent(self, theta: float | Array) -> Array:
         """Get the tangent vector at angle theta.
 
         Args:
@@ -140,7 +139,7 @@ class Circle:
         Returns:
             Area: π * r²
         """
-        return jnp.pi * self.radius.value ** 2
+        return jnp.pi * self.radius.value**2
 
     def circumference(self) -> float:
         """Get the circumference of the circle.

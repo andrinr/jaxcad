@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Union
+from typing import TYPE_CHECKING
 
 import jax.numpy as jnp
 
-from jaxcad.geometry.parameters import Vector, Scalar, as_parameter
+from jaxcad.geometry.parameters import Scalar, Vector, as_parameter
 from jaxcad.geometry.primitives import Rectangle
 
+if TYPE_CHECKING:
+    from jaxcad.sdf.primitives.box import Box
 
-def extrude(rectangle: Rectangle, depth: Union[float, Scalar]) -> 'Box':
+
+def extrude(rectangle: Rectangle, depth: float | Scalar) -> Box:
     """Extrude a rectangle to create an oriented box.
 
     The box is centered on the rectangle's plane and extends depth/2 in each
@@ -42,11 +45,7 @@ def extrude(rectangle: Rectangle, depth: Union[float, Scalar]) -> 'Box':
     # proper coordinate frame handling for arbitrary rectangle orientations
 
     # Create size vector
-    size_xyz = jnp.array([
-        rectangle.width.value / 2,
-        rectangle.height.value / 2,
-        depth.value / 2
-    ])
+    size_xyz = jnp.array([rectangle.width.value / 2, rectangle.height.value / 2, depth.value / 2])
 
     size = Vector(value=size_xyz, free=False, name=f"{rectangle.center.name}_box_size")
 
@@ -55,6 +54,6 @@ def extrude(rectangle: Rectangle, depth: Union[float, Scalar]) -> 'Box':
 
     # Store reference to source geometry for potential future use
     box._source_geometry = rectangle
-    box._construction_method = 'extrude'
+    box._construction_method = "extrude"
 
     return box

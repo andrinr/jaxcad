@@ -16,13 +16,13 @@ Functions:
 from __future__ import annotations
 
 from jaxcad.construction.extrude import extrude
-from jaxcad.construction.from_line import from_line
 from jaxcad.construction.from_circle import from_circle
+from jaxcad.construction.from_line import from_line
 from jaxcad.construction.from_point import from_point
 
 __all__ = [
-    'extrude',
-    'from_line',
-    'from_circle',
-    'from_point',
+    "extrude",
+    "from_line",
+    "from_circle",
+    "from_point",
 ]

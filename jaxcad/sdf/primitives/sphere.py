@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Union
-
 import jax.numpy as jnp
 from jax import Array
 
@@ -40,8 +38,8 @@ class Sphere(Primitive):
         distance = Sphere.sdf(point, radius=1.0)
     """
 
-    def __init__(self, radius: Union[float, Scalar]):
-        self.params = {'radius': radius}
+    def __init__(self, radius: float | Scalar):
+        self.params = {"radius": radius}
 
     @staticmethod
     def sdf(p: Array, radius: float) -> Array:
@@ -64,7 +62,7 @@ class Sphere(Primitive):
 
         Delegates to the pure function with stored parameters.
         """
-        return Sphere.sdf(p, self.params['radius'].value)
+        return Sphere.sdf(p, self.params["radius"].value)
 
     def to_functional(self):
         """Return pure function for compilation.

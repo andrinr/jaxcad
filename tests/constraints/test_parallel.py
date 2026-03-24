@@ -1,26 +1,29 @@
 """Tests for ParallelConstraint."""
 
-import pytest
 import jax.numpy as jnp
+import pytest
 
-from jaxcad.geometry.parameters import Vector
 from jaxcad.constraints import ParallelConstraint
+from jaxcad.geometry.parameters import Vector
 
 
-@pytest.mark.parametrize("v1_xyz,v2_xyz,is_satisfied", [
-    ([1, 0, 0], [2, 0, 0], True),  # Parallel
-    ([1, 0, 0], [-3, 0, 0], True),  # Anti-parallel
-    ([0, 1, 0], [0, 5, 0], True),  # Different magnitude
-    ([1, 0, 0], [0, 1, 0], False),  # Perpendicular
-    ([1, 1, 0], [1, 0, 0], False),  # Not parallel
-])
+@pytest.mark.parametrize(
+    "v1_xyz,v2_xyz,is_satisfied",
+    [
+        ([1, 0, 0], [2, 0, 0], True),  # Parallel
+        ([1, 0, 0], [-3, 0, 0], True),  # Anti-parallel
+        ([0, 1, 0], [0, 5, 0], True),  # Different magnitude
+        ([1, 0, 0], [0, 1, 0], False),  # Perpendicular
+        ([1, 1, 0], [1, 0, 0], False),  # Not parallel
+    ],
+)
 def test_parallel_constraint_residual(v1_xyz, v2_xyz, is_satisfied):
     """Test that parallel constraint residual is correct."""
-    v1 = Vector(v1_xyz, free=True, name='v1')
-    v2 = Vector(v2_xyz, free=True, name='v2')
+    v1 = Vector(v1_xyz, free=True, name="v1")
+    v2 = Vector(v2_xyz, free=True, name="v2")
 
     constraint = ParallelConstraint(v1, v2)
-    param_values = {'v1': v1.xyz, 'v2': v2.xyz}
+    param_values = {"v1": v1.xyz, "v2": v2.xyz}
 
     residual = constraint.compute_residual(param_values)
 
@@ -33,8 +36,8 @@ def test_parallel_constraint_residual(v1_xyz, v2_xyz, is_satisfied):
 
 def test_parallel_constraint_dof_reduction():
     """Test that parallel constraint reduces DOF by 2."""
-    v1 = Vector([1, 0, 0], free=True, name='v1')
-    v2 = Vector([2, 0, 0], free=True, name='v2')
+    v1 = Vector([1, 0, 0], free=True, name="v1")
+    v2 = Vector([2, 0, 0], free=True, name="v2")
 
     constraint = ParallelConstraint(v1, v2)
 
@@ -43,8 +46,8 @@ def test_parallel_constraint_dof_reduction():
 
 def test_parallel_constraint_get_parameters():
     """Test that get_parameters returns both vectors."""
-    v1 = Vector([1, 0, 0], free=True, name='v1')
-    v2 = Vector([2, 0, 0], free=True, name='v2')
+    v1 = Vector([1, 0, 0], free=True, name="v1")
+    v2 = Vector([2, 0, 0], free=True, name="v2")
 
     constraint = ParallelConstraint(v1, v2)
     params = constraint.get_parameters()

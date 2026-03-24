@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Dict
 
 import jax.numpy as jnp
 from jax import Array
 
-from jaxcad.geometry.parameters import Vector, Scalar, Parameter
 from jaxcad.constraints.base import Constraint
+from jaxcad.geometry.parameters import Parameter, Scalar, Vector
 
 
 @dataclass
@@ -40,20 +39,21 @@ class AngleConstraint(Constraint):
     def __post_init__(self):
         """Convert angle to Scalar and populate params dict."""
         from jaxcad.geometry.parameters import as_parameter
+
         if not isinstance(self.angle, Scalar):
             self.angle = as_parameter(self.angle)
 
         # Store in params dict for Fluent pattern
         self.params = {
-            'vector1': self.vector1,
-            'vector2': self.vector2,
-            'angle': self.angle,
+            "vector1": self.vector1,
+            "vector2": self.vector2,
+            "angle": self.angle,
         }
 
         # Register constraint on parameters
         self._register_constraint()
 
-    def compute_residual(self, param_values: Dict[str, Array]) -> Array:
+    def compute_residual(self, param_values: dict[str, Array]) -> Array:
         """Compute angle constraint residual: arccos(v1·v2/(||v1||||v2||)) - θ.
 
         Args:
@@ -86,7 +86,7 @@ class AngleConstraint(Constraint):
         """Angle constraint adds 1 scalar equation, reducing DOF by 1."""
         return 1
 
-    def get_parameters(self) -> List[Parameter]:
+    def get_parameters(self) -> list[Parameter]:
         """Return both vectors involved in the angle constraint."""
         return [self.vector1, self.vector2]
 

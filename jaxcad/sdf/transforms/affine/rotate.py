@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Union
-
 import jax.numpy as jnp
 from jax import Array
 
-from jaxcad.geometry.parameters import Vector, Scalar
+from jaxcad.geometry.parameters import Scalar, Vector
 from jaxcad.sdf import SDF
 from jaxcad.sdf.transforms.base import Transform
 
@@ -21,20 +19,17 @@ class Rotate(Transform):
         angle: Rotation angle in radians (float or Scalar parameter)
     """
 
-    def __init__(self, sdf: SDF, axis: Union[str, Array, Vector], angle: Union[float, Scalar]):
+    def __init__(self, sdf: SDF, axis: str | Array | Vector, angle: float | Scalar):
         self.sdf = sdf
         # Convert string axis to vector before auto-cast
         if isinstance(axis, str):
             axis_map = {
-                'x': jnp.array([1.0, 0.0, 0.0]),
-                'y': jnp.array([0.0, 1.0, 0.0]),
-                'z': jnp.array([0.0, 0.0, 1.0])
+                "x": jnp.array([1.0, 0.0, 0.0]),
+                "y": jnp.array([0.0, 1.0, 0.0]),
+                "z": jnp.array([0.0, 0.0, 1.0]),
             }
             axis = axis_map.get(axis.lower(), jnp.array([0.0, 0.0, 1.0]))
-        self.params = {
-            'axis': axis,
-            'angle': angle
-        }
+        self.params = {"axis": axis, "angle": angle}
 
     @staticmethod
     def sdf(child_sdf, p: Array, axis: Array, angle: float) -> Array:
@@ -58,23 +53,22 @@ class Rotate(Transform):
         x, y, z = axis[0], axis[1], axis[2]
 
         # Build rotation matrix
-        R = jnp.array([
-            [t*x*x + c,   t*x*y - s*z, t*x*z + s*y],
-            [t*x*y + s*z, t*y*y + c,   t*y*z - s*x],
-            [t*x*z - s*y, t*y*z + s*x, t*z*z + c]
-        ])
+        R = jnp.array(
+            [
+                [t * x * x + c, t * x * y - s * z, t * x * z + s * y],
+                [t * x * y + s * z, t * y * y + c, t * y * z - s * x],
+                [t * x * z - s * y, t * y * z + s * x, t * z * z + c],
+            ]
+        )
 
         # Apply inverse rotation to point
-        if p.ndim == 1:
-            p_rotated = R.T @ p
-        else:
-            p_rotated = jnp.einsum('ij,...j->...i', R.T, p)
+        p_rotated = R.T @ p if p.ndim == 1 else jnp.einsum("ij,...j->...i", R.T, p)
 
         return child_sdf(p_rotated)
 
     def __call__(self, p: Array) -> Array:
         """Evaluate rotated SDF."""
-        return Rotate.sdf(self.sdf, p, self.params['axis'].xyz, self.params['angle'].value)
+        return Rotate.sdf(self.sdf, p, self.params["axis"].xyz, self.params["angle"].value)
 
     def to_functional(self):
         """Return pure function for compilation."""

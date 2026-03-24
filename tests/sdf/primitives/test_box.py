@@ -1,19 +1,22 @@
 """Tests for Box SDF primitive."""
 
-import pytest
 import jax.numpy as jnp
+import pytest
 
 from jaxcad.sdf.primitives import Box
 
 
-@pytest.mark.parametrize("size,point,expected_sign", [
-    ([1.0, 1.0, 1.0], [0.0, 0.0, 0.0], "negative"),  # Center
-    ([1.0, 1.0, 1.0], [1.0, 1.0, 1.0], "zero"),      # Corner
-    ([1.0, 1.0, 1.0], [1.0, 0.0, 0.0], "zero"),      # Face center
-    ([1.0, 1.0, 1.0], [2.0, 0.0, 0.0], "positive"),  # Outside
-    ([2.0, 1.0, 0.5], [0.0, 0.0, 0.0], "negative"),  # Different sizes, center
-    ([2.0, 1.0, 0.5], [2.0, 1.0, 0.5], "zero"),      # Different sizes, corner
-])
+@pytest.mark.parametrize(
+    "size,point,expected_sign",
+    [
+        ([1.0, 1.0, 1.0], [0.0, 0.0, 0.0], "negative"),  # Center
+        ([1.0, 1.0, 1.0], [1.0, 1.0, 1.0], "zero"),  # Corner
+        ([1.0, 1.0, 1.0], [1.0, 0.0, 0.0], "zero"),  # Face center
+        ([1.0, 1.0, 1.0], [2.0, 0.0, 0.0], "positive"),  # Outside
+        ([2.0, 1.0, 0.5], [0.0, 0.0, 0.0], "negative"),  # Different sizes, center
+        ([2.0, 1.0, 0.5], [2.0, 1.0, 0.5], "zero"),  # Different sizes, corner
+    ],
+)
 def test_box_distance(size, point, expected_sign):
     """Test that box SDF returns correct sign."""
     box = Box(size=jnp.array(size))

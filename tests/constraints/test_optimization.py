@@ -1,18 +1,18 @@
 """Tests for constraint integration with optimization."""
 
-import pytest
 import jax
 import jax.numpy as jnp
+import pytest
 
-from jaxcad.geometry.parameters import Vector
 from jaxcad.constraints import ConstraintGraph, DistanceConstraint
+from jaxcad.geometry.parameters import Vector
 
 
 def test_constrained_optimization_gradient_flow():
     """Test that gradients flow correctly through constrained optimization."""
     # Two points that should maintain distance 1.0
-    p1 = Vector([0, 0, 0], free=True, name='p1')
-    p2 = Vector([1, 0, 0], free=True, name='p2')
+    p1 = Vector([0, 0, 0], free=True, name="p1")
+    p2 = Vector([1, 0, 0], free=True, name="p2")
 
     graph = ConstraintGraph()
     graph.add_constraint(DistanceConstraint(p1, p2, 1.0))
@@ -57,9 +57,9 @@ def test_constrained_optimization_gradient_flow():
 def test_constraint_preserves_dof_in_optimization():
     """Test that constraints correctly reduce DOF during optimization."""
     # Three points with two distance constraints
-    p1 = Vector([0, 0, 0], free=True, name='p1')
-    p2 = Vector([1, 0, 0], free=True, name='p2')
-    p3 = Vector([0.5, 0.5, 0], free=True, name='p3')
+    p1 = Vector([0, 0, 0], free=True, name="p1")
+    p2 = Vector([1, 0, 0], free=True, name="p2")
+    p3 = Vector([0.5, 0.5, 0], free=True, name="p3")
 
     graph = ConstraintGraph()
     graph.add_constraint(DistanceConstraint(p1, p2, 1.0))
@@ -90,8 +90,8 @@ def test_constraint_preserves_dof_in_optimization():
 @pytest.mark.parametrize("learning_rate", [0.01, 0.05, 0.1])
 def test_optimization_convergence_with_learning_rate(learning_rate):
     """Test optimization convergence with different learning rates."""
-    p1 = Vector([0, 0, 0], free=True, name='p1')
-    p2 = Vector([1, 0, 0], free=True, name='p2')
+    p1 = Vector([0, 0, 0], free=True, name="p1")
+    p2 = Vector([1, 0, 0], free=True, name="p2")
 
     graph = ConstraintGraph()
     graph.add_constraint(DistanceConstraint(p1, p2, 1.0))

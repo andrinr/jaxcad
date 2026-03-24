@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Dict
 
 import jax.numpy as jnp
 from jax import Array
 
-from jaxcad.geometry.parameters import Vector, Parameter
 from jaxcad.constraints.base import Constraint
+from jaxcad.geometry.parameters import Parameter, Vector
 
 
 @dataclass
@@ -38,14 +37,14 @@ class PerpendicularConstraint(Constraint):
     def __post_init__(self):
         """Populate params dict."""
         self.params = {
-            'vector1': self.vector1,
-            'vector2': self.vector2,
+            "vector1": self.vector1,
+            "vector2": self.vector2,
         }
 
         # Register constraint on parameters
         self._register_constraint()
 
-    def compute_residual(self, param_values: Dict[str, Array]) -> Array:
+    def compute_residual(self, param_values: dict[str, Array]) -> Array:
         """Compute perpendicular constraint residual: v1 · v2.
 
         Two vectors are perpendicular iff their dot product is zero.
@@ -68,7 +67,7 @@ class PerpendicularConstraint(Constraint):
         # Dot product
         return jnp.dot(v1_val, v2_val)
 
-    def jacobian(self, param_values: Dict[str, Array]) -> Array:
+    def jacobian(self, param_values: dict[str, Array]) -> Array:
         """Compute Jacobian of perpendicular constraint.
 
         For v1 · v2 = 0:
@@ -97,7 +96,7 @@ class PerpendicularConstraint(Constraint):
         """Perpendicular constraint adds 1 scalar equation."""
         return 1
 
-    def get_parameters(self) -> List[Parameter]:
+    def get_parameters(self) -> list[Parameter]:
         """Return both vectors involved in the perpendicular constraint."""
         return [self.vector1, self.vector2]
 

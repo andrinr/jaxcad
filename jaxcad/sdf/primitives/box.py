@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Union
-
 import jax.numpy as jnp
 from jax import Array
 
@@ -22,7 +20,7 @@ class Box(Primitive):
     """
 
     def __init__(self, size: Vector):
-        self.params = {'size': size}
+        self.params = {"size": size}
 
     @staticmethod
     def sdf(p: Array, size: Array) -> Array:
@@ -36,12 +34,11 @@ class Box(Primitive):
             Signed distance to box
         """
         q = jnp.abs(p) - size
-        return (jnp.linalg.norm(jnp.maximum(q, 0.0), axis=-1) +
-                jnp.minimum(jnp.max(q, axis=-1), 0.0))
+        return jnp.linalg.norm(jnp.maximum(q, 0.0), axis=-1) + jnp.minimum(jnp.max(q, axis=-1), 0.0)
 
     def __call__(self, p: Array) -> Array:
         """Evaluate SDF at point(s) p."""
-        return Box.sdf(p, self.params['size'].xyz)
+        return Box.sdf(p, self.params["size"].xyz)
 
     def to_functional(self):
         """Return pure function for compilation."""

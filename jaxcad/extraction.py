@@ -1,6 +1,6 @@
 """Parameter extraction from SDF trees."""
 
-from typing import Any, Dict
+from typing import Any
 
 import jax.numpy as jnp
 from jax import Array
@@ -8,7 +8,7 @@ from jax import Array
 from jaxcad.sdf import SDF
 
 
-def extract_parameters(sdf: SDF) -> tuple[Dict[str, Any], Dict[str, Any]]:
+def extract_parameters(sdf: SDF) -> tuple[dict[str, Any], dict[str, Any]]:
     """Extract free and fixed parameters from an SDF tree.
 
     Args:
@@ -19,19 +19,19 @@ def extract_parameters(sdf: SDF) -> tuple[Dict[str, Any], Dict[str, Any]]:
         parameter paths to Parameter objects.
         Parameter paths are in format: "node_id.param_name" (e.g., "sphere_0.radius")
     """
-    from jaxcad.sdf.transforms.base import Transform
     from jaxcad.sdf.boolean.base import BooleanOp
+    from jaxcad.sdf.transforms.base import Transform
 
     free_params = {}
     fixed_params = {}
-    node_counter = {'count': 0}
+    node_counter = {"count": 0}
 
     def walk(obj: SDF) -> None:
         class_name = obj.__class__.__name__.lower()
         node_id = f"{class_name}_{node_counter['count']}"
-        node_counter['count'] += 1
+        node_counter["count"] += 1
 
-        if hasattr(obj, 'params'):
+        if hasattr(obj, "params"):
             for param_name, param in obj.params.items():
                 param_path = f"{node_id}.{param_name}"
                 if param.free:
@@ -76,7 +76,7 @@ def extract_parameters_with_constraints(
             ...
     """
     from jaxcad.constraints.graph import ConstraintGraph
-    from jaxcad.geometry.parameters import Vector, Scalar
+    from jaxcad.geometry.parameters import Scalar, Vector
 
     free_params_dict, _ = extract_parameters(sdf)
 

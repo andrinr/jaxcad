@@ -1,7 +1,6 @@
 """Tests for boolean operations."""
 
 import jax.numpy as jnp
-import pytest
 
 from jaxcad.sdf.boolean import Difference, Intersection, Union
 from jaxcad.sdf.primitives import Box, Sphere

@@ -7,7 +7,6 @@ from jax import Array
 
 from jaxcad.sdf.boolean.base import BooleanOp
 from jaxcad.sdf.boolean.smooth import smooth_max
-from jaxcad.sdf import SDF
 
 
 class Difference(BooleanOp):
@@ -24,7 +23,7 @@ class Difference(BooleanOp):
         if len(sdfs) == 1 and isinstance(sdfs[0], (tuple, list)):
             sdfs = tuple(sdfs[0])
         self.sdfs = sdfs
-        self.params = {'smoothness': smoothness}
+        self.params = {"smoothness": smoothness}
 
     @staticmethod
     def sdf(child_sdfs, p: Array, smoothness: float) -> Array:
@@ -41,12 +40,14 @@ class Difference(BooleanOp):
         result = child_sdfs[0](p)
         for child in child_sdfs[1:]:
             d = child(p)
-            result = jnp.where(smoothness > 0, smooth_max(result, -d, smoothness), jnp.maximum(result, -d))
+            result = jnp.where(
+                smoothness > 0, smooth_max(result, -d, smoothness), jnp.maximum(result, -d)
+            )
         return result
 
     def __call__(self, p: Array) -> Array:
         """Difference: subtract all subsequent SDFs from first"""
-        return Difference.sdf(self.sdfs, p, self.params['smoothness'].value)
+        return Difference.sdf(self.sdfs, p, self.params["smoothness"].value)
 
     def to_functional(self):
         """Return pure function for compilation."""

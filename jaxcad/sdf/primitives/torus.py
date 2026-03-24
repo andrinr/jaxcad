@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Union
-
 import jax.numpy as jnp
 from jax import Array
 
@@ -19,8 +17,8 @@ class Torus(Primitive):
         minor_radius: Tube radius (float or Scalar)
     """
 
-    def __init__(self, major_radius: Union[float, Scalar], minor_radius: Union[float, Scalar]):
-        self.params = {'major_radius': major_radius, 'minor_radius': minor_radius}
+    def __init__(self, major_radius: float | Scalar, minor_radius: float | Scalar):
+        self.params = {"major_radius": major_radius, "minor_radius": minor_radius}
 
     @staticmethod
     def sdf(p: Array, major_radius: float, minor_radius: float) -> Array:
@@ -40,7 +38,7 @@ class Torus(Primitive):
 
     def __call__(self, p: Array) -> Array:
         """Evaluate SDF at point(s) p."""
-        return Torus.sdf(p, self.params['major_radius'].value, self.params['minor_radius'].value)
+        return Torus.sdf(p, self.params["major_radius"].value, self.params["minor_radius"].value)
 
     def to_functional(self):
         """Return pure function for compilation."""

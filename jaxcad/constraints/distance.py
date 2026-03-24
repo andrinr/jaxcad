@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Dict
 
 import jax.numpy as jnp
 from jax import Array
 
-from jaxcad.geometry.parameters import Vector, Scalar, Parameter
 from jaxcad.constraints.base import Constraint
+from jaxcad.geometry.parameters import Parameter, Scalar, Vector
 
 
 @dataclass
@@ -43,20 +42,21 @@ class DistanceConstraint(Constraint):
     def __post_init__(self):
         """Convert distance to Scalar and populate params dict."""
         from jaxcad.geometry.parameters import as_parameter
+
         if not isinstance(self.distance, Scalar):
             self.distance = as_parameter(self.distance)
 
         # Store in params dict for Fluent pattern
         self.params = {
-            'param1': self.param1,
-            'param2': self.param2,
-            'distance': self.distance,
+            "param1": self.param1,
+            "param2": self.param2,
+            "distance": self.distance,
         }
 
         # Register constraint on parameters
         self._register_constraint()
 
-    def compute_residual(self, param_values: Dict[str, Array]) -> Array:
+    def compute_residual(self, param_values: dict[str, Array]) -> Array:
         """Compute distance constraint residual: ||p1 - p2|| - d.
 
         Args:
@@ -86,9 +86,11 @@ class DistanceConstraint(Constraint):
         """Distance constraint adds 1 scalar equation, reducing DOF by 1."""
         return 1
 
-    def get_parameters(self) -> List[Parameter]:
+    def get_parameters(self) -> list[Parameter]:
         """Return both parameters involved in the distance constraint."""
         return [self.param1, self.param2]
 
     def __repr__(self) -> str:
-        return f"DistanceConstraint({self.param1.name}, {self.param2.name}, d={self.distance.value})"
+        return (
+            f"DistanceConstraint({self.param1.name}, {self.param2.name}, d={self.distance.value})"
+        )

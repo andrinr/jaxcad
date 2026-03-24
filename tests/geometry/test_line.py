@@ -1,6 +1,5 @@
 """Tests for Line geometric entity."""
 
-import pytest
 import jax.numpy as jnp
 
 from jaxcad.geometry.parameters import Vector
@@ -9,8 +8,8 @@ from jaxcad.geometry.primitives import Line
 
 def test_line_basic():
     """Test basic line creation."""
-    p1 = Vector([0, 0, 0], name='p1')
-    p2 = Vector([1, 0, 0], name='p2')
+    p1 = Vector([0, 0, 0], name="p1")
+    p2 = Vector([1, 0, 0], name="p2")
     line = Line(start=p1, end=p2)
 
     assert line.start is p1
@@ -124,15 +123,15 @@ def test_line_distance_to_point():
 
 def test_line_with_free_parameters():
     """Test line with free parameters."""
-    p1 = Vector([0, 0, 0], free=True, name='start')
-    p2 = Vector([1, 1, 1], free=True, name='end')
+    p1 = Vector([0, 0, 0], free=True, name="start")
+    p2 = Vector([1, 1, 1], free=True, name="end")
 
     line = Line(start=p1, end=p2)
 
     assert line.start.free
     assert line.end.free
-    assert line.start.name == 'start'
-    assert line.end.name == 'end'
+    assert line.start.name == "start"
+    assert line.end.name == "end"
 
 
 def test_line_degenerate():

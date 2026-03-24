@@ -8,7 +8,6 @@ for operations like Repeat.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Union
 
 import jax.numpy as jnp
 from jax import Array
@@ -58,7 +57,7 @@ class Line:
         self.start = as_parameter(self.start)
         self.end = as_parameter(self.end)
 
-    def sample(self, t: Union[float, Array]) -> Array:
+    def sample(self, t: float | Array) -> Array:
         """Sample point along the line at parameter t.
 
         Args:
@@ -103,7 +102,7 @@ class Line:
         """
         return (self.start.xyz + self.end.xyz) / 2
 
-    def tangent(self, t: Union[float, Array]) -> Array:
+    def tangent(self, _t: float | Array) -> Array:
         """Get the tangent vector at parameter t.
 
         For a line, the tangent is constant everywhere.

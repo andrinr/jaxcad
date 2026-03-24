@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Union
+from typing import TYPE_CHECKING
 
-from jaxcad.geometry.parameters import Vector, Scalar, as_parameter
+from jaxcad.geometry.parameters import Scalar, Vector, as_parameter
+
+if TYPE_CHECKING:
+    from jaxcad.sdf.primitives.sphere import Sphere
 
 
-def from_point(point: Vector, radius: Union[float, Scalar]) -> 'Sphere':
+def from_point(point: Vector, radius: float | Scalar) -> Sphere:
     """Create a sphere centered at a point.
 
     Args:
@@ -32,6 +35,6 @@ def from_point(point: Vector, radius: Union[float, Scalar]) -> 'Sphere':
 
     # Store reference to source geometry
     sphere._source_point = point
-    sphere._construction_method = 'from_point'
+    sphere._construction_method = "from_point"
 
     return sphere

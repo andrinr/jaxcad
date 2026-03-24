@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Union
-
 import jax.numpy as jnp
 from jax import Array
 
@@ -23,12 +21,12 @@ class Scale(Transform):
         scale: Per-axis scale as Array [sx, sy, sz], Vector parameter, or float for uniform scaling
     """
 
-    def __init__(self, sdf: SDF, scale: Union[float, Array, Vector]):
+    def __init__(self, sdf: SDF, scale: float | Array | Vector):
         self.sdf = sdf
         # Convert scalar to uniform 3D scale vector before auto-cast
         if isinstance(scale, (int, float)):
             scale = jnp.array([scale, scale, scale])
-        self.params = {'scale': scale}
+        self.params = {"scale": scale}
 
     @staticmethod
     def sdf(child_sdf, p: Array, scale: Array) -> Array:
@@ -57,7 +55,7 @@ class Scale(Transform):
 
     def __call__(self, p: Array) -> Array:
         """Evaluate scaled SDF."""
-        return Scale.sdf(self.sdf, p, self.params['scale'].xyz)
+        return Scale.sdf(self.sdf, p, self.params["scale"].xyz)
 
     def to_functional(self):
         """Return pure function for compilation."""

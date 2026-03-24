@@ -1,6 +1,6 @@
 """Compilation of SDF trees to pure JAX functions."""
 
-from typing import Any, Callable, Dict
+from typing import Any, Callable
 
 import jax.numpy as jnp
 from jax import Array
@@ -37,15 +37,16 @@ def functionalize(sdf: SDF) -> Callable:
         >>> fixed_vals = {}
         >>> distance = sdf_fn(free_vals, fixed_vals)(jnp.array([0., 0., 0.]))
     """
+    from jaxcad.sdf.boolean.base import BooleanOp
     from jaxcad.sdf.primitives.base import Primitive
     from jaxcad.sdf.transforms.base import Transform
-    from jaxcad.sdf.boolean.base import BooleanOp
 
-    node_counter = {'count': 0}
+    node_counter = {"count": 0}
 
     def extract_value(val: Any) -> Any:
         """Extract raw numeric value from Parameter or pass through raw values."""
         from jaxcad.geometry.parameters import Parameter
+
         if isinstance(val, Parameter):
             return val.extract_value()
         return val
@@ -55,7 +56,7 @@ def functionalize(sdf: SDF) -> Callable:
         # Generate node ID for parameter lookup
         class_name = obj.__class__.__name__.lower()
         node_id = f"{class_name}_{node_counter['count']}"
-        node_counter['count'] += 1
+        node_counter["count"] += 1
 
         # Get the pure SDF function for this class
         pure_sdf = obj.__class__.sdf
@@ -66,10 +67,10 @@ def functionalize(sdf: SDF) -> Callable:
             params_snapshot = obj.params
             current_node_id = node_id
 
-            def eval_primitive(p: Array, free_params: Dict, fixed_params: Dict) -> Array:
+            def eval_primitive(p: Array, free_params: dict, fixed_params: dict) -> Array:
                 # Collect parameter values from both dicts
                 param_values = {}
-                for param_name in params_snapshot.keys():
+                for param_name in params_snapshot:
                     param_path = f"{current_node_id}.{param_name}"
                     if param_path in free_params:
                         param_values[param_name] = extract_value(free_params[param_path])
@@ -85,10 +86,10 @@ def functionalize(sdf: SDF) -> Callable:
             params_snapshot = obj.params
             current_node_id = node_id
 
-            def eval_transform(p: Array, free_params: Dict, fixed_params: Dict) -> Array:
+            def eval_transform(p: Array, free_params: dict, fixed_params: dict) -> Array:
                 # Collect parameter values
                 param_values = {}
-                for param_name in params_snapshot.keys():
+                for param_name in params_snapshot:
                     param_path = f"{current_node_id}.{param_name}"
                     if param_path in free_params:
                         param_values[param_name] = extract_value(free_params[param_path])
@@ -96,7 +97,9 @@ def functionalize(sdf: SDF) -> Callable:
                         param_values[param_name] = extract_value(fixed_params[param_path])
 
                 # Call child function with parameters
-                child_eval = lambda p_inner: child_fn(p_inner, free_params, fixed_params)
+                def child_eval(p_inner):
+                    return child_fn(p_inner, free_params, fixed_params)
+
                 return pure_sdf(child_eval, p, **param_values)
 
             return eval_transform
@@ -107,10 +110,17 @@ def functionalize(sdf: SDF) -> Callable:
             params_snapshot = obj.params
             current_node_id = node_id
 
-            def eval_boolean(p: Array, free_params: Dict, fixed_params: Dict, _child_fns=child_fns, _params=params_snapshot, _node_id=current_node_id) -> Array:
+            def eval_boolean(
+                p: Array,
+                free_params: dict,
+                fixed_params: dict,
+                _child_fns=child_fns,
+                _params=params_snapshot,
+                _node_id=current_node_id,
+            ) -> Array:
                 # Collect parameter values
                 param_values = {}
-                for param_name in _params.keys():
+                for param_name in _params:
                     param_path = f"{_node_id}.{param_name}"
                     if param_path in free_params:
                         param_values[param_name] = extract_value(free_params[param_path])

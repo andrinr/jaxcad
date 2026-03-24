@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import List, Tuple, Dict, Optional
 import warnings
+from dataclasses import dataclass, field
 
 import jax.numpy as jnp
 from jax import Array
 
-from jaxcad.geometry.parameters import Parameter, Scalar, Vector
 from jaxcad.constraints.base import Constraint
+from jaxcad.geometry.parameters import Parameter, Scalar, Vector
 
 
 @dataclass
@@ -40,10 +39,10 @@ class ConstraintGraph:
         # reduced_params has 5 DOF instead of 6
     """
 
-    constraints: List[Constraint] = field(default_factory=list)
+    constraints: list[Constraint] = field(default_factory=list)
 
     @classmethod
-    def from_parameters(cls, param_list: List[Parameter]) -> 'ConstraintGraph':
+    def from_parameters(cls, param_list: list[Parameter]) -> ConstraintGraph:
         """Build a ConstraintGraph by discovering all constraints attached to the given parameters.
 
         Constraints register themselves on their parameters at construction time, so this
@@ -82,7 +81,7 @@ class ConstraintGraph:
         """
         return sum(c.dof_reduction() for c in self.constraints)
 
-    def get_all_parameters(self) -> List[Parameter]:
+    def get_all_parameters(self) -> list[Parameter]:
         """Get unique list of all parameters involved in constraints.
 
         Returns:
@@ -98,9 +97,7 @@ class ConstraintGraph:
         return params
 
     def build_constraint_jacobian(
-        self,
-        param_values: Dict[str, Array],
-        all_param_names: List[str]
+        self, param_values: dict[str, Array], all_param_names: list[str]
     ) -> Array:
         """Build the full constraint Jacobian matrix.
 
@@ -133,14 +130,13 @@ class ConstraintGraph:
 
             # Fill in the Jacobian for the parameters involved in this constraint
             offset = 0
-            local_offset = 0
             for name in all_param_names:
                 param_dim = param_values[name].size
                 if name in constraint_params:
                     # This parameter is involved in the constraint
                     local_idx = constraint_params.index(name)
-                    jac_full = jac_full.at[:, offset:offset+param_dim].set(
-                        jac_local[:, local_idx*param_dim:(local_idx+1)*param_dim]
+                    jac_full = jac_full.at[:, offset : offset + param_dim].set(
+                        jac_local[:, local_idx * param_dim : (local_idx + 1) * param_dim]
                     )
                 offset += param_dim
 
@@ -179,10 +175,7 @@ class ConstraintGraph:
 
         return null_space
 
-    def extract_free_dof(
-        self,
-        parameters: List[Parameter]
-    ) -> Tuple[Array, Array]:
+    def extract_free_dof(self, parameters: list[Parameter]) -> tuple[Array, Array]:
         """Extract reduced degrees of freedom from parameters under constraints.
 
         This computes:
@@ -219,7 +212,9 @@ class ConstraintGraph:
 
         for param in parameters:
             if not param.free:
-                warnings.warn(f"Parameter {param.name} is not free, skipping in DOF extraction")
+                warnings.warn(
+                    f"Parameter {param.name} is not free, skipping in DOF extraction", stacklevel=2
+                )
                 continue
 
             param_names.append(param.name)
@@ -231,7 +226,7 @@ class ConstraintGraph:
                 param_values[param.name] = param.value
                 full_params.append(jnp.array([param.value]))
             else:
-                warnings.warn(f"Unknown parameter type {type(param)}")
+                warnings.warn(f"Unknown parameter type {type(param)}", stacklevel=2)
 
         # Flatten to 1D array
         full_params_flat = jnp.concatenate(full_params)
@@ -255,10 +250,7 @@ class ConstraintGraph:
         return reduced_params, null_space
 
     def project_to_full(
-        self,
-        reduced_params: Array,
-        null_space: Array,
-        base_point: Optional[Array] = None
+        self, reduced_params: Array, null_space: Array, base_point: Array | None = None
     ) -> Array:
         """Project reduced DOF parameters back to full parameter space.
 

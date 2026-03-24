@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Union
+from typing import TYPE_CHECKING
 
 from jaxcad.geometry.parameters import Scalar, as_parameter
 from jaxcad.geometry.primitives import Circle
 
+if TYPE_CHECKING:
+    from jaxcad.sdf.primitives.cylinder import Cylinder
 
-def from_circle(circle: Circle, height: Union[float, Scalar]) -> 'Cylinder':
+
+def from_circle(circle: Circle, height: float | Scalar) -> Cylinder:
     """Create a cylinder from a circle.
 
     The cylinder's base is the circle, and it extends along the circle's normal
@@ -40,6 +43,6 @@ def from_circle(circle: Circle, height: Union[float, Scalar]) -> 'Cylinder':
 
     # Store reference to source geometry
     cylinder._source_geometry = circle
-    cylinder._construction_method = 'from_circle'
+    cylinder._construction_method = "from_circle"
 
     return cylinder

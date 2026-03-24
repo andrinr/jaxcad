@@ -8,7 +8,6 @@ independent constraint equations it introduces.
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import List, Dict
 
 import jax
 import jax.numpy as jnp
@@ -52,7 +51,7 @@ class Constraint(Fluent):
     - jacobian(): Returns ∂c/∂x; defaults to AD on compute_residual
     """
 
-    params: dict[str, 'Parameter']
+    params: dict[str, Parameter]
 
     def _register_constraint(self) -> None:
         """Register this constraint on all parameters it references.
@@ -61,14 +60,14 @@ class Constraint(Fluent):
         Enables implicit constraint discovery without explicit ConstraintGraph.
         """
         # Auto-cast params
-        if hasattr(self, 'params'):
+        if hasattr(self, "params"):
             self._cast_params()
         # Auto-register on parameters
         for param in self.get_parameters():
             param.add_constraint(self)
 
     @abstractmethod
-    def compute_residual(self, param_values: Dict[str, Array]) -> Array:
+    def compute_residual(self, param_values: dict[str, Array]) -> Array:
         """Compute constraint residual c(x).
 
         Args:
@@ -79,7 +78,7 @@ class Constraint(Fluent):
         """
         pass
 
-    def jacobian(self, param_values: Dict[str, Array]) -> Array:
+    def jacobian(self, param_values: dict[str, Array]) -> Array:
         """Compute constraint Jacobian ∂c/∂x via automatic differentiation.
 
         Differentiates compute_residual with respect to each parameter returned
@@ -122,7 +121,7 @@ class Constraint(Fluent):
         pass
 
     @abstractmethod
-    def get_parameters(self) -> List[Parameter]:
+    def get_parameters(self) -> list[Parameter]:
         """Get list of parameters involved in this constraint.
 
         Returns:

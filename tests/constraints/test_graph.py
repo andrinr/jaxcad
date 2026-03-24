@@ -1,15 +1,14 @@
 """Tests for ConstraintGraph."""
 
-import pytest
-import jax
 import jax.numpy as jnp
+import pytest
 
-from jaxcad.geometry.parameters import Vector
 from jaxcad.constraints import (
     ConstraintGraph,
     DistanceConstraint,
     PerpendicularConstraint,
 )
+from jaxcad.geometry.parameters import Vector
 
 
 def test_empty_graph():
@@ -24,8 +23,8 @@ def test_add_single_constraint():
     """Test adding a single constraint to graph."""
     graph = ConstraintGraph()
 
-    p1 = Vector([0, 0, 0], free=True, name='p1')
-    p2 = Vector([1, 0, 0], free=True, name='p2')
+    p1 = Vector([0, 0, 0], free=True, name="p1")
+    p2 = Vector([1, 0, 0], free=True, name="p2")
 
     constraint = DistanceConstraint(p1, p2, 1.0)
     graph.add_constraint(constraint)
@@ -38,10 +37,10 @@ def test_add_multiple_constraints():
     """Test multiple constraints in graph."""
     graph = ConstraintGraph()
 
-    p1 = Vector([0, 0, 0], free=True, name='p1')
-    p2 = Vector([1, 0, 0], free=True, name='p2')
-    v1 = Vector([1, 0, 0], free=True, name='v1')
-    v2 = Vector([0, 1, 0], free=True, name='v2')
+    p1 = Vector([0, 0, 0], free=True, name="p1")
+    p2 = Vector([1, 0, 0], free=True, name="p2")
+    v1 = Vector([1, 0, 0], free=True, name="v1")
+    v2 = Vector([0, 1, 0], free=True, name="v2")
 
     graph.add_constraint(DistanceConstraint(p1, p2, 1.0))
     graph.add_constraint(PerpendicularConstraint(v1, v2))
@@ -55,8 +54,8 @@ def test_extract_free_dof_no_constraints():
     """Test DOF extraction with no constraints."""
     graph = ConstraintGraph()
 
-    p1 = Vector([0, 0, 0], free=True, name='p1')
-    p2 = Vector([1, 0, 0], free=True, name='p2')
+    p1 = Vector([0, 0, 0], free=True, name="p1")
+    p2 = Vector([1, 0, 0], free=True, name="p2")
 
     reduced, null_space = graph.extract_free_dof([p1, p2])
 
@@ -67,8 +66,8 @@ def test_extract_free_dof_no_constraints():
 
 def test_extract_free_dof_with_distance_constraint():
     """Test DOF extraction with distance constraint."""
-    p1 = Vector([0, 0, 0], free=True, name='p1')
-    p2 = Vector([1, 0, 0], free=True, name='p2')
+    p1 = Vector([0, 0, 0], free=True, name="p1")
+    p2 = Vector([1, 0, 0], free=True, name="p2")
 
     graph = ConstraintGraph()
     graph.add_constraint(DistanceConstraint(p1, p2, 1.0))
@@ -82,8 +81,8 @@ def test_extract_free_dof_with_distance_constraint():
 
 def test_project_to_full():
     """Test projecting reduced params back to full space."""
-    p1 = Vector([0, 0, 0], free=True, name='p1')
-    p2 = Vector([1, 0, 0], free=True, name='p2')
+    p1 = Vector([0, 0, 0], free=True, name="p1")
+    p2 = Vector([1, 0, 0], free=True, name="p2")
 
     graph = ConstraintGraph()
     graph.add_constraint(DistanceConstraint(p1, p2, 1.0))
@@ -99,8 +98,8 @@ def test_project_to_full():
 
 def test_null_space_satisfies_constraints():
     """Test that movements in null space approximately preserve constraints."""
-    p1 = Vector([0, 0, 0], free=True, name='p1')
-    p2 = Vector([1, 0, 0], free=True, name='p2')
+    p1 = Vector([0, 0, 0], free=True, name="p1")
+    p2 = Vector([1, 0, 0], free=True, name="p2")
 
     graph = ConstraintGraph()
     constraint = DistanceConstraint(p1, p2, 1.0)
@@ -123,28 +122,31 @@ def test_null_space_satisfies_constraints():
     new_p1 = new_full[:3]
     new_p2 = new_full[3:]
 
-    param_values = {'p1': new_p1, 'p2': new_p2}
+    param_values = {"p1": new_p1, "p2": new_p2}
     residual = constraint.compute_residual(param_values)
 
     # Residual should be small (approximate due to linearization)
     assert jnp.abs(residual) < 0.1
 
 
-@pytest.mark.parametrize("n_points,n_constraints,expected_reduced_dof", [
-    (2, 1, 5),   # 6 DOF - 1 constraint
-    (3, 2, 7),   # 9 DOF - 2 constraints
-    (4, 3, 9),   # 12 DOF - 3 constraints
-])
+@pytest.mark.parametrize(
+    "n_points,n_constraints,expected_reduced_dof",
+    [
+        (2, 1, 5),  # 6 DOF - 1 constraint
+        (3, 2, 7),  # 9 DOF - 2 constraints
+        (4, 3, 9),  # 12 DOF - 3 constraints
+    ],
+)
 def test_dof_counting(n_points, n_constraints, expected_reduced_dof):
     """Test DOF counting with multiple constraints."""
     # Create n_points points
-    points = [Vector([i, 0, 0], free=True, name=f'p{i}') for i in range(n_points)]
+    points = [Vector([i, 0, 0], free=True, name=f"p{i}") for i in range(n_points)]
 
     graph = ConstraintGraph()
 
     # Add distance constraints between consecutive points
     for i in range(n_constraints):
-        graph.add_constraint(DistanceConstraint(points[i], points[i+1], 1.0))
+        graph.add_constraint(DistanceConstraint(points[i], points[i + 1], 1.0))
 
     assert graph.get_total_dof_reduction() == n_constraints
 

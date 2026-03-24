@@ -1,11 +1,10 @@
 """Common tests that apply to all SDF primitives."""
 
-import pytest
 import jax
 import jax.numpy as jnp
+import pytest
 
-from jaxcad.sdf.primitives import Sphere, Box, Cylinder, Capsule, Cone, Torus
-
+from jaxcad.sdf.primitives import Box, Capsule, Cone, Cylinder, Sphere, Torus
 
 # List all primitives with their constructor arguments
 PRIMITIVES = [
