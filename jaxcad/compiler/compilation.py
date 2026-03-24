@@ -8,7 +8,7 @@ from jax import Array
 from jaxcad.sdf import SDF
 
 
-def compile_to_function(sdf: SDF) -> Callable:
+def to_function(sdf: SDF) -> Callable:
     """Compile an SDF to a pure function with free and fixed parameters.
 
     Returns a function with signature:
@@ -30,7 +30,7 @@ def compile_to_function(sdf: SDF) -> Callable:
         >>> radius = Scalar(value=1.0, free=True, name='radius')
         >>> sphere = Sphere(radius=radius)
         >>>
-        >>> sdf_fn = compile_to_function(sphere)
+        >>> sdf_fn = to_function(sphere)
         >>>
         >>> # Query with specific parameter values
         >>> free_vals = {'sphere_0.radius': 2.0}

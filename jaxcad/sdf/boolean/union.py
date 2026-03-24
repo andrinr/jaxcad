@@ -20,7 +20,9 @@ class Union(BooleanOp):
         smoothness: Blend radius (0 = sharp, >0 = smooth)
     """
 
-    def __init__(self, sdfs: tuple[SDF, ...], smoothness: float = 0.1):
+    def __init__(self, *sdfs, smoothness: float = 0.1):
+        if len(sdfs) == 1 and isinstance(sdfs[0], (tuple, list)):
+            sdfs = tuple(sdfs[0])
         self.sdfs = sdfs
         self.params = {'smoothness': smoothness}
 

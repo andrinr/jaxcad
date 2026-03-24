@@ -12,7 +12,7 @@ def test_rectangle_basic():
     center = Vector([0, 0, 0], name='c')
     width = Scalar(2.0, name='w')
     height = Scalar(1.0, name='h')
-    normal = Vector([0, 0, 1, 0], name='n')  # XY plane
+    normal = Vector([0, 0, 1], name='n')  # XY plane
 
     rect = Rectangle(center=center, width=width, height=height, normal=normal)
 
@@ -27,7 +27,7 @@ def test_rectangle_from_scalars():
         center=[0, 0, 0],
         width=4.0,
         height=2.0,
-        normal=[0, 0, 1, 0]
+        normal=[0, 0, 1]
     )
 
     assert isinstance(rect.center, Vector)
@@ -43,7 +43,7 @@ def test_rectangle_sample_center():
         center=[5, 5, 5],
         width=2.0,
         height=1.0,
-        normal=[0, 0, 1, 0]
+        normal=[0, 0, 1]
     )
 
     center_point = rect.sample(0.5, 0.5)
@@ -56,7 +56,7 @@ def test_rectangle_corners():
         center=[0, 0, 0],
         width=2.0,
         height=1.0,
-        normal=[0, 0, 1, 0]
+        normal=[0, 0, 1]
     )
 
     corners = rect.corners()
@@ -85,7 +85,7 @@ def test_rectangle_sample_corners():
         center=[0, 0, 0],
         width=2.0,
         height=2.0,
-        normal=[0, 0, 1, 0]
+        normal=[0, 0, 1]
     )
 
     # Sample at corners using (u, v) parameters
@@ -106,7 +106,7 @@ def test_rectangle_local_frame():
         center=[0, 0, 0],
         width=1.0,
         height=1.0,
-        normal=[0, 0, 1, 0]
+        normal=[0, 0, 1]
     )
 
     # U and V axes should be orthonormal
@@ -132,7 +132,7 @@ def test_rectangle_tilted():
         center=[0, 0, 0],
         width=2.0,
         height=1.0,
-        normal=[1, 0, 0, 0]
+        normal=[1, 0, 0]
     )
 
     # Center should still be at origin
@@ -155,7 +155,7 @@ def test_rectangle_with_free_parameters():
         center=center,
         width=width,
         height=height,
-        normal=[0, 0, 1, 0]
+        normal=[0, 0, 1]
     )
 
     assert rect.center.free
@@ -169,7 +169,7 @@ def test_rectangle_sample_grid():
         center=[0, 0, 0],
         width=4.0,
         height=2.0,
-        normal=[0, 0, 1, 0]
+        normal=[0, 0, 1]
     )
 
     # Sample a 3x3 grid

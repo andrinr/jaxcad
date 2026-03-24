@@ -16,7 +16,9 @@ class Xor(BooleanOp):
         sdfs: 2-tuple of SDFs
     """
 
-    def __init__(self, sdfs: tuple[SDF, SDF]):
+    def __init__(self, *sdfs):
+        if len(sdfs) == 1 and isinstance(sdfs[0], (tuple, list)):
+            sdfs = tuple(sdfs[0])
         self.sdfs = sdfs
         self.params = {}
 

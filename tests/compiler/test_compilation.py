@@ -6,7 +6,7 @@ import jax.numpy as jnp
 from jaxcad.geometry.parameters import Scalar, Vector
 from jaxcad.sdf.primitives.sphere import Sphere
 from jaxcad.sdf.primitives.box import Box
-from jaxcad.compiler import compile_to_function, extract_parameters
+from jaxcad.compiler import to_function, extract_parameters
 
 
 def test_compile_sphere_basic():
@@ -14,7 +14,7 @@ def test_compile_sphere_basic():
     radius = Scalar(1.0, free=True, name='radius')
     sphere = Sphere(radius=radius)
 
-    sdf_fn = compile_to_function(sphere)
+    sdf_fn = to_function(sphere)
 
     # Query at origin (inside sphere)
     point = jnp.array([0., 0., 0.])
@@ -32,7 +32,7 @@ def test_compile_sphere_outside():
     radius = Scalar(1.0, free=False, name='radius')
     sphere = Sphere(radius=radius)
 
-    sdf_fn = compile_to_function(sphere)
+    sdf_fn = to_function(sphere)
 
     # Query at distance 2 from origin
     point = jnp.array([2., 0., 0.])
@@ -50,7 +50,7 @@ def test_compile_with_parameter_variation():
     radius = Scalar(1.0, free=True, name='radius')
     sphere = Sphere(radius=radius)
 
-    sdf_fn = compile_to_function(sphere)
+    sdf_fn = to_function(sphere)
     point = jnp.array([2., 0., 0.])
 
     # Test with radius = 1.0
@@ -71,7 +71,7 @@ def test_compile_box():
     size = Vector([1., 1., 1.], free=True, name='size')
     box = Box(size=size)
 
-    sdf_fn = compile_to_function(box)
+    sdf_fn = to_function(box)
 
     # Query at origin (inside box)
     point = jnp.array([0., 0., 0.])
@@ -89,7 +89,7 @@ def test_compile_consistency():
     radius = Scalar(1.5, free=False, name='radius')
     sphere = Sphere(radius=radius)
 
-    sdf_fn = compile_to_function(sphere)
+    sdf_fn = to_function(sphere)
 
     # Test multiple points
     test_points = [

@@ -11,7 +11,7 @@ def test_circle_basic():
     """Test basic circle creation."""
     center = Vector([0, 0, 0], name='c')
     radius = Scalar(1.0, name='r')
-    normal = Vector([0, 0, 1, 0], name='n')
+    normal = Vector([0, 0, 1], name='n')
 
     circle = Circle(center=center, radius=radius, normal=normal)
 
@@ -24,7 +24,7 @@ def test_circle_from_scalars():
     circle = Circle(
         center=[0, 0, 0],
         radius=2.5,
-        normal=[0, 0, 1, 0]
+        normal=[0, 0, 1]
     )
 
     assert isinstance(circle.center, Vector)
@@ -37,7 +37,7 @@ def test_circle_sample():
     circle = Circle(
         center=[0, 0, 0],
         radius=1.0,
-        normal=[0, 0, 1, 0]
+        normal=[0, 0, 1]
     )
 
     # Sample at angle 0
@@ -58,7 +58,7 @@ def test_circle_sample_uniform():
     circle = Circle(
         center=[0, 0, 0],
         radius=2.0,
-        normal=[0, 0, 1, 0]
+        normal=[0, 0, 1]
     )
 
     points = circle.sample_uniform(8)
@@ -75,7 +75,7 @@ def test_circle_tangent():
     circle = Circle(
         center=[0, 0, 0],
         radius=1.0,
-        normal=[0, 0, 1, 0]
+        normal=[0, 0, 1]
     )
 
     # Tangent at angle 0
@@ -94,7 +94,7 @@ def test_circle_area():
     circle = Circle(
         center=[0, 0, 0],
         radius=2.0,
-        normal=[0, 0, 1, 0]
+        normal=[0, 0, 1]
     )
 
     area = circle.area()
@@ -107,7 +107,7 @@ def test_circle_circumference():
     circle = Circle(
         center=[0, 0, 0],
         radius=3.0,
-        normal=[0, 0, 1, 0]
+        normal=[0, 0, 1]
     )
 
     circumference = circle.circumference()
@@ -120,7 +120,7 @@ def test_circle_closest_point():
     circle = Circle(
         center=[0, 0, 0],
         radius=1.0,
-        normal=[0, 0, 1, 0]
+        normal=[0, 0, 1]
     )
 
     # Point outside circle in the plane
@@ -137,7 +137,7 @@ def test_circle_distance_to_point():
     circle = Circle(
         center=[0, 0, 0],
         radius=1.0,
-        normal=[0, 0, 1, 0]
+        normal=[0, 0, 1]
     )
 
     # Point on the circle
@@ -158,7 +158,7 @@ def test_circle_local_frame():
     circle = Circle(
         center=[0, 0, 0],
         radius=1.0,
-        normal=[0, 0, 1, 0]
+        normal=[0, 0, 1]
     )
 
     u = circle.u_axis.xyz
@@ -182,7 +182,7 @@ def test_circle_tilted():
     circle = Circle(
         center=[0, 0, 0],
         radius=2.0,
-        normal=[1, 0, 0, 0]
+        normal=[1, 0, 0]
     )
 
     # Sample points should have x ≈ 0 (in YZ plane)
@@ -199,7 +199,7 @@ def test_circle_with_free_parameters():
     circle = Circle(
         center=center,
         radius=radius,
-        normal=[0, 0, 1, 0]
+        normal=[0, 0, 1]
     )
 
     assert circle.center.free
@@ -211,7 +211,7 @@ def test_circle_offset_center():
     circle = Circle(
         center=[10, 20, 30],
         radius=5.0,
-        normal=[0, 0, 1, 0]
+        normal=[0, 0, 1]
     )
 
     # Sample point
@@ -227,7 +227,7 @@ def test_circle_large_radius():
     circle = Circle(
         center=[0, 0, 0],
         radius=100.0,
-        normal=[0, 0, 1, 0]
+        normal=[0, 0, 1]
     )
 
     area = circle.area()
@@ -240,7 +240,7 @@ def test_circle_small_radius():
     circle = Circle(
         center=[0, 0, 0],
         radius=0.01,
-        normal=[0, 0, 1, 0]
+        normal=[0, 0, 1]
     )
 
     circumference = circle.circumference()

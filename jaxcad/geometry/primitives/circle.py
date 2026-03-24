@@ -40,7 +40,7 @@ class Circle:
         # Tilted circle with free parameters
         center = Vector([0, 0, 0], free=True, name='center')
         radius = Scalar(1.5, free=True, name='radius')
-        normal = Vector([1, 1, 1, 0], free=False)  # w=0 for direction
+        normal = Vector([1, 1, 1], free=False)  # direction vector
         circle = Circle(center=center, radius=radius, normal=normal)
 
         # Sample points on the circle
@@ -77,7 +77,7 @@ class Circle:
         u = u / jnp.linalg.norm(u)
 
         # Store as Vector parameter (direction, w=0)
-        self.u_axis = as_parameter(jnp.append(u, 0.0))
+        self.u_axis = as_parameter(u)  # Direction vector
 
         # Compute V (second tangent) axis
         v = jnp.cross(self.normal.xyz, u)

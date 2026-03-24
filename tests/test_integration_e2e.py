@@ -15,7 +15,7 @@ from jaxcad.geometry.parameters import Vector, Scalar
 from jaxcad.geometry.primitives import Line, Circle, Rectangle
 from jaxcad.constraints import DistanceConstraint, AngleConstraint, ConstraintGraph
 from jaxcad.construction import extrude, from_line, from_circle, from_point
-from jaxcad.compiler import extract_parameters, compile_to_function
+from jaxcad.compiler import extract_parameters, to_function
 from jaxcad.sdf.primitives import Sphere, Box
 
 
@@ -62,7 +62,7 @@ def test_e2e_parametric_sphere_optimization():
     assert 'sphere_0.radius' in free_params
 
     # Compile to pure function
-    sdf_fn = compile_to_function(sphere)
+    sdf_fn = to_function(sphere)
 
     # Test gradient computation
     def loss_fn(r):
@@ -112,7 +112,7 @@ def test_e2e_rectangle_extrusion():
     center = Vector([0, 0, 0], free=False, name='center')
     width = Scalar(4.0, free=True, name='width')
     height = Scalar(2.0, free=True, name='height')
-    normal = Vector([0, 0, 1, 0], free=False, name='normal')
+    normal = Vector([0, 0, 1], free=False, name='normal')
 
     rect = Rectangle(center=center, width=width, height=height, normal=normal)
 
@@ -137,7 +137,7 @@ def test_e2e_circle_to_cylinder_with_constraints():
     # Layer 1: Parametric circle
     center = Vector([0, 0, 0], free=True, name='center')
     radius = Scalar(2.0, free=True, name='radius')
-    normal = Vector([0, 0, 1, 0], free=False, name='normal')
+    normal = Vector([0, 0, 1], free=False, name='normal')
 
     circle = Circle(center=center, radius=radius, normal=normal)
 
@@ -154,7 +154,7 @@ def test_e2e_circle_to_cylinder_with_constraints():
     assert cylinder.params['height'] is height
 
     # Layer 4: Compile
-    sdf_fn = compile_to_function(cylinder)
+    sdf_fn = to_function(cylinder)
 
     # Test evaluation
     point = jnp.array([0., 0., 0.])
@@ -232,7 +232,7 @@ def test_e2e_gradient_based_optimization_setup():
     free_params, fixed_params = extract_parameters(sphere)
 
     # Compile to function
-    sdf_fn = compile_to_function(sphere)
+    sdf_fn = to_function(sphere)
 
     # Define loss function (distance to target point)
     def loss(r):

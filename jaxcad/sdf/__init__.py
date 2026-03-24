@@ -30,6 +30,8 @@ from jaxcad.sdf.boolean import (
     difference,
     xor,
 )
+from jaxcad.sdf import measure
+from jaxcad.sdf.measure import volume
 from jaxcad.sdf.transforms import (
     Translate,
     Rotate,
@@ -40,6 +42,9 @@ from jaxcad.sdf.transforms import (
 __all__ = [
     # Base
     "SDF",
+    # Measure
+    "measure",
+    "volume",
     # Primitives
     "Primitive",
     "Box",

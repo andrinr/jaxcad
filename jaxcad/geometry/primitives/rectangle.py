@@ -42,7 +42,7 @@ class Rectangle:
 
         # Tilted rectangle with free parameters
         center = Vector([0, 0, 0], free=True, name='center')
-        normal = Vector([1, 1, 1, 0], free=False)  # w=0 for direction
+        normal = Vector([1, 1, 1], free=False)  # direction vector
         rect = Rectangle(center=center, width=2.0, height=1.0, normal=normal)
 
         # Sample points on the rectangle
@@ -82,7 +82,7 @@ class Rectangle:
         u = u / jnp.linalg.norm(u)
 
         # Store as Vector parameter
-        self.u_axis = as_parameter(jnp.append(u, 0.0))  # Direction vector (w=0)
+        self.u_axis = as_parameter(u)  # Direction vector
 
         v = jnp.cross(self.normal.xyz, u)
         self.v_axis = as_parameter(v).normalize()  # Direction vector (w=0)

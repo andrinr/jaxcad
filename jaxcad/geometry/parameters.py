@@ -7,7 +7,7 @@ automatically extracted and optimized.
 Types:
 - Parameter: Base class for all parameters
 - Scalar: Single values (radius, distance, angle, scale, etc.)
-- Vector: 3D/4D vectors (positions, offsets, directions) with homogeneous coordinates
+- Vector: 3D vectors (positions, offsets, directions)
 
 Helpers:
 - as_parameter: Auto-convert raw values to Parameter objects
@@ -126,69 +126,35 @@ class Scalar(Parameter):
 
 @dataclass
 class Vector(Parameter):
-    """3D or 4D vector parameter (position, offset, direction, size).
-
-    Supports both 3D vectors [x, y, z] and 4D homogeneous coordinates [x, y, z, w].
-    When initialized with 3 components, automatically extends to 4D with w=1.0 for points.
-
-    In homogeneous coordinates:
-    - Points (w=1): affected by translation
-    - Directions (w=0): not affected by translation
+    """3D vector parameter (position, offset, direction, size).
 
     Example:
-        position = Vector(value=[1.0, 2.0, 3.0], free=True, name='pos')  # becomes [1,2,3,1]
-        direction = Vector(value=[0, 1, 0, 0], free=False)  # pure direction
+        position = Vector(value=[1.0, 2.0, 3.0], free=True, name='pos')
         offset = Vector(value=[0, 0, 0], free=False)
     """
 
     def __post_init__(self):
         super().__post_init__()
-        # Accept both 3D and 4D vectors
-        if self.value.shape == (3,):
-            # Extend 3D to homogeneous coordinates with w=1 (point)
-            self.value = jnp.append(self.value, 1.0)
-        elif self.value.shape == (4,):
-            # Already in homogeneous coordinates
-            pass
-        else:
-            raise ValueError(f"Vector must be 3D or 4D, got shape {self.value.shape}")
+        if self.value.shape != (3,):
+            raise ValueError(f"Vector must be 3D, got shape {self.value.shape}")
+        if not jnp.issubdtype(self.value.dtype, jnp.floating):
+            self.value = self.value.astype(jnp.float32)
 
     def norm(self) -> float:
-        """Compute Euclidean norm of the 3D part (ignoring w)."""
-        return jnp.linalg.norm(self.xyz)
-    
+        """Compute Euclidean norm."""
+        return jnp.linalg.norm(self.value)
+
     def normalize(self) -> 'Vector':
-        """Return a normalized Vector (unit length in 3D part)."""
+        """Return a normalized Vector (unit length)."""
         norm = self.norm()
         if norm < 1e-8:
             raise ValueError("Cannot normalize zero-length vector.")
-        normalized_xyz = self.xyz / norm
+        return Vector(value=self.value / norm, free=self.free, name=self.name, bounds=self.bounds)
 
-        return Vector(
-            value=jnp.append(normalized_xyz, self.w), 
-            free=self.free, 
-            name=self.name, 
-            bounds=self.bounds)
-    
     @property
     def xyz(self) -> Array:
-        """Get 3D cartesian coordinates (x, y, z)."""
-        return self.value[:3]
-
-    @property
-    def w(self) -> float:
-        """Get homogeneous coordinate w."""
-        return self.value[3]
-
-    @property
-    def is_point(self) -> bool:
-        """True if this is a point (w=1), False if direction (w=0)."""
-        return jnp.abs(self.w - 1.0) < 1e-6
-
-    @property
-    def is_direction(self) -> bool:
-        """True if this is a direction vector (w=0)."""
-        return jnp.abs(self.w) < 1e-6
+        """Alias for .value (3D coordinates)."""
+        return self.value
 
 
 # Register as JAX pytrees
@@ -234,7 +200,7 @@ def as_parameter(value: Union[float, Array, Scalar, Vector], name: Optional[str]
         Scalar(value=1.5, free=False)
 
         >>> as_parameter([1, 2, 3])
-        Vector(value=[1, 2, 3, 1], free=False)
+        Vector(value=[1, 2, 3], free=False)
 
         >>> existing = Scalar(value=2.0, free=True, name='radius')
         >>> as_parameter(existing)
@@ -251,10 +217,10 @@ def as_parameter(value: Union[float, Array, Scalar, Vector], name: Optional[str]
     if arr.ndim == 0 or (arr.ndim == 1 and arr.shape[0] == 1):
         return Scalar(value=arr if arr.ndim == 0 else arr[0], free=False, name=name)
 
-    # Vector (3D or 4D array)
-    elif arr.shape == (3,) or arr.shape == (4,):
+    # Vector (3D array)
+    elif arr.shape == (3,):
         return Vector(value=arr, free=False, name=name)
 
     else:
         raise ValueError(f"Cannot auto-convert value with shape {arr.shape} to Parameter. "
-                        f"Use Scalar for scalars or Vector for 3D/4D vectors.")
+                        f"Use Scalar for scalars or Vector for 3D vectors.")

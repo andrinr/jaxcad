@@ -61,7 +61,7 @@ def test_from_point_at_origin():
     center = Vector([0, 0, 0], name='origin')
     sphere = from_point(center, radius=1.0)
 
-    assert jnp.allclose(sphere._source_point.value, jnp.array([0, 0, 0, 1]))
+    assert jnp.allclose(sphere._source_point.value, jnp.array([0, 0, 0]))
     assert sphere.params['radius'].value == 1.0
 
 

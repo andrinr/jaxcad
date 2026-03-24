@@ -15,7 +15,7 @@ def test_extrude_basic():
         center=Vector([0, 0, 0], name='center'),
         width=Scalar(2.0, name='width'),
         height=Scalar(1.0, name='height'),
-        normal=Vector([0, 0, 1, 0], name='normal')
+        normal=Vector([0, 0, 1], name='normal')
     )
 
     box = extrude(rect, depth=3.0)
@@ -31,7 +31,7 @@ def test_extrude_with_scalar_depth():
         center=Vector([0, 0, 0], name='center'),
         width=Scalar(4.0, name='width'),
         height=Scalar(2.0, name='height'),
-        normal=Vector([0, 0, 1, 0], name='normal')
+        normal=Vector([0, 0, 1], name='normal')
     )
 
     depth = Scalar(5.0, name='depth')
@@ -49,7 +49,7 @@ def test_extrude_with_free_parameters():
     width = Scalar(2.0, free=True, name='width')
     height = Scalar(1.0, free=True, name='height')
 
-    rect = Rectangle(center=center, width=width, height=height, normal=Vector([0, 0, 1, 0], name='normal'))
+    rect = Rectangle(center=center, width=width, height=height, normal=Vector([0, 0, 1], name='normal'))
     box = extrude(rect, depth=3.0)
 
     # The box should reference the original rectangle
@@ -64,7 +64,7 @@ def test_extrude_dimensions():
         center=Vector([0, 0, 0], name='c'),
         width=Scalar(6.0, name='w'),
         height=Scalar(4.0, name='h'),
-        normal=Vector([0, 0, 1, 0], name='n')
+        normal=Vector([0, 0, 1], name='n')
     )
 
     box = extrude(rect, depth=2.0)

@@ -15,7 +15,7 @@ import imageio
 from jaxcad.geometry.parameters import Vector, Scalar
 from jaxcad.constraints import DistanceConstraint
 from jaxcad.construction import from_point
-from jaxcad.compiler import extract_parameters, extract_parameters_with_constraints, compile_to_function
+from jaxcad.compiler import extract_parameters, extract_parameters_with_constraints, to_function
 from jaxcad.sdf.boolean import Union
 from jaxcad.render import render_marching_cubes
 
@@ -47,7 +47,7 @@ print(f"Parameters: {base_point.shape[0]} DOF → {reduced_params.shape[0]} DOF 
 print(f"Constraints: 2 distance constraints (auto-discovered)")
 
 # Compile SDF
-sdf_fn = compile_to_function(initial_scene)
+sdf_fn = to_function(initial_scene)
 free_params, fixed_params = extract_parameters(initial_scene)
 
 # Target points
