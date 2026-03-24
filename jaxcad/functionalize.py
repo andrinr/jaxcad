@@ -18,24 +18,16 @@ def functionalize(sdf: SDF) -> Callable:
         sdf: The SDF to compile
 
     Returns:
-        Pure function that takes:
-        - free_params: Dict[str, Array] - free parameter values
-        - fixed_params: Dict[str, Array] - fixed parameter values
-        and returns an SDF callable: point: Array (3,) -> distance: Array ()
+        Callable: Curried function ``sdf_fn(free_params, fixed_params) -> (point -> distance)``
+            mapping parameter dicts to a callable ``point: Array (3,) -> distance: Array ()``.
 
     Example:
-        >>> from jaxcad.sdf.primitives import Sphere
-        >>> from jaxcad.geometry import Scalar
-        >>>
-        >>> radius = Scalar(value=1.0, free=True, name='radius')
-        >>> sphere = Sphere(radius=radius)
-        >>>
-        >>> sdf_fn = functionalize(sphere)
-        >>>
-        >>> # Query with specific parameter values
-        >>> free_vals = {'sphere_0.radius': 2.0}
-        >>> fixed_vals = {}
-        >>> distance = sdf_fn(free_vals, fixed_vals)(jnp.array([0., 0., 0.]))
+        ```python
+        radius = Scalar(value=1.0, free=True, name='radius')
+        sphere = Sphere(radius=radius)
+        sdf_fn = functionalize(sphere)
+        distance = sdf_fn({'sphere_0.radius': 2.0}, {})(jnp.array([0., 0., 0.]))
+        ```
     """
     from jaxcad.sdf.boolean.base import BooleanOp
     from jaxcad.sdf.primitives.base import Primitive

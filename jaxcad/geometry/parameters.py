@@ -118,8 +118,10 @@ class Scalar(Parameter):
     """Scalar parameter (radius, distance, angle, scale, strength, etc.).
 
     Example:
+        ```python
         radius = Scalar(value=1.0, free=True, name='radius')
-        angle = Scalar(value=jnp.pi/4, free=False, name='rotation')
+        angle = Scalar(value=jnp.pi / 4, free=False, name='rotation')
+        ```
     """
 
     def __post_init__(self):
@@ -134,8 +136,10 @@ class Vector(Parameter):
     """3D vector parameter (position, offset, direction, size).
 
     Example:
+        ```python
         position = Vector(value=[1.0, 2.0, 3.0], free=True, name='pos')
         offset = Vector(value=[0, 0, 0], free=False)
+        ```
     """
 
     def __post_init__(self):

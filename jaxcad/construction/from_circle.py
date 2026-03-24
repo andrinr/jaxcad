@@ -25,10 +25,12 @@ def from_circle(circle: Circle, height: float | Scalar) -> Cylinder:
         Cylinder SDF with shared parameter references
 
     Example:
+        ```python
         center = Vector([0, 0, 0], free=True, name='center')
         radius = Scalar(1.0, free=True, name='radius')
         circle = Circle(center=center, radius=radius)
         cylinder = from_circle(circle, height=5.0)
+        ```
     """
     from jaxcad.sdf.primitives.cylinder import Cylinder
 

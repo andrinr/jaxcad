@@ -25,14 +25,11 @@ class DistanceConstraint(Constraint):
         distance: Target distance (Scalar parameter or float)
 
     Example:
+        ```python
         p1 = Vector([0, 0, 0], free=True, name='p1')
         p2 = Vector([1, 0, 0], free=True, name='p2')
-
-        # Fix distance to 0.2
-        constraint = DistanceConstraint(p1, p2, Scalar(0.2))
-
-        # Or with raw float
         constraint = DistanceConstraint(p1, p2, 0.2)
+        ```
     """
 
     param1: Vector

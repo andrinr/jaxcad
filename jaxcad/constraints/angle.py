@@ -25,11 +25,11 @@ class AngleConstraint(Constraint):
         angle: Target angle in radians (Scalar parameter or float)
 
     Example:
+        ```python
         v1 = Vector([1, 0, 0], free=True, name='v1')
         v2 = Vector([0, 1, 0], free=True, name='v2')
-
-        # Fix angle to 90 degrees (π/2 radians)
         constraint = AngleConstraint(v1, v2, jnp.pi / 2)
+        ```
     """
 
     vector1: Vector

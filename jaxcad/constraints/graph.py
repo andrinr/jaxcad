@@ -27,16 +27,13 @@ class ConstraintGraph:
     are automatically satisfied.
 
     Example:
-        # Two points with distance constraint
+        ```python
         p1 = Vector([0, 0, 0], free=True, name='p1')
         p2 = Vector([1, 0, 0], free=True, name='p2')
-
         graph = ConstraintGraph()
         graph.add_constraint(DistanceConstraint(p1, p2, 0.2))
-
-        # Get reduced DOF
         reduced_params, projection = graph.extract_free_dof([p1, p2])
-        # reduced_params has 5 DOF instead of 6
+        ```
     """
 
     constraints: list[Constraint] = field(default_factory=list)
@@ -192,17 +189,14 @@ class ConstraintGraph:
             null_space (Array): Null space matrix for projecting reduced → full params.
 
         Example:
+            ```python
             p1 = Vector([0, 0, 0], free=True, name='p1')
             p2 = Vector([1, 0, 0], free=True, name='p2')
-
             graph = ConstraintGraph()
             graph.add_constraint(DistanceConstraint(p1, p2, 0.5))
-
             reduced, null_space = graph.extract_free_dof([p1, p2])
-            # reduced has shape (5,) instead of (6,)
-
-            # To get full params from reduced:
             # full_params = base_point + null_space @ reduced
+            ```
         """
         # Build parameter value dictionary
         param_values = {}

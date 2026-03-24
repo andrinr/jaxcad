@@ -110,9 +110,10 @@ class SDF(Fluent):
             where params are the primitive/transform parameters.
 
         Example:
+            ```python
             sphere = Sphere(radius=1.0)
             func = sphere.to_functional()
-            # func(p, radius=1.0) -> Array
+            ```
         """
         pass
 

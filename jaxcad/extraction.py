@@ -68,11 +68,10 @@ def extract_parameters_with_constraints(
         param_list (list): Ordered list of free Parameter objects.
 
     Example:
+        ```python
         reduced, null_space, base, params = extract_parameters_with_constraints(scene)
-
-        def loss_fn(reduced_params):
-            full = base + null_space @ reduced_params
-            ...
+        full_params = base + null_space @ reduced
+        ```
     """
     from jaxcad.constraints.graph import ConstraintGraph
     from jaxcad.geometry.parameters import Scalar, Vector

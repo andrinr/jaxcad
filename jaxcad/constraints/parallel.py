@@ -24,11 +24,11 @@ class ParallelConstraint(Constraint):
         vector2: Second direction vector (Vector parameter)
 
     Example:
+        ```python
         v1 = Vector([1, 0, 0], free=True, name='v1')
         v2 = Vector([2, 0, 0], free=True, name='v2')
-
-        # Force vectors parallel
         constraint = ParallelConstraint(v1, v2)
+        ```
     """
 
     vector1: Vector

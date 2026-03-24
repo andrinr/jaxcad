@@ -21,9 +21,11 @@ def from_point(point: Vector, radius: float | Scalar) -> Sphere:
         Sphere SDF with shared parameter references
 
     Example:
+        ```python
         center = Vector([0, 0, 0], free=True, name='center')
         radius = Scalar(1.0, free=True, name='radius')
         sphere = from_point(center, radius)
+        ```
     """
     from jaxcad.sdf.primitives.sphere import Sphere
 

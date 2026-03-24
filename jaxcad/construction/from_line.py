@@ -25,11 +25,12 @@ def from_line(line: Line, radius: float | Scalar) -> SDF:
         Transformed Capsule SDF with shared parameter references
 
     Example:
+        ```python
         p1 = Vector([0, 0, 0], free=True, name='p1')
         p2 = Vector([5, 0, 0], free=True, name='p2')
         line = Line(start=p1, end=p2)
         capsule = from_line(line, radius=0.5)
-        # Capsule connects p1 and p2 with radius 0.5
+        ```
     """
 
     from jaxcad.sdf.primitives.capsule import Capsule

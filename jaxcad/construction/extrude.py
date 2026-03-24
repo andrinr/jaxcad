@@ -27,9 +27,10 @@ def extrude(rectangle: Rectangle, depth: float | Scalar) -> Box:
         Box SDF with shared parameter references
 
     Example:
+        ```python
         rect = Rectangle(center=[0, 0, 0], width=2.0, height=1.0)
         box = extrude(rect, depth=3.0)
-        # Box has dimensions 2.0 × 1.0 × 3.0
+        ```
     """
     from jaxcad.sdf.primitives.box import Box
 

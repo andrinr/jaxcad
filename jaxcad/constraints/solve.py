@@ -79,8 +79,10 @@ def solve_constraints(
         RuntimeError: If Newton-Raphson does not converge.
 
     Example:
+        ```python
         solved_params = solve_constraints(scene)
         sdf_fn = functionalize(scene)(solved_params, fixed_params)
+        ```
     """
     # Local import avoids a circular dependency: constraints.solve → jaxcad → constraints
     from jaxcad.extraction import extract_parameters
