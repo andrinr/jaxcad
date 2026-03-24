@@ -6,7 +6,8 @@ from jax import Array
 
 from jaxcad.sdf import SDF
 from jaxcad.compiler.extraction import extract_parameters
-
+from jaxcad.constraints.graph import ConstraintGraph
+from jaxcad.geometry.parameters import Vector, Scalar
 
 def extract_parameters_with_constraints(
     sdf: SDF
@@ -73,8 +74,6 @@ def extract_parameters_with_constraints(
                 constraint_set.add(constraint)
                 discovered_constraints.append(constraint)
 
-    # Build ConstraintGraph implicitly from discovered constraints
-    from jaxcad.constraints.graph import ConstraintGraph
 
     constraint_graph = ConstraintGraph()
     for constraint in discovered_constraints:
@@ -83,8 +82,6 @@ def extract_parameters_with_constraints(
     # Extract reduced DOF using constraint graph
     reduced_params, null_space = constraint_graph.extract_free_dof(param_list)
 
-    # Build base point (current parameter values)
-    from jaxcad.geometry.parameters import Vector, Scalar
     base_parts = []
     for param in param_list:
         if isinstance(param, Vector):

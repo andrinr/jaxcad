@@ -7,47 +7,44 @@ from jax import Array
 
 from jaxcad.sdf.boolean.base import BooleanOp
 from jaxcad.sdf.boolean.smooth import smooth_max
-from jaxcad.geometry.parameters import Scalar
 from jaxcad.sdf import SDF
 
 
 class Intersection(BooleanOp):
-    """Intersection of two SDFs (only overlapping region).
+    """Intersection of two or more SDFs (only overlapping region).
 
     Uses smooth maximum for differentiable blending.
 
     Args:
-        sdf1: First SDF
-        sdf2: Second SDF
+        sdfs: Tuple of SDFs to intersect
         smoothness: Blend radius (0 = sharp, >0 = smooth)
     """
 
-    def __init__(self, sdf1: SDF, sdf2: SDF, smoothness: float = 0.1):
-        self.sdf1 = sdf1
-        self.sdf2 = sdf2
+    def __init__(self, sdfs: tuple[SDF, ...], smoothness: float = 0.1):
+        self.sdfs = sdfs
         self.params = {'smoothness': smoothness}
 
     @staticmethod
-    def sdf(child_sdf1, child_sdf2, p: Array, smoothness: float) -> Array:
+    def sdf(child_sdfs, p: Array, smoothness: float) -> Array:
         """Pure function for intersection operation.
 
         Args:
-            child_sdf1: First SDF function
-            child_sdf2: Second SDF function
+            child_sdfs: Tuple of SDF functions
             p: Query point(s)
             smoothness: Blend radius
 
         Returns:
             Intersection SDF value
         """
-        d1 = child_sdf1(p)
-        d2 = child_sdf2(p)
-        # Use jnp.where for JAX-compatible branching
-        return jnp.where(smoothness > 0, smooth_max(d1, d2, smoothness), jnp.maximum(d1, d2))
+        result = child_sdfs[0](p)
+        for child in child_sdfs[1:]:
+            d = child(p)
+            result = jnp.where(smoothness > 0, smooth_max(result, d, smoothness), jnp.maximum(result, d))
+        return result
 
     def __call__(self, p: Array) -> Array:
-        """Intersection: max(d1, d2) with smooth blending"""
-        return Intersection.sdf(self.sdf1, self.sdf2, p, self.params['smoothness'].value)
+        """Intersection: max over all children with smooth blending"""
+        return Intersection.sdf(self.sdfs, p, self.params['smoothness'].value)
 
     def to_functional(self):
         """Return pure function for compilation."""

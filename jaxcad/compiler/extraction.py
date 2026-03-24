@@ -44,8 +44,8 @@ def extract_parameters(sdf: SDF) -> tuple[Dict[str, Any], Dict[str, Any]]:
         if isinstance(obj, Transform):
             walk(obj.sdf)
         elif isinstance(obj, BooleanOp):
-            walk(obj.sdf1)
-            walk(obj.sdf2)
+            for child in obj.sdfs:
+                walk(child)
         # Primitives have no children
 
     walk(sdf)

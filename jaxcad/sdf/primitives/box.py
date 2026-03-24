@@ -15,14 +15,13 @@ class Box(Primitive):
     """Axis-aligned box centered at origin.
 
     Args:
-        size: Half-extents in each dimension (x, y, z) - Array or Vector parameter
+        size: Half-extents in each dimension (x, y, z) - Vector parameter
 
     Example:
-        box = Box(size=[1, 2, 3])
         box = Box(size=Vector([1, 2, 3], free=True, name='size'))
     """
 
-    def __init__(self, size: Union[Array, Vector]):
+    def __init__(self, size: Vector):
         self.params = {'size': size}
 
     @staticmethod

@@ -102,26 +102,27 @@ def compile_to_function(sdf: SDF) -> Callable:
             return eval_transform
 
         elif isinstance(obj, BooleanOp):
-            # Boolean ops: sdf(child_fn1, child_fn2, p, **params)
-            left_fn = build_function(obj.sdf1)
-            right_fn = build_function(obj.sdf2)
+            # Boolean ops: sdf(child_fns_tuple, p, **params)
+            child_fns = [build_function(child) for child in obj.sdfs]
             params_snapshot = obj.params
             current_node_id = node_id
 
-            def eval_boolean(p: Array, free_params: Dict, fixed_params: Dict) -> Array:
+            def eval_boolean(p: Array, free_params: Dict, fixed_params: Dict, _child_fns=child_fns, _params=params_snapshot, _node_id=current_node_id) -> Array:
                 # Collect parameter values
                 param_values = {}
-                for param_name in params_snapshot.keys():
-                    param_path = f"{current_node_id}.{param_name}"
+                for param_name in _params.keys():
+                    param_path = f"{_node_id}.{param_name}"
                     if param_path in free_params:
                         param_values[param_name] = extract_value(free_params[param_path])
                     elif param_path in fixed_params:
                         param_values[param_name] = extract_value(fixed_params[param_path])
 
-                # Call child functions with parameters
-                left_eval = lambda p_inner: left_fn(p_inner, free_params, fixed_params)
-                right_eval = lambda p_inner: right_fn(p_inner, free_params, fixed_params)
-                return pure_sdf(left_eval, right_eval, p, **param_values)
+                # Build child eval closures
+                child_evals = tuple(
+                    (lambda p_inner, fn=fn: fn(p_inner, free_params, fixed_params))
+                    for fn in _child_fns
+                )
+                return pure_sdf(child_evals, p, **param_values)
 
             return eval_boolean
 

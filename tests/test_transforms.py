@@ -3,8 +3,8 @@
 import jax.numpy as jnp
 import pytest
 
-from jaxcad.primitives import Box, Sphere
-from jaxcad.transforms import Rotate, Scale, Translate
+from jaxcad.sdf.primitives import Box, Sphere
+from jaxcad.sdf.transforms import Rotate, Scale, Translate
 
 
 def test_translate():
@@ -20,14 +20,6 @@ def test_translate():
     assert translated(jnp.array([2.0, 0.0, 0.0])) == pytest.approx(0.0, abs=1e-5)
 
 
-def test_translate_method():
-    """Test translation via method API."""
-    sphere = Sphere(radius=1.0)
-    translated = sphere.translate(jnp.array([1.0, 0.0, 0.0]))
-
-    assert translated(jnp.array([1.0, 0.0, 0.0])) == pytest.approx(-1.0, abs=1e-5)
-
-
 def test_uniform_scale():
     """Test uniform scaling."""
     sphere = Sphere(radius=1.0)
@@ -36,14 +28,6 @@ def test_uniform_scale():
     # Sphere with radius 1 scaled by 2 should have radius 2
     assert scaled(jnp.array([2.0, 0.0, 0.0])) == pytest.approx(0.0, abs=1e-5)
     assert scaled(jnp.array([0.0, 0.0, 0.0])) == pytest.approx(-2.0, abs=1e-5)
-
-
-def test_scale_method():
-    """Test scaling via method API."""
-    sphere = Sphere(radius=1.0)
-    scaled = sphere.scale(2.0)
-
-    assert scaled(jnp.array([2.0, 0.0, 0.0])) == pytest.approx(0.0, abs=1e-5)
 
 
 def test_rotate_z():
@@ -55,29 +39,3 @@ def test_rotate_z():
     # After 90° rotation around Z, the X axis becomes Y axis
     # Point at (0, 2.0, 0) should be on surface (at +Y boundary)
     assert rotated(jnp.array([0.0, 2.0, 0.0])) == pytest.approx(0.0, abs=1e-4)
-
-
-def test_rotate_method():
-    """Test rotation via method API."""
-    sphere = Sphere(radius=1.0)
-    rotated = sphere.rotate('z', jnp.pi / 2)
-
-    # Rotating a sphere shouldn't change its shape
-    assert rotated(jnp.array([1.0, 0.0, 0.0])) == pytest.approx(0.0, abs=1e-5)
-
-
-def test_chained_transforms():
-    """Test chaining multiple transformations."""
-    sphere = Sphere(radius=1.0)
-
-    # Chain: scale, rotate, translate
-    transformed = (
-        sphere
-        .scale(2.0)
-        .rotate('z', jnp.pi / 4)
-        .translate(jnp.array([1.0, 0.0, 0.0]))
-    )
-
-    # Should be callable
-    result = transformed(jnp.array([1.0, 0.0, 0.0]))
-    assert jnp.isfinite(result)

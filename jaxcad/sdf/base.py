@@ -116,38 +116,25 @@ class SDF(Fluent):
     def __or__(self, other: SDF) -> SDF:
         """Union operator: self | other"""
         from jaxcad.sdf.boolean import Union
-        return Union(self, other)
+        return Union((self, other))
+
+    def __add__(self, other: SDF) -> SDF:
+        """Union operator: self + other"""
+        from jaxcad.sdf.boolean import Union
+        return Union((self, other))
 
     def __and__(self, other: SDF) -> SDF:
         """Intersection operator: self & other"""
         from jaxcad.sdf.boolean import Intersection
-        return Intersection(self, other)
+        return Intersection((self, other))
 
     def __sub__(self, other: SDF) -> SDF:
         """Difference operator: self - other"""
         from jaxcad.sdf.boolean import Difference
-        return Difference(self, other)
+        return Difference((self, other))
 
-    @classmethod
-    def register(cls, name: str, sdf_class):
-        """Register an SDF class as a fluent API method.
+    def __xor__(self, other: SDF) -> SDF:
+        """Xor operator: self ^ other"""
+        from jaxcad.sdf.boolean import Xor
+        return Xor((self, other))
 
-        This enables method chaining for both transforms and operations.
-
-        Args:
-            name: Method name to add to SDF class
-            sdf_class: SDF class to instantiate
-
-        Example:
-            SDF.register('translate', Translate)
-            SDF.register('smooth_union', SmoothUnion)
-            # Now you can do:
-            # sphere.translate([1, 0, 0])
-            # sphere.smooth_union(box, k=0.5)
-        """
-        def method(self, *args, **kwargs):
-            return sdf_class(self, *args, **kwargs)
-
-        method.__name__ = name
-        method.__doc__ = sdf_class.__doc__
-        setattr(cls, name, method)

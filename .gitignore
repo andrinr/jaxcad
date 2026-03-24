@@ -28,3 +28,4 @@ ENV/
 .vscode/
 .claude/
 .ruff_cache/
+examples/output/

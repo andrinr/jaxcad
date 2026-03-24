@@ -13,33 +13,31 @@ class Xor(BooleanOp):
     """XOR of two SDFs (symmetric difference).
 
     Args:
-        sdf1: First SDF
-        sdf2: Second SDF
+        sdfs: 2-tuple of SDFs
     """
 
-    def __init__(self, sdf1: SDF, sdf2: SDF):
-        self.sdf1 = sdf1
-        self.sdf2 = sdf2
+    def __init__(self, sdfs: tuple[SDF, SDF]):
+        self.sdfs = sdfs
+        self.params = {}
 
     @staticmethod
-    def sdf(child_sdf1, child_sdf2, p: Array) -> Array:
+    def sdf(child_sdfs, p: Array) -> Array:
         """Pure function for XOR operation.
 
         Args:
-            child_sdf1: First SDF function
-            child_sdf2: Second SDF function
+            child_sdfs: 2-tuple of SDF functions
             p: Query point(s)
 
         Returns:
             XOR SDF value
         """
-        d1 = child_sdf1(p)
-        d2 = child_sdf2(p)
+        d1 = child_sdfs[0](p)
+        d2 = child_sdfs[1](p)
         return jnp.maximum(jnp.minimum(d1, d2), -jnp.maximum(d1, d2))
 
     def __call__(self, p: Array) -> Array:
         """XOR: max(min(d1, d2), -max(d1, d2))"""
-        return Xor.sdf(self.sdf1, self.sdf2, p)
+        return Xor.sdf(self.sdfs, p)
 
     def to_functional(self):
         """Return pure function for compilation."""

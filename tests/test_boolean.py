@@ -3,8 +3,8 @@
 import jax.numpy as jnp
 import pytest
 
-from jaxcad.boolean import Difference, Intersection, Union
-from jaxcad.primitives import Box, Sphere
+from jaxcad.sdf.boolean import Difference, Intersection, Union
+from jaxcad.sdf.primitives import Box, Sphere
 
 
 class TestUnion:
@@ -12,7 +12,7 @@ class TestUnion:
         """Union should contain points from both shapes"""
         sphere = Sphere(radius=1.0)
         box = Box(size=jnp.array([0.5, 0.5, 0.5]))
-        union = Union(sphere, box)
+        union = Union((sphere, box))
 
         # Point only in sphere
         p1 = jnp.array([0.9, 0.0, 0.0])
@@ -37,8 +37,8 @@ class TestUnion:
         sphere = Sphere(radius=1.0)
         box = Box(size=jnp.array([0.5, 0.5, 0.5]))
 
-        sharp = Union(sphere, box, smoothness=0.0)
-        smooth = Union(sphere, box, smoothness=0.5)
+        sharp = Union((sphere, box), smoothness=0.0)
+        smooth = Union((sphere, box), smoothness=0.5)
 
         # Point near intersection should differ
         p = jnp.array([0.5, 0.5, 0.0])
@@ -50,7 +50,7 @@ class TestIntersection:
         """Intersection should only contain overlapping region"""
         sphere = Sphere(radius=1.0)
         box = Box(size=jnp.array([2.0, 2.0, 2.0]))
-        inter = Intersection(sphere, box)
+        inter = Intersection((sphere, box))
 
         # Point in both (center)
         p1 = jnp.array([0.0, 0.0, 0.0])
@@ -75,7 +75,7 @@ class TestIntersection:
         sphere1 = Sphere(radius=0.5)
         sphere2 = Sphere(radius=0.5)
         # Translate sphere2 (would need transform, so just test conceptually)
-        inter = Intersection(sphere1, sphere2)
+        inter = Intersection((sphere1, sphere2))
 
         # Both spheres at same location, should have overlap
         p = jnp.array([0.0, 0.0, 0.0])
@@ -87,7 +87,7 @@ class TestDifference:
         """Difference should remove second shape from first"""
         sphere = Sphere(radius=1.0)
         small_sphere = Sphere(radius=0.5)
-        diff = Difference(sphere, small_sphere)
+        diff = Difference((sphere, small_sphere))
 
         # Point in outer sphere but not inner
         p1 = jnp.array([0.8, 0.0, 0.0])
@@ -109,7 +109,7 @@ class TestDifference:
 
     def test_drill_hole(self):
         """Classic use case: drill a hole through a sphere"""
-        from jaxcad.primitives import Cylinder
+        from jaxcad.sdf.primitives import Cylinder
 
         sphere = Sphere(radius=2.0)
         cylinder = Cylinder(radius=0.5, height=3.0)
@@ -157,8 +157,8 @@ class TestSmoothness:
         box = Box(size=jnp.array([1.0, 1.0, 1.0]))
 
         # Different smoothness values
-        sharp = Union(sphere, box, smoothness=0.01)
-        smooth = Union(sphere, box, smoothness=0.5)
+        sharp = Union((sphere, box), smoothness=0.01)
+        smooth = Union((sphere, box), smoothness=0.5)
 
         # Point near blending region
         p = jnp.array([0.7, 0.7, 0.0])

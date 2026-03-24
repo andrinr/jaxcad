@@ -6,18 +6,16 @@ from jaxcad.sdf import SDF
 
 
 class BooleanOp(SDF):
-    """Base class for boolean operation SDFs (binary operations in the SDF tree).
+    """Base class for boolean operation SDFs.
 
-    Boolean operations combine two SDFs - union, intersection, difference, etc.
-    They have two children.
+    Boolean operations combine one or more SDFs - union, intersection, difference, etc.
 
     Subclasses must implement:
-    - @staticmethod def sdf(child_sdf1, child_sdf2, p: Array, smoothness: float) -> Array
+    - @staticmethod def sdf(child_sdfs: tuple, p: Array, **params) -> Array
     - __call__(self, p: Array) -> Array
     - to_functional(self) -> Callable
 
     Subclasses should store:
-    - self.sdf1: The first child SDF
-    - self.sdf2: The second child SDF
+    - self.sdfs: Tuple of child SDFs
     - self.params: Dictionary of Parameter objects
     """

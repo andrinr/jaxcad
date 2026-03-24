@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 
 from jaxcad.sdf.primitives import Sphere, Box, Cylinder
 from jaxcad.sdf.boolean import Union, Difference, Intersection
+from jaxcad.sdf.transforms import Translate
 from jaxcad.render import render_marching_cubes
 
 
@@ -20,13 +21,12 @@ def create_scene1():
     print("Creating scene 1: Union operations...")
 
     # Platform
-    platform = Box(size=jnp.array([3.0, 3.0, 0.3]))
-    platform = platform.translate(offset=jnp.array([0.0, 0.0, -0.5]))
+    platform = Translate(Box(size=jnp.array([3.0, 3.0, 0.3])), offset=jnp.array([0.0, 0.0, -0.5]))
 
     # Three spheres at different positions
-    sphere1 = Sphere(radius=0.6).translate(offset=jnp.array([-1.0, 0.0, 0.0]))
-    sphere2 = Sphere(radius=0.6).translate(offset=jnp.array([1.0, 0.0, 0.0]))
-    sphere3 = Sphere(radius=0.5).translate(offset=jnp.array([0.0, 0.0, 0.8]))
+    sphere1 = Translate(Sphere(radius=0.6), offset=jnp.array([-1.0, 0.0, 0.0]))
+    sphere2 = Translate(Sphere(radius=0.6), offset=jnp.array([1.0, 0.0, 0.0]))
+    sphere3 = Translate(Sphere(radius=0.5), offset=jnp.array([0.0, 0.0, 0.8]))
 
     # Combine with union
     scene = Union(platform, sphere1)
@@ -45,9 +45,9 @@ def create_scene2():
     sphere = Sphere(radius=1.2)
 
     # Three cylinders as holes
-    hole1 = Cylinder(radius=0.4, height=3.0).translate(offset=jnp.array([0.0, 0.0, -1.5]))
-    hole2 = Cylinder(radius=0.4, height=3.0).translate(offset=jnp.array([0.0, -1.5, 0.0]))
-    hole3 = Cylinder(radius=0.4, height=3.0).translate(offset=jnp.array([-1.5, 0.0, 0.0]))
+    hole1 = Translate(Cylinder(radius=0.4, height=3.0), offset=jnp.array([0.0, 0.0, -1.5]))
+    hole2 = Translate(Cylinder(radius=0.4, height=3.0), offset=jnp.array([0.0, -1.5, 0.0]))
+    hole3 = Translate(Cylinder(radius=0.4, height=3.0), offset=jnp.array([-1.5, 0.0, 0.0]))
 
     # Subtract holes from sphere
     scene = Difference(sphere, hole1)
@@ -72,7 +72,7 @@ def create_scene3():
     rounded_cube = Intersection(box, sphere)
 
     # Add a cylinder on top
-    cylinder = Cylinder(radius=0.3, height=0.8).translate(offset=jnp.array([0.0, 0.0, 0.75]))
+    cylinder = Translate(Cylinder(radius=0.3, height=0.8), offset=jnp.array([0.0, 0.0, 0.75]))
 
     # Union with cylinder
     scene = Union(rounded_cube, cylinder)
