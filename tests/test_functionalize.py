@@ -6,7 +6,7 @@ import jax.numpy as jnp
 from jaxcad.geometry.parameters import Scalar, Vector
 from jaxcad.sdf.primitives.sphere import Sphere
 from jaxcad.sdf.primitives.box import Box
-from jaxcad.compiler import functionalize, extract_parameters
+from jaxcad import functionalize, extract_parameters
 
 
 def test_compile_sphere_basic():
@@ -21,7 +21,7 @@ def test_compile_sphere_basic():
     free_vals = {'sphere_0.radius': 1.0}
     fixed_vals = {}
 
-    distance = sdf_fn(point, free_vals, fixed_vals)
+    distance = sdf_fn(free_vals, fixed_vals)(point)
 
     # At origin, distance should be -radius
     assert jnp.isclose(distance, -1.0)
@@ -39,7 +39,7 @@ def test_compile_sphere_outside():
     free_vals = {}
     fixed_vals = {'sphere_0.radius': 1.0}
 
-    distance = sdf_fn(point, free_vals, fixed_vals)
+    distance = sdf_fn(free_vals, fixed_vals)(point)
 
     # Distance should be 2 - 1 = 1
     assert jnp.isclose(distance, 1.0)
@@ -54,15 +54,15 @@ def test_compile_with_parameter_variation():
     point = jnp.array([2., 0., 0.])
 
     # Test with radius = 1.0
-    dist1 = sdf_fn(point, {'sphere_0.radius': 1.0}, {})
+    dist1 = sdf_fn({'sphere_0.radius': 1.0}, {})(point)
     assert jnp.isclose(dist1, 1.0)
 
     # Test with radius = 1.5
-    dist2 = sdf_fn(point, {'sphere_0.radius': 1.5}, {})
+    dist2 = sdf_fn({'sphere_0.radius': 1.5}, {})(point)
     assert jnp.isclose(dist2, 0.5)
 
     # Test with radius = 2.0
-    dist3 = sdf_fn(point, {'sphere_0.radius': 2.0}, {})
+    dist3 = sdf_fn({'sphere_0.radius': 2.0}, {})(point)
     assert jnp.isclose(dist3, 0.0)
 
 
@@ -78,7 +78,7 @@ def test_compile_box():
     free_vals = {'box_0.size': jnp.array([1., 1., 1.])}
     fixed_vals = {}
 
-    distance = sdf_fn(point, free_vals, fixed_vals)
+    distance = sdf_fn(free_vals, fixed_vals)(point)
 
     # Should be inside the box
     assert distance < 0
@@ -104,7 +104,7 @@ def test_compile_consistency():
         direct_dist = sphere(point)
 
         # Compiled evaluation
-        compiled_dist = sdf_fn(point, {}, {'sphere_0.radius': 1.5})
+        compiled_dist = sdf_fn({}, {'sphere_0.radius': 1.5})(point)
 
         # Should be very close
         assert jnp.isclose(direct_dist, compiled_dist, atol=1e-6)

@@ -10,6 +10,8 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import List, Dict
 
+import jax
+import jax.numpy as jnp
 from jax import Array
 
 from jaxcad.fluent import Fluent
@@ -43,9 +45,11 @@ class Constraint(Fluent):
 
     Subclasses must implement:
     - compute_residual(): Returns constraint violation c(x)
-    - jacobian(): Returns ∂c/∂x
     - dof_reduction(): Number of DOF this constraint removes
     - get_parameters(): List of parameters involved in this constraint
+
+    Subclasses may optionally override:
+    - jacobian(): Returns ∂c/∂x; defaults to AD on compute_residual
     """
 
     params: dict[str, 'Parameter']
@@ -75,17 +79,38 @@ class Constraint(Fluent):
         """
         pass
 
-    @abstractmethod
     def jacobian(self, param_values: Dict[str, Array]) -> Array:
-        """Compute constraint Jacobian ∂c/∂x.
+        """Compute constraint Jacobian ∂c/∂x via automatic differentiation.
+
+        Differentiates compute_residual with respect to each parameter returned
+        by get_parameters(). Subclasses may override with a manually derived
+        Jacobian for performance or numerical reasons.
 
         Args:
             param_values: Dictionary mapping parameter names to their current values
 
         Returns:
-            Jacobian matrix of shape (n_constraints, n_params)
+            Jacobian array of shape (n_residuals, n_params) for vector residuals,
+            or (n_params,) for scalar residuals.
         """
-        pass
+        params = self.get_parameters()
+        names = [p.name for p in params]
+        vals = [param_values[n] for n in names]
+        argnums = tuple(range(len(params)))
+
+        def residual(*vals):
+            pv = dict(param_values)
+            for n, v in zip(names, vals):
+                pv[n] = v
+            return self.compute_residual(pv)
+
+        r = residual(*vals)
+        if jnp.ndim(r) == 0:
+            grads = jax.grad(residual, argnums=argnums)(*vals)
+            return jnp.concatenate([jnp.atleast_1d(g) for g in grads])
+        else:
+            jacs = jax.jacobian(residual, argnums=argnums)(*vals)
+            return jnp.concatenate(list(jacs), axis=-1)
 
     @abstractmethod
     def dof_reduction(self) -> int:

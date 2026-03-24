@@ -8,8 +8,8 @@ For full differentiability, use the functional API in transforms.functional.
 import jax
 import jax.numpy as jnp
 
-from jaxcad.primitives import Box, Sphere
-from jaxcad.transforms import Translate, Rotate, Scale, Twist
+from jaxcad.sdf.primitives import Box, Sphere
+from jaxcad.sdf.transforms import Translate, Rotate, Scale, Twist
 
 
 def test_translate_gradient_functional():
@@ -71,7 +71,7 @@ def test_twist_gradient_functional():
     box = Box(size=jnp.array([0.5, 0.5, 1.0]))
 
     def loss_fn(strength):
-        return Twist.sdf(box, jnp.array([1.0, 0.0, 0.5]), strength) ** 2
+        return Twist.sdf(box, jnp.array([1.0, 0.0, 0.5]), strength, jnp.array([0.0, 0.0, 1.0])) ** 2
 
     strength = 1.0
     grad_fn = jax.grad(loss_fn)

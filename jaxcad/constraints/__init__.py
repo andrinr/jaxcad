@@ -37,6 +37,8 @@ from jaxcad.constraints.angle import AngleConstraint
 from jaxcad.constraints.parallel import ParallelConstraint
 from jaxcad.constraints.perpendicular import PerpendicularConstraint
 from jaxcad.constraints.graph import ConstraintGraph
+from jaxcad.constraints.solve import solve_constraints, newton_raphson
+from jaxcad.extraction import extract_parameters_with_constraints
 
 # Convenience aliases (for backward compatibility with planned API)
 Distance = DistanceConstraint
@@ -60,6 +62,10 @@ __all__ = [
     'PerpendicularConstraint',
     # Graph
     'ConstraintGraph',
+    # Solver
+    'solve_constraints',
+    'newton_raphson',
+    'extract_parameters_with_constraints',
     # Aliases
     'Distance',
     'Angle',

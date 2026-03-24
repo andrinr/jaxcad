@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Dict
 
-import jax
 import jax.numpy as jnp
 from jax import Array
 
@@ -82,32 +81,6 @@ class AngleConstraint(Constraint):
 
         # Residual
         return current_angle - self.angle.value
-
-    def jacobian(self, param_values: Dict[str, Array]) -> Array:
-        """Compute Jacobian of angle constraint using JAX autodiff.
-
-        Args:
-            param_values: Dict with keys matching parameter names
-
-        Returns:
-            Jacobian array of shape (1, total_params)
-        """
-        def residual_fn(v1, v2):
-            v1_norm = v1 / jnp.linalg.norm(v1)
-            v2_norm = v2 / jnp.linalg.norm(v2)
-            cos_angle = jnp.clip(jnp.dot(v1_norm, v2_norm), -1.0, 1.0)
-            return jnp.arccos(cos_angle) - self.angle.value
-
-        v1_name = self.vector1.name
-        v2_name = self.vector2.name
-
-        v1_val = param_values[v1_name]
-        v2_val = param_values[v2_name]
-
-        # Compute gradients
-        grad_v1, grad_v2 = jax.grad(residual_fn, argnums=(0, 1))(v1_val, v2_val)
-
-        return jnp.concatenate([grad_v1, grad_v2])
 
     def dof_reduction(self) -> int:
         """Angle constraint adds 1 scalar equation, reducing DOF by 1."""

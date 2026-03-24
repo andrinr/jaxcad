@@ -6,7 +6,7 @@ import jax.numpy as jnp
 from jaxcad.geometry.parameters import Scalar, Vector
 from jaxcad.sdf.primitives.sphere import Sphere
 from jaxcad.sdf.primitives.box import Box
-from jaxcad.compiler import extract_parameters
+from jaxcad import extract_parameters
 
 
 def test_extract_free_parameter():

@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Dict
 
-import jax
 import jax.numpy as jnp
 from jax import Array
 
@@ -68,33 +67,6 @@ class ParallelConstraint(Constraint):
 
         # Cross product (for 3D vectors only)
         return jnp.cross(v1_val, v2_val)
-
-    def jacobian(self, param_values: Dict[str, Array]) -> Array:
-        """Compute Jacobian of parallel constraint.
-
-        For v1 × v2 = 0, we get 3 equations but only 2 are independent.
-
-        Args:
-            param_values: Dict with keys matching parameter names
-
-        Returns:
-            Jacobian array of shape (3, total_params)
-        """
-        def residual_fn(v1, v2):
-            return jnp.cross(v1, v2)
-
-        v1_name = self.vector1.name
-        v2_name = self.vector2.name
-
-        v1_val = param_values[v1_name]
-        v2_val = param_values[v2_name]
-
-        # Jacobian of cross product
-        jac = jax.jacobian(residual_fn, argnums=(0, 1))(v1_val, v2_val)
-
-        # Concatenate Jacobians w.r.t. v1 and v2
-        # jac[0] has shape (3, 3) for v1, jac[1] has shape (3, 3) for v2
-        return jnp.concatenate([jac[0], jac[1]], axis=1)
 
     def dof_reduction(self) -> int:
         """Parallel constraint adds 2 independent equations (cross product in 3D)."""

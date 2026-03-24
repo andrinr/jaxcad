@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Dict
 
-import jax
 import jax.numpy as jnp
 from jax import Array
 
@@ -82,35 +81,6 @@ class DistanceConstraint(Constraint):
 
         # Residual: ||p1 - p2|| - d
         return current_dist - target_dist
-
-    def jacobian(self, param_values: Dict[str, Array]) -> Array:
-        """Compute Jacobian of distance constraint.
-
-        For ||p1 - p2|| - d = 0:
-        ∂/∂p1 = (p1 - p2) / ||p1 - p2||
-        ∂/∂p2 = -(p1 - p2) / ||p1 - p2||
-
-        Args:
-            param_values: Dict with keys matching parameter names
-
-        Returns:
-            Jacobian array of shape (1, total_params)
-        """
-        # Use JAX automatic differentiation
-        def residual_fn(p1, p2):
-            diff = p1 - p2
-            return jnp.linalg.norm(diff) - self.distance.value
-
-        p1_name = self.param1.name
-        p2_name = self.param2.name
-
-        p1_val = param_values[p1_name]
-        p2_val = param_values[p2_name]
-
-        # Compute gradients
-        grad_p1, grad_p2 = jax.grad(residual_fn, argnums=(0, 1))(p1_val, p2_val)
-
-        return jnp.concatenate([grad_p1, grad_p2])
 
     def dof_reduction(self) -> int:
         """Distance constraint adds 1 scalar equation, reducing DOF by 1."""

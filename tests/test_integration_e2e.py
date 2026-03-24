@@ -15,7 +15,7 @@ from jaxcad.geometry.parameters import Vector, Scalar
 from jaxcad.geometry.primitives import Line, Circle, Rectangle
 from jaxcad.constraints import DistanceConstraint, AngleConstraint, ConstraintGraph
 from jaxcad.construction import extrude, from_line, from_circle, from_point
-from jaxcad.compiler import extract_parameters, functionalize
+from jaxcad import extract_parameters, functionalize
 from jaxcad.sdf.primitives import Sphere, Box
 
 
@@ -68,7 +68,7 @@ def test_e2e_parametric_sphere_optimization():
     def loss_fn(r):
         params = {'sphere_0.radius': r}
         point = jnp.array([2.0, 0.0, 0.0])
-        return sdf_fn(point, params, {})**2
+        return sdf_fn(params, {})(point)**2
 
     # Compute gradient
     grad = jax.grad(loss_fn)(1.0)
@@ -158,7 +158,7 @@ def test_e2e_circle_to_cylinder_with_constraints():
 
     # Test evaluation
     point = jnp.array([0., 0., 0.])
-    dist = sdf_fn(point, {'cylinder_0.radius': 2.0, 'cylinder_0.height': 5.0}, {})
+    dist = sdf_fn({'cylinder_0.radius': 2.0, 'cylinder_0.height': 5.0}, {})(point)
 
     # At origin, should be inside cylinder
     assert dist < 0
@@ -238,7 +238,7 @@ def test_e2e_gradient_based_optimization_setup():
     def loss(r):
         params_dict = {'sphere_0.radius': r}
         target_point = jnp.array([2.0, 0.0, 0.0])
-        distance = sdf_fn(target_point, params_dict, {})
+        distance = sdf_fn(params_dict, {})(target_point)
         return distance ** 2
 
     # Compute gradient using JAX

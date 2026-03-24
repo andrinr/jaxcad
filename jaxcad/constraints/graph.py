@@ -42,6 +42,30 @@ class ConstraintGraph:
 
     constraints: List[Constraint] = field(default_factory=list)
 
+    @classmethod
+    def from_parameters(cls, param_list: List[Parameter]) -> 'ConstraintGraph':
+        """Build a ConstraintGraph by discovering all constraints attached to the given parameters.
+
+        Constraints register themselves on their parameters at construction time, so this
+        collects them without any explicit graph management by the caller.
+
+        Args:
+            param_list: Free parameters whose attached constraints should be collected.
+
+        Returns:
+            A ConstraintGraph containing all discovered constraints (deduplicated).
+        """
+        seen: set = set()
+        constraints = []
+        for param in param_list:
+            for constraint in param.get_constraints():
+                if id(constraint) not in seen:
+                    seen.add(id(constraint))
+                    constraints.append(constraint)
+        graph = cls()
+        graph.constraints = constraints
+        return graph
+
     def add_constraint(self, constraint: Constraint) -> None:
         """Add a constraint to the graph.
 
