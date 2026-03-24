@@ -25,7 +25,7 @@ jobs:
         run: |
           pip install "jax[cpu]>=0.4.20"
           pip install -e . --no-deps
-          pip install quartodoc
+          pip install "quartodoc>=0.7" "griffe<1.0"
 
       - name: Build API reference
         run: quartodoc build
