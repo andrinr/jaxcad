@@ -298,28 +298,28 @@
     "href": "docs/getting-started.html",
     "title": "Getting Started",
     "section": "",
-    "text": "pip install jaxcad\nFor development:\ngit clone https://github.com/your-org/jaxcad\ncd jaxcad\npip install -e \".[dev]\""
+    "text": "pip install jaxcad\nFor development:\ngit clone https://github.com/andrinr/jaxcad\ncd jaxcad\nuv sync"
   },
   {
     "objectID": "docs/getting-started.html#installation",
     "href": "docs/getting-started.html#installation",
     "title": "Getting Started",
     "section": "",
-    "text": "pip install jaxcad\nFor development:\ngit clone https://github.com/your-org/jaxcad\ncd jaxcad\npip install -e \".[dev]\""
+    "text": "pip install jaxcad\nFor development:\ngit clone https://github.com/andrinr/jaxcad\ncd jaxcad\nuv sync"
   },
   {
-    "objectID": "docs/getting-started.html#the-three-step-workflow",
-    "href": "docs/getting-started.html#the-three-step-workflow",
+    "objectID": "docs/getting-started.html#core-concepts",
+    "href": "docs/getting-started.html#core-concepts",
     "title": "Getting Started",
-    "section": "The three-step workflow",
-    "text": "The three-step workflow\n\n1. Build a parametric scene\nParameters are Vector or Scalar objects tagged as free=True (optimizable) or free=False (constant).\nfrom jaxcad.geometry.parameters import Scalar\nfrom jaxcad.sdf.primitives import Sphere\n\nradius = Scalar(1.0, free=True, name='radius')\nsphere = Sphere(radius=radius)\n\n\n2. Extract parameters and functionalize\nextract_parameters walks the SDF tree and returns two dicts — free and fixed. functionalize compiles the tree to a pure JAX function.\nfrom jaxcad import extract_parameters, functionalize\nimport jax.numpy as jnp\n\nfree_params, fixed_params = extract_parameters(sphere)\nsdf_fn = functionalize(sphere)(free_params, fixed_params)\n\nprint(sdf_fn(jnp.array([0.0, 0.0, 0.0])))  # -1.0 (inside sphere of radius 1)\n\n\n3. Optimize with JAX\nBecause functionalize produces a pure function, jax.grad, jax.jit, and jax.vmap work directly.\nimport jax\n\ndef loss(r):\n    target = jnp.array([2.0, 0.0, 0.0])\n    return functionalize(sphere)({'sphere_0.radius': r}, {})(target) ** 2\n\nprint(jax.grad(loss)(1.0))"
+    "section": "Core concepts",
+    "text": "Core concepts\njaxCAD has two building blocks: parametric geometry (SDF trees with tagged parameters) and geometric constraints (relationships between parameters). Gradient-based optimization ties them together.\n\nBuild a constrained scene\nParameters are Vector or Scalar objects tagged as free=True (differentiable) or free=False (fixed). Constraints link parameters together.\nimport jax.numpy as jnp\nfrom jaxcad.constraints import DistanceConstraint\nfrom jaxcad.geometry import Vector\nfrom jaxcad.sdf import Sphere, Translate\n\n# A sphere whose center is constrained to lie on a sphere of radius 2\nanchor = Vector(jnp.array([0.0, 0.0, 0.0]), free=False, name=\"anchor\")\np = Vector(jnp.array([2.0, 0.0, 0.0]), free=True, name=\"p\")\nDistanceConstraint(p, anchor, 2.0)\n\nscene = Translate(Sphere(radius=0.3), offset=p)\n\n\nOptimize on the constraint manifold\nBecause every SDF is a pure JAX function, jax.grad works directly. After each gradient step, project back onto the manifold to keep the constraint satisfied.\nimport jax\n\ntarget = jnp.array([1.0, 1.5, 0.0])\n\ndef obj(q):\n    return jnp.sum((q - target) ** 2)\n\nlr = 0.1\np_current = jnp.array([2.0, 0.0, 0.0])\nfor _ in range(50):\n    grad = jax.grad(obj)(p_current)\n    p_new = p_current - lr * grad\n    p_current = 2.0 * p_new / jnp.linalg.norm(p_new)  # project back onto manifold\n\nprint(p_current)  # [1.109 1.664 0.] -- closest point on the sphere to target\nThe constraint stays satisfied throughout: ||p|| = 2.0 at every step."
   },
   {
-    "objectID": "docs/getting-started.html#constraint-solving",
-    "href": "docs/getting-started.html#constraint-solving",
+    "objectID": "docs/getting-started.html#next-steps",
+    "href": "docs/getting-started.html#next-steps",
     "title": "Getting Started",
-    "section": "Constraint solving",
-    "text": "Constraint solving\nWhen parameters must satisfy geometric relationships, attach constraints and call solve_constraints.\nfrom jaxcad.geometry.parameters import Vector\nfrom jaxcad.sdf.transforms import Translate\nfrom jaxcad.constraints import DistanceConstraint, solve_constraints\n\np = Vector([0.5, 0.5, 0.0], free=True, name='p')\nscene = Translate(Sphere(radius=0.5), offset=p)\n\n# Three constraints fully determine p in 3D\nanchor_a = Vector([0.0, 0.0, 0.0], free=False, name='a')\nDistanceConstraint(p, anchor_a, 2.0)\n# ... add two more ...\n\nsolved = solve_constraints(scene)\nsolve_constraints raises ValueError immediately if the system is under- or over-constrained."
+    "section": "Next steps",
+    "text": "Next steps\n\nOptimization - differentiating through geometry parameters\nConstraints - solving fully-determined constraint systems\nConstrained Optimization - the full workflow with trajectory visualization"
   },
   {
     "objectID": "index.html",

@@ -181,13 +181,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
    
   <ul>
   <li><a href="#installation" id="toc-installation" class="nav-link active" data-scroll-target="#installation">Installation</a></li>
-  <li><a href="#the-three-step-workflow" id="toc-the-three-step-workflow" class="nav-link" data-scroll-target="#the-three-step-workflow">The three-step workflow</a>
+  <li><a href="#core-concepts" id="toc-core-concepts" class="nav-link" data-scroll-target="#core-concepts">Core concepts</a>
   <ul class="collapse">
-  <li><a href="#build-a-parametric-scene" id="toc-build-a-parametric-scene" class="nav-link" data-scroll-target="#build-a-parametric-scene">1. Build a parametric scene</a></li>
-  <li><a href="#extract-parameters-and-functionalize" id="toc-extract-parameters-and-functionalize" class="nav-link" data-scroll-target="#extract-parameters-and-functionalize">2. Extract parameters and functionalize</a></li>
-  <li><a href="#optimize-with-jax" id="toc-optimize-with-jax" class="nav-link" data-scroll-target="#optimize-with-jax">3. Optimize with JAX</a></li>
+  <li><a href="#build-a-constrained-scene" id="toc-build-a-constrained-scene" class="nav-link" data-scroll-target="#build-a-constrained-scene">Build a constrained scene</a></li>
+  <li><a href="#optimize-on-the-constraint-manifold" id="toc-optimize-on-the-constraint-manifold" class="nav-link" data-scroll-target="#optimize-on-the-constraint-manifold">Optimize on the constraint manifold</a></li>
   </ul></li>
-  <li><a href="#constraint-solving" id="toc-constraint-solving" class="nav-link" data-scroll-target="#constraint-solving">Constraint solving</a></li>
+  <li><a href="#next-steps" id="toc-next-steps" class="nav-link" data-scroll-target="#next-steps">Next steps</a></li>
   </ul>
 </nav>
     </div>
@@ -217,63 +216,58 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="installation">Installation</h2>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install jaxcad</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>For development:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/your-org/jaxcad</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/andrinr/jaxcad</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> jaxcad</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">-e</span> <span class="st">".[dev]"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">uv</span> sync</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <hr>
 </section>
-<section id="the-three-step-workflow" class="level2">
-<h2 class="anchored" data-anchor-id="the-three-step-workflow">The three-step workflow</h2>
-<section id="build-a-parametric-scene" class="level3">
-<h3 class="anchored" data-anchor-id="build-a-parametric-scene">1. Build a parametric scene</h3>
-<p>Parameters are <code>Vector</code> or <code>Scalar</code> objects tagged as <code>free=True</code> (optimizable) or <code>free=False</code> (constant).</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.geometry.parameters <span class="im">import</span> Scalar</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.sdf.primitives <span class="im">import</span> Sphere</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>radius <span class="op">=</span> Scalar(<span class="fl">1.0</span>, free<span class="op">=</span><span class="va">True</span>, name<span class="op">=</span><span class="st">'radius'</span>)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>sphere <span class="op">=</span> Sphere(radius<span class="op">=</span>radius)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="core-concepts" class="level2">
+<h2 class="anchored" data-anchor-id="core-concepts">Core concepts</h2>
+<p>jaxCAD has two building blocks: parametric geometry (SDF trees with tagged parameters) and geometric constraints (relationships between parameters). Gradient-based optimization ties them together.</p>
+<section id="build-a-constrained-scene" class="level3">
+<h3 class="anchored" data-anchor-id="build-a-constrained-scene">Build a constrained scene</h3>
+<p>Parameters are <code>Vector</code> or <code>Scalar</code> objects tagged as <code>free=True</code> (differentiable) or <code>free=False</code> (fixed). Constraints link parameters together.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax.numpy <span class="im">as</span> jnp</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.constraints <span class="im">import</span> DistanceConstraint</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.geometry <span class="im">import</span> Vector</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.sdf <span class="im">import</span> Sphere, Translate</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co"># A sphere whose center is constrained to lie on a sphere of radius 2</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>anchor <span class="op">=</span> Vector(jnp.array([<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>]), free<span class="op">=</span><span class="va">False</span>, name<span class="op">=</span><span class="st">"anchor"</span>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> Vector(jnp.array([<span class="fl">2.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>]), free<span class="op">=</span><span class="va">True</span>, name<span class="op">=</span><span class="st">"p"</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>DistanceConstraint(p, anchor, <span class="fl">2.0</span>)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>scene <span class="op">=</span> Translate(Sphere(radius<span class="op">=</span><span class="fl">0.3</span>), offset<span class="op">=</span>p)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
-<section id="extract-parameters-and-functionalize" class="level3">
-<h3 class="anchored" data-anchor-id="extract-parameters-and-functionalize">2. Extract parameters and functionalize</h3>
-<p><code>extract_parameters</code> walks the SDF tree and returns two dicts — free and fixed. <code>functionalize</code> compiles the tree to a pure JAX function.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad <span class="im">import</span> extract_parameters, functionalize</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax.numpy <span class="im">as</span> jnp</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>free_params, fixed_params <span class="op">=</span> extract_parameters(sphere)</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>sdf_fn <span class="op">=</span> functionalize(sphere)(free_params, fixed_params)</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(sdf_fn(jnp.array([<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>])))  <span class="co"># -1.0 (inside sphere of radius 1)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</section>
-<section id="optimize-with-jax" class="level3">
-<h3 class="anchored" data-anchor-id="optimize-with-jax">3. Optimize with JAX</h3>
-<p>Because <code>functionalize</code> produces a pure function, <code>jax.grad</code>, <code>jax.jit</code>, and <code>jax.vmap</code> work directly.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> loss(r):</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    target <span class="op">=</span> jnp.array([<span class="fl">2.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>])</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> functionalize(sphere)({<span class="st">'sphere_0.radius'</span>: r}, {})(target) <span class="op">**</span> <span class="dv">2</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(jax.grad(loss)(<span class="fl">1.0</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="optimize-on-the-constraint-manifold" class="level3">
+<h3 class="anchored" data-anchor-id="optimize-on-the-constraint-manifold">Optimize on the constraint manifold</h3>
+<p>Because every SDF is a pure JAX function, <code>jax.grad</code> works directly. After each gradient step, project back onto the manifold to keep the constraint satisfied.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>target <span class="op">=</span> jnp.array([<span class="fl">1.0</span>, <span class="fl">1.5</span>, <span class="fl">0.0</span>])</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> obj(q):</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> jnp.<span class="bu">sum</span>((q <span class="op">-</span> target) <span class="op">**</span> <span class="dv">2</span>)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>lr <span class="op">=</span> <span class="fl">0.1</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>p_current <span class="op">=</span> jnp.array([<span class="fl">2.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>])</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">50</span>):</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    grad <span class="op">=</span> jax.grad(obj)(p_current)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    p_new <span class="op">=</span> p_current <span class="op">-</span> lr <span class="op">*</span> grad</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    p_current <span class="op">=</span> <span class="fl">2.0</span> <span class="op">*</span> p_new <span class="op">/</span> jnp.linalg.norm(p_new)  <span class="co"># project back onto manifold</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(p_current)  <span class="co"># [1.109 1.664 0.] -- closest point on the sphere to target</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The constraint stays satisfied throughout: <code>||p|| = 2.0</code> at every step.</p>
 <hr>
 </section>
 </section>
-<section id="constraint-solving" class="level2">
-<h2 class="anchored" data-anchor-id="constraint-solving">Constraint solving</h2>
-<p>When parameters must satisfy geometric relationships, attach constraints and call <code>solve_constraints</code>.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.geometry.parameters <span class="im">import</span> Vector</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.sdf.transforms <span class="im">import</span> Translate</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.constraints <span class="im">import</span> DistanceConstraint, solve_constraints</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> Vector([<span class="fl">0.5</span>, <span class="fl">0.5</span>, <span class="fl">0.0</span>], free<span class="op">=</span><span class="va">True</span>, name<span class="op">=</span><span class="st">'p'</span>)</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>scene <span class="op">=</span> Translate(Sphere(radius<span class="op">=</span><span class="fl">0.5</span>), offset<span class="op">=</span>p)</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Three constraints fully determine p in 3D</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>anchor_a <span class="op">=</span> Vector([<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>], free<span class="op">=</span><span class="va">False</span>, name<span class="op">=</span><span class="st">'a'</span>)</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>DistanceConstraint(p, anchor_a, <span class="fl">2.0</span>)</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="co"># ... add two more ...</span></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>solved <span class="op">=</span> solve_constraints(scene)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p><code>solve_constraints</code> raises <code>ValueError</code> immediately if the system is under- or over-constrained.</p>
+<section id="next-steps" class="level2">
+<h2 class="anchored" data-anchor-id="next-steps">Next steps</h2>
+<ul>
+<li><a href="../examples/optimization.html">Optimization</a> - differentiating through geometry parameters</li>
+<li><a href="../examples/constraints.html">Constraints</a> - solving fully-determined constraint systems</li>
+<li><a href="../examples/constrained_optimization.html">Constrained Optimization</a> - the full workflow with trajectory visualization</li>
+</ul>
 
 
 </section>
