@@ -25,3 +25,10 @@ htmlcov/
 .venv/
 venv/
 ENV/
+.vscode/
+.claude/
+.ruff_cache/
+_site/
+/.quarto/
+/reference/
+**/*.quarto_ipynb

@@ -1,0 +1,86 @@
+---
+title: Getting Started
+---
+
+## Installation
+
+```bash
+pip install jaxcad
+```
+
+For development:
+
+```bash
+git clone https://github.com/your-org/jaxcad
+cd jaxcad
+pip install -e ".[dev]"
+```
+
+---
+
+## The three-step workflow
+
+### 1. Build a parametric scene
+
+Parameters are `Vector` or `Scalar` objects tagged as `free=True` (optimizable) or `free=False` (constant).
+
+```python
+from jaxcad.geometry.parameters import Scalar
+from jaxcad.sdf.primitives import Sphere
+
+radius = Scalar(1.0, free=True, name='radius')
+sphere = Sphere(radius=radius)
+```
+
+### 2. Extract parameters and functionalize
+
+`extract_parameters` walks the SDF tree and returns two dicts — free and fixed.
+`functionalize` compiles the tree to a pure JAX function.
+
+```python
+from jaxcad import extract_parameters, functionalize
+import jax.numpy as jnp
+
+free_params, fixed_params = extract_parameters(sphere)
+sdf_fn = functionalize(sphere)(free_params, fixed_params)
+
+print(sdf_fn(jnp.array([0.0, 0.0, 0.0])))  # -1.0 (inside sphere of radius 1)
+```
+
+### 3. Optimize with JAX
+
+Because `functionalize` produces a pure function, `jax.grad`, `jax.jit`, and `jax.vmap` work directly.
+
+```python
+import jax
+
+def loss(r):
+    target = jnp.array([2.0, 0.0, 0.0])
+    return functionalize(sphere)({'sphere_0.radius': r}, {})(target) ** 2
+
+print(jax.grad(loss)(1.0))
+```
+
+---
+
+## Constraint solving
+
+When parameters must satisfy geometric relationships, attach constraints and call `solve_constraints`.
+
+```python
+from jaxcad.geometry.parameters import Vector
+from jaxcad.sdf.transforms import Translate
+from jaxcad.constraints import DistanceConstraint, solve_constraints
+
+p = Vector([0.5, 0.5, 0.0], free=True, name='p')
+scene = Translate(Sphere(radius=0.5), offset=p)
+
+# Three constraints fully determine p in 3D
+anchor_a = Vector([0.0, 0.0, 0.0], free=False, name='a')
+DistanceConstraint(p, anchor_a, 2.0)
+# ... add two more ...
+
+solved = solve_constraints(scene)
+```
+
+`solve_constraints` raises `ValueError` immediately if the system is under- or over-constrained.

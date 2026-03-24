@@ -9,6 +9,7 @@ description = "Fully differentiable CAD software built with JAX"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
+    "imageio>=2.37.2",
     "jax[cuda12]>=0.4.20",
     "numpy>=1.24.0",
 ]
@@ -16,7 +17,12 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
+    "pre-commit>=3.0.0",
     "matplotlib>=3.7.0",
+]
+docs = [
+    "quartodoc>=0.7",
+    "griffe<1.0",
 ]
 
 [tool.setuptools.packages.find]
@@ -27,6 +33,7 @@ include = ["jaxcad*"]
 dev = [
     "pytest>=7.0.0",
     "ruff>=0.8.0",
+    "pre-commit>=3.0.0",
     "matplotlib>=3.7.0",
     "scikit-image>=0.21.0",
 ]

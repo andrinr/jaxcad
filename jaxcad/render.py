@@ -1,6 +1,6 @@
 """Rendering utilities for visualizing SDFs."""
 
-from typing import Optional, Tuple
+from typing import Optional
 
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
@@ -15,19 +15,19 @@ def render_raymarched(
     sdf: SDF,
     camera_pos: Array = jnp.array([5.0, 5.0, 5.0]),
     look_at: Array = jnp.array([0.0, 0.0, 0.0]),
-    resolution: Tuple[int, int] = (200, 200),
+    resolution: tuple[int, int] = (200, 200),
     max_steps: int = 64,
-    max_dist: float = 20.0,
+    _max_dist: float = 20.0,
     eps: float = 1e-3,
     ax: Optional[plt.Axes] = None,
-    title: Optional[str] = None
+    title: Optional[str] = None,
 ) -> plt.Axes:
     """Render SDF using sphere tracing (raymarching) - fully vectorized with JAX.
 
     Args:
         sdf: The SDF to render
         camera_pos: Camera position
-        look_at: Point to look at
+        look_at: Vector to look at
         resolution: Image resolution (height, width)
         max_steps: Maximum raymarching steps
         max_dist: Maximum ray distance
@@ -62,9 +62,11 @@ def render_raymarched(
     v = (i_grid / height - 0.5) * fov
 
     # Ray directions for all pixels (height x width x 3)
-    ray_dirs = (forward[None, None, :] +
-                u[:, :, None] * right[None, None, :] +
-                v[:, :, None] * up[None, None, :])
+    ray_dirs = (
+        forward[None, None, :]
+        + u[:, :, None] * right[None, None, :]
+        + v[:, :, None] * up[None, None, :]
+    )
 
     # Normalize all rays
     ray_dirs = ray_dirs / jnp.linalg.norm(ray_dirs, axis=2, keepdims=True)
@@ -86,7 +88,7 @@ def render_raymarched(
         distances = jax.vmap(sdf)(positions)
 
         # March rays forward - rays naturally stop when distance is small
-        return t + 0.9*jnp.maximum(jnp.abs(distances), eps * 0.5)
+        return t + 0.9 * jnp.maximum(jnp.abs(distances), eps * 0.5)
 
     t = jax.lax.fori_loop(0, max_steps, march_step, t)
 
@@ -106,7 +108,7 @@ def render_raymarched(
         grad_fn = jax.grad(lambda p: sdf(p))
         normal = grad_fn(pos)
         norm = jnp.linalg.norm(normal)
-        return jnp.where(norm > 1e-6, normal / norm, jnp.array([0., 0., 1.]))
+        return jnp.where(norm > 1e-6, normal / norm, jnp.array([0.0, 0.0, 1.0]))
 
     # Compute normals for all hit positions
     normals = jax.vmap(jax.vmap(compute_normal))(final_positions)
@@ -132,26 +134,27 @@ def render_raymarched(
     image = jnp.where(hit, image, 0.0)
 
     # Display
-    ax.imshow(np.array(image), cmap='gray', origin='lower', vmin=0, vmax=1)
-    ax.axis('off')
+    ax.imshow(np.array(image), cmap="gray", origin="lower", vmin=0, vmax=1)
+    ax.axis("off")
 
     if title:
-        ax.set_title(title, fontsize=12, fontweight='bold')
+        ax.set_title(title, fontsize=12, fontweight="bold")
     else:
-        ax.set_title('Raymarched Render', fontsize=12)
+        ax.set_title("Raymarched Render", fontsize=12)
 
     return ax
 
 
 def render_marching_cubes(
     sdf: SDF,
-    bounds: Tuple[float, float, float] = (-3, -3, -3),
-    size: Tuple[float, float, float] = (6, 6, 6),
+    bounds: tuple[float, float, float] = (-3, -3, -3),
+    size: tuple[float, float, float] = (6, 6, 6),
     resolution: int = 50,
     ax: Optional[plt.Axes] = None,
-    color: str = 'cyan',
+    color: str = "cyan",
     alpha: float = 0.7,
-    title: Optional[str] = None
+    title: Optional[str] = None,
+    figsize: tuple[float, float] = (10, 10),
 ) -> plt.Axes:
     """Render SDF using marching cubes to extract mesh.
 
@@ -166,21 +169,21 @@ def render_marching_cubes(
         color: Mesh color
         alpha: Mesh transparency
         title: Plot title
+        figsize: Figure size as (width, height) in inches
 
     Returns:
         The matplotlib axes object
     """
     try:
         from skimage import measure
-    except ImportError:
+    except ImportError as err:
         raise ImportError(
-            "render_marching_cubes requires scikit-image. "
-            "Install with: pip install scikit-image"
-        )
+            "render_marching_cubes requires scikit-image. Install with: pip install scikit-image"
+        ) from err
 
     if ax is None:
-        fig = plt.figure(figsize=(10, 10))
-        ax = fig.add_subplot(111, projection='3d')
+        fig = plt.figure(figsize=figsize)
+        ax = fig.add_subplot(111, projection="3d")
 
     # Create volume - fully vectorized with JAX
     import jax
@@ -190,7 +193,7 @@ def render_marching_cubes(
     z = jnp.linspace(bounds[2], bounds[2] + size[2], resolution)
 
     # Create meshgrid
-    X, Y, Z = jnp.meshgrid(x, y, z, indexing='ij')
+    X, Y, Z = jnp.meshgrid(x, y, z, indexing="ij")
 
     # Stack into points array (resolution^3, 3)
     points = jnp.stack([X.ravel(), Y.ravel(), Z.ravel()], axis=1)
@@ -203,11 +206,11 @@ def render_marching_cubes(
 
     # Extract mesh using marching cubes
     try:
-        verts, faces, _, _ = measure.marching_cubes(volume, level=0.0, spacing=(
-            size[0] / resolution,
-            size[1] / resolution,
-            size[2] / resolution
-        ))
+        verts, faces, _, _ = measure.marching_cubes(
+            volume,
+            level=0.0,
+            spacing=(size[0] / resolution, size[1] / resolution, size[2] / resolution),
+        )
 
         # Offset vertices to correct position
         verts[:, 0] += bounds[0]
@@ -215,7 +218,7 @@ def render_marching_cubes(
         verts[:, 2] += bounds[2]
 
         # Create mesh
-        mesh = Poly3DCollection(verts[faces], alpha=alpha, edgecolor='k', linewidths=0.1)
+        mesh = Poly3DCollection(verts[faces], alpha=alpha, edgecolor="k", linewidths=0.1)
         mesh.set_facecolor(color)
         ax.add_collection3d(mesh)
 
@@ -228,25 +231,21 @@ def render_marching_cubes(
         print(f"Warning: Marching cubes failed - {e}")
         print("The SDF might not have a zero-level surface in the given bounds.")
 
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    ax.set_zlabel("Z")
     ax.set_box_aspect([1, 1, 1])
 
     if title:
-        ax.set_title(title, fontsize=12, fontweight='bold')
+        ax.set_title(title, fontsize=12, fontweight="bold")
     else:
-        ax.set_title('3D Mesh (Marching Cubes)', fontsize=12)
+        ax.set_title("3D Mesh (Marching Cubes)", fontsize=12)
 
     return ax
 
 
 # Convenience function
-def render(
-    sdf: SDF,
-    method: str = 'raymarch',
-    **kwargs
-) -> plt.Axes:
+def render(sdf: SDF, method: str = "raymarch", **kwargs) -> plt.Axes:
     """Render an SDF using the specified method.
 
     Args:
@@ -257,9 +256,9 @@ def render(
     Returns:
         Matplotlib axes object
     """
-    if method == 'raymarch':
+    if method == "raymarch":
         return render_raymarched(sdf, **kwargs)
-    elif method == 'marching_cubes':
+    elif method == "marching_cubes":
         return render_marching_cubes(sdf, **kwargs)
     else:
         raise ValueError(f"Unknown render method: {method}. Use 'raymarch' or 'marching_cubes'")

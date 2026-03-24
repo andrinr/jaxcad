@@ -1,0 +1,42 @@
+name: docs
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Install Python dependencies
+        run: |
+          pip install "jax[cpu]>=0.4.20"
+          pip install -e . --no-deps
+          pip install "quartodoc>=0.7" "griffe<1.0"
+
+      - name: Build API reference
+        run: quartodoc build
+
+      - name: Render site
+        run: quarto render
+
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: quarto-dev/quarto-actions/publish@v2
+        with:
+          target: gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

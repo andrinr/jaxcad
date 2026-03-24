@@ -1,8 +1,15 @@
 """JaxCAD: Differentiable CAD with SDFs and CSG."""
 
-from jaxcad.sdf import SDF
-from jaxcad import primitives
-from jaxcad import boolean
-from jaxcad import transforms
+from jaxcad.extraction import extract_parameters, extract_parameters_with_constraints
+from jaxcad.functionalize import functionalize
+from jaxcad.sdf import SDF, boolean, primitives, transforms
 
-__all__ = ["SDF", "primitives", "boolean", "transforms"]
+__all__ = [
+    "SDF",
+    "primitives",
+    "boolean",
+    "transforms",
+    "extract_parameters",
+    "extract_parameters_with_constraints",
+    "functionalize",
+]
