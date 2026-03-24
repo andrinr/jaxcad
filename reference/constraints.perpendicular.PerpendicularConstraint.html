@@ -184,9 +184,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">Parameters</a></li>
   <li><a href="#example" id="toc-example" class="nav-link" data-scroll-target="#example">Example</a></li>
-  </ul></li>
-  <li><a href="#force-vectors-perpendicular" id="toc-force-vectors-perpendicular" class="nav-link" data-scroll-target="#force-vectors-perpendicular">Force vectors perpendicular</a>
-  <ul class="collapse">
   <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods">Methods</a>
   <ul class="collapse">
   <li><a href="#jaxcad.constraints.perpendicular.PerpendicularConstraint.compute_residual" id="toc-jaxcad.constraints.perpendicular.PerpendicularConstraint.compute_residual" class="nav-link" data-scroll-target="#jaxcad.constraints.perpendicular.PerpendicularConstraint.compute_residual">compute_residual</a></li>
@@ -245,12 +242,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="example" class="level2 doc-section doc-section-example">
 <h2 class="doc-section doc-section-example anchored" data-anchor-id="example">Example</h2>
-<p>v1 = Vector([1, 0, 0], free=True, name=‘v1’) v2 = Vector([0, 1, 0], free=True, name=‘v2’)</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>v1 <span class="op">=</span> Vector([<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>], free<span class="op">=</span><span class="va">True</span>, name<span class="op">=</span><span class="st">'v1'</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>v2 <span class="op">=</span> Vector([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>], free<span class="op">=</span><span class="va">True</span>, name<span class="op">=</span><span class="st">'v2'</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>constraint <span class="op">=</span> PerpendicularConstraint(v1, v2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
-</section>
-<section id="force-vectors-perpendicular" class="level1">
-<h1>Force vectors perpendicular</h1>
-<p>constraint = PerpendicularConstraint(v1, v2)</p>
 <section id="methods" class="level2">
 <h2 class="anchored" data-anchor-id="methods">Methods</h2>
 <table class="caption-top table">
@@ -281,7 +276,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="jaxcad.constraints.perpendicular.PerpendicularConstraint.compute_residual" class="level3">
 <h3 class="anchored" data-anchor-id="jaxcad.constraints.perpendicular.PerpendicularConstraint.compute_residual">compute_residual</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>constraints.perpendicular.PerpendicularConstraint.compute_residual(param_values)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>constraints.perpendicular.PerpendicularConstraint.compute_residual(param_values)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Compute perpendicular constraint residual: v1 · v2.</p>
 <p>Two vectors are perpendicular iff their dot product is zero.</p>
 <section id="parameters-1" class="level4 doc-section doc-section-parameters">
@@ -338,17 +333,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="jaxcad.constraints.perpendicular.PerpendicularConstraint.dof_reduction" class="level3">
 <h3 class="anchored" data-anchor-id="jaxcad.constraints.perpendicular.PerpendicularConstraint.dof_reduction">dof_reduction</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>constraints.perpendicular.PerpendicularConstraint.dof_reduction()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>constraints.perpendicular.PerpendicularConstraint.dof_reduction()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Perpendicular constraint adds 1 scalar equation.</p>
 </section>
 <section id="jaxcad.constraints.perpendicular.PerpendicularConstraint.get_parameters" class="level3">
 <h3 class="anchored" data-anchor-id="jaxcad.constraints.perpendicular.PerpendicularConstraint.get_parameters">get_parameters</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>constraints.perpendicular.PerpendicularConstraint.get_parameters()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>constraints.perpendicular.PerpendicularConstraint.get_parameters()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Return both vectors involved in the perpendicular constraint.</p>
 </section>
 <section id="jaxcad.constraints.perpendicular.PerpendicularConstraint.jacobian" class="level3">
 <h3 class="anchored" data-anchor-id="jaxcad.constraints.perpendicular.PerpendicularConstraint.jacobian">jacobian</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>constraints.perpendicular.PerpendicularConstraint.jacobian(param_values)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>constraints.perpendicular.PerpendicularConstraint.jacobian(param_values)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Compute Jacobian of perpendicular constraint.</p>
 <p>For v1 · v2 = 0: ∂/∂v1 = v2 ∂/∂v2 = v1</p>
 <section id="parameters-2" class="level4 doc-section doc-section-parameters">

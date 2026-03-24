@@ -184,9 +184,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">Parameters</a></li>
   <li><a href="#example" id="toc-example" class="nav-link" data-scroll-target="#example">Example</a></li>
-  </ul></li>
-  <li><a href="#fix-angle-to-90-degrees-π2-radians" id="toc-fix-angle-to-90-degrees-π2-radians" class="nav-link" data-scroll-target="#fix-angle-to-90-degrees-π2-radians">Fix angle to 90 degrees (π/2 radians)</a>
-  <ul class="collapse">
   <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods">Methods</a>
   <ul class="collapse">
   <li><a href="#jaxcad.constraints.angle.AngleConstraint.compute_residual" id="toc-jaxcad.constraints.angle.AngleConstraint.compute_residual" class="nav-link" data-scroll-target="#jaxcad.constraints.angle.AngleConstraint.compute_residual">compute_residual</a></li>
@@ -250,12 +247,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="example" class="level2 doc-section doc-section-example">
 <h2 class="doc-section doc-section-example anchored" data-anchor-id="example">Example</h2>
-<p>v1 = Vector([1, 0, 0], free=True, name=‘v1’) v2 = Vector([0, 1, 0], free=True, name=‘v2’)</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>v1 <span class="op">=</span> Vector([<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>], free<span class="op">=</span><span class="va">True</span>, name<span class="op">=</span><span class="st">'v1'</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>v2 <span class="op">=</span> Vector([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>], free<span class="op">=</span><span class="va">True</span>, name<span class="op">=</span><span class="st">'v2'</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>constraint <span class="op">=</span> AngleConstraint(v1, v2, jnp.pi <span class="op">/</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
-</section>
-<section id="fix-angle-to-90-degrees-π2-radians" class="level1">
-<h1>Fix angle to 90 degrees (π/2 radians)</h1>
-<p>constraint = AngleConstraint(v1, v2, jnp.pi / 2)</p>
 <section id="methods" class="level2">
 <h2 class="anchored" data-anchor-id="methods">Methods</h2>
 <table class="caption-top table">
@@ -282,7 +277,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="jaxcad.constraints.angle.AngleConstraint.compute_residual" class="level3">
 <h3 class="anchored" data-anchor-id="jaxcad.constraints.angle.AngleConstraint.compute_residual">compute_residual</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>constraints.angle.AngleConstraint.compute_residual(param_values)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>constraints.angle.AngleConstraint.compute_residual(param_values)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Compute angle constraint residual: arccos(v1·v2/(||v1||||v2||)) - θ.</p>
 <section id="parameters-1" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
@@ -333,12 +328,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="jaxcad.constraints.angle.AngleConstraint.dof_reduction" class="level3">
 <h3 class="anchored" data-anchor-id="jaxcad.constraints.angle.AngleConstraint.dof_reduction">dof_reduction</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>constraints.angle.AngleConstraint.dof_reduction()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>constraints.angle.AngleConstraint.dof_reduction()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Angle constraint adds 1 scalar equation, reducing DOF by 1.</p>
 </section>
 <section id="jaxcad.constraints.angle.AngleConstraint.get_parameters" class="level3">
 <h3 class="anchored" data-anchor-id="jaxcad.constraints.angle.AngleConstraint.get_parameters">get_parameters</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>constraints.angle.AngleConstraint.get_parameters()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>constraints.angle.AngleConstraint.get_parameters()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Return both vectors involved in the angle constraint.</p>
 
 
