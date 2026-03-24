@@ -37,54 +37,35 @@ quarto preview    # serve locally at localhost:4321
 
 ## Example
 
-**Build a parametric scene and evaluate it:**
-
-```python
-import jax.numpy as jnp
-from jaxcad.geometry.parameters import Scalar
-from jaxcad.sdf.primitives import Sphere
-from jaxcad import extract_parameters, functionalize
-
-radius = Scalar(1.0, free=True, name='radius')
-sphere = Sphere(radius=radius)
-
-free_params, fixed_params = extract_parameters(sphere)
-sdf_fn = functionalize(sphere)(free_params, fixed_params)
-
-print(sdf_fn(jnp.array([0.0, 0.0, 0.0])))  # -1.0 (inside sphere)
-```
-
-**Differentiate through parameters:**
+Pin a sphere's center to a constraint manifold and find the point on it closest to a target:
 
 ```python
 import jax
+import jax.numpy as jnp
+from jaxcad.constraints import DistanceConstraint
+from jaxcad.geometry import Vector
+from jaxcad.sdf import Sphere, Translate
 
-def loss(r):
-    target = jnp.array([2.0, 0.0, 0.0])
-    return functionalize(sphere)({'sphere_0.radius': r}, {})(target) ** 2
+# Constrain the sphere center to lie on a sphere of radius 2
+anchor = Vector(jnp.array([0.0, 0.0, 0.0]), free=False, name="anchor")
+p = Vector(jnp.array([2.0, 0.0, 0.0]), free=True, name="p")
+DistanceConstraint(p, anchor, 2.0)
 
-print(jax.grad(loss)(1.0))
-```
+scene = Translate(Sphere(radius=0.3), offset=p)
+target = jnp.array([1.0, 1.5, 0.0])
 
-**Solve geometric constraints:**
+# Gradient descent with projection back onto the constraint manifold
+def obj(q):
+    return jnp.sum((q - target) ** 2)
 
-```python
-from jaxcad.geometry.parameters import Vector
-from jaxcad.sdf.transforms import Translate
-from jaxcad.constraints import DistanceConstraint, solve_constraints
+lr = 0.1
+p_current = jnp.array([2.0, 0.0, 0.0])
+for _ in range(50):
+    grad = jax.grad(obj)(p_current)
+    p_new = p_current - lr * grad
+    p_current = 2.0 * p_new / jnp.linalg.norm(p_new)  # project back onto manifold
 
-p = Vector([0.5, 0.5, 0.0], free=True, name='p')
-scene = Translate(Sphere(radius=0.5), offset=p)
-
-anchor_a = Vector([0.0, 0.0, 0.0], free=False, name='a')
-anchor_b = Vector([4.0, 0.0, 0.0], free=False, name='b')
-anchor_c = Vector([2.0, 3.0, 0.0], free=False, name='c')
-
-DistanceConstraint(p, anchor_a, 2.236)
-DistanceConstraint(p, anchor_b, 2.236)
-DistanceConstraint(p, anchor_c, 2.0)
-
-solved = solve_constraints(scene)
+print(p_current)  # [1.109 1.664 0.] -- closest point on the sphere to target
 ```
 
 ---

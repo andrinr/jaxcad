@@ -11,76 +11,63 @@ pip install jaxcad
 For development:
 
 ```bash
-git clone https://github.com/your-org/jaxcad
+git clone https://github.com/andrinr/jaxcad
 cd jaxcad
-pip install -e ".[dev]"
+uv sync
 ```
 
 ---
 
-## The three-step workflow
+## Core concepts
 
-### 1. Build a parametric scene
+jaxCAD has two building blocks: parametric geometry (SDF trees with tagged parameters) and geometric constraints (relationships between parameters). Gradient-based optimization ties them together.
 
-Parameters are `Vector` or `Scalar` objects tagged as `free=True` (optimizable) or `free=False` (constant).
+### Build a constrained scene
 
-```python
-from jaxcad.geometry.parameters import Scalar
-from jaxcad.sdf.primitives import Sphere
-
-radius = Scalar(1.0, free=True, name='radius')
-sphere = Sphere(radius=radius)
-```
-
-### 2. Extract parameters and functionalize
-
-`extract_parameters` walks the SDF tree and returns two dicts — free and fixed.
-`functionalize` compiles the tree to a pure JAX function.
+Parameters are `Vector` or `Scalar` objects tagged as `free=True` (differentiable) or `free=False` (fixed). Constraints link parameters together.
 
 ```python
-from jaxcad import extract_parameters, functionalize
 import jax.numpy as jnp
+from jaxcad.constraints import DistanceConstraint
+from jaxcad.geometry import Vector
+from jaxcad.sdf import Sphere, Translate
 
-free_params, fixed_params = extract_parameters(sphere)
-sdf_fn = functionalize(sphere)(free_params, fixed_params)
+# A sphere whose center is constrained to lie on a sphere of radius 2
+anchor = Vector(jnp.array([0.0, 0.0, 0.0]), free=False, name="anchor")
+p = Vector(jnp.array([2.0, 0.0, 0.0]), free=True, name="p")
+DistanceConstraint(p, anchor, 2.0)
 
-print(sdf_fn(jnp.array([0.0, 0.0, 0.0])))  # -1.0 (inside sphere of radius 1)
+scene = Translate(Sphere(radius=0.3), offset=p)
 ```
 
-### 3. Optimize with JAX
+### Optimize on the constraint manifold
 
-Because `functionalize` produces a pure function, `jax.grad`, `jax.jit`, and `jax.vmap` work directly.
+Because every SDF is a pure JAX function, `jax.grad` works directly. After each gradient step, project back onto the manifold to keep the constraint satisfied.
 
 ```python
 import jax
 
-def loss(r):
-    target = jnp.array([2.0, 0.0, 0.0])
-    return functionalize(sphere)({'sphere_0.radius': r}, {})(target) ** 2
+target = jnp.array([1.0, 1.5, 0.0])
 
-print(jax.grad(loss)(1.0))
+def obj(q):
+    return jnp.sum((q - target) ** 2)
+
+lr = 0.1
+p_current = jnp.array([2.0, 0.0, 0.0])
+for _ in range(50):
+    grad = jax.grad(obj)(p_current)
+    p_new = p_current - lr * grad
+    p_current = 2.0 * p_new / jnp.linalg.norm(p_new)  # project back onto manifold
+
+print(p_current)  # [1.109 1.664 0.] -- closest point on the sphere to target
 ```
+
+The constraint stays satisfied throughout: `||p|| = 2.0` at every step.
 
 ---
 
-## Constraint solving
+## Next steps
 
-When parameters must satisfy geometric relationships, attach constraints and call `solve_constraints`.
-
-```python
-from jaxcad.geometry.parameters import Vector
-from jaxcad.sdf.transforms import Translate
-from jaxcad.constraints import DistanceConstraint, solve_constraints
-
-p = Vector([0.5, 0.5, 0.0], free=True, name='p')
-scene = Translate(Sphere(radius=0.5), offset=p)
-
-# Three constraints fully determine p in 3D
-anchor_a = Vector([0.0, 0.0, 0.0], free=False, name='a')
-DistanceConstraint(p, anchor_a, 2.0)
-# ... add two more ...
-
-solved = solve_constraints(scene)
-```
-
-`solve_constraints` raises `ValueError` immediately if the system is under- or over-constrained.
+- [Optimization](../examples/optimization.ipynb) - differentiating through geometry parameters
+- [Constraints](../examples/constraints.ipynb) - solving fully-determined constraint systems
+- [Constrained Optimization](../examples/constrained_optimization.ipynb) - the full workflow with trajectory visualization
