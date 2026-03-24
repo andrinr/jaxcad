@@ -4,7 +4,7 @@ These tests verify that all layers work together:
 1. Geometry layer (Line, Circle, Rectangle)
 2. Constraints layer (DistanceConstraint, AngleConstraint, etc.)
 3. Construction layer (extrude, from_line, from_circle, from_point)
-4. Compiler layer (extract_parameters, compile_to_function)
+4. Compiler layer (extract_parameters, compile_functionalize)
 """
 
 import pytest
@@ -15,7 +15,7 @@ from jaxcad.geometry.parameters import Vector, Scalar
 from jaxcad.geometry.primitives import Line, Circle, Rectangle
 from jaxcad.constraints import DistanceConstraint, AngleConstraint, ConstraintGraph
 from jaxcad.construction import extrude, from_line, from_circle, from_point
-from jaxcad.compiler import extract_parameters, to_function
+from jaxcad.compiler import extract_parameters, functionalize
 from jaxcad.sdf.primitives import Sphere, Box
 
 
@@ -62,7 +62,7 @@ def test_e2e_parametric_sphere_optimization():
     assert 'sphere_0.radius' in free_params
 
     # Compile to pure function
-    sdf_fn = to_function(sphere)
+    sdf_fn = functionalize(sphere)
 
     # Test gradient computation
     def loss_fn(r):
@@ -154,7 +154,7 @@ def test_e2e_circle_to_cylinder_with_constraints():
     assert cylinder.params['height'] is height
 
     # Layer 4: Compile
-    sdf_fn = to_function(cylinder)
+    sdf_fn = functionalize(cylinder)
 
     # Test evaluation
     point = jnp.array([0., 0., 0.])
@@ -232,7 +232,7 @@ def test_e2e_gradient_based_optimization_setup():
     free_params, fixed_params = extract_parameters(sphere)
 
     # Compile to function
-    sdf_fn = to_function(sphere)
+    sdf_fn = functionalize(sphere)
 
     # Define loss function (distance to target point)
     def loss(r):

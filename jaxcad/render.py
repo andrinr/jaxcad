@@ -151,7 +151,8 @@ def render_marching_cubes(
     ax: Optional[plt.Axes] = None,
     color: str = 'cyan',
     alpha: float = 0.7,
-    title: Optional[str] = None
+    title: Optional[str] = None,
+    figsize: Tuple[float, float] = (10, 10)
 ) -> plt.Axes:
     """Render SDF using marching cubes to extract mesh.
 
@@ -166,6 +167,7 @@ def render_marching_cubes(
         color: Mesh color
         alpha: Mesh transparency
         title: Plot title
+        figsize: Figure size as (width, height) in inches
 
     Returns:
         The matplotlib axes object
@@ -179,7 +181,7 @@ def render_marching_cubes(
         )
 
     if ax is None:
-        fig = plt.figure(figsize=(10, 10))
+        fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111, projection='3d')
 
     # Create volume - fully vectorized with JAX

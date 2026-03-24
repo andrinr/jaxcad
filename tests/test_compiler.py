@@ -4,7 +4,7 @@ import jax
 import jax.numpy as jnp
 import pytest
 
-from jaxcad.compiler import extract_parameters, to_function
+from jaxcad.compiler import extract_parameters, functionalize
 from jaxcad.parameters import Scalar, Vector
 from jaxcad.primitives import Sphere
 from jaxcad.transforms import Translate, Scale
@@ -27,13 +27,13 @@ def test_extract_free_fixed_parameters():
     assert len(fixed_params) == 1
 
 
-def test_compile_to_function_basic():
+def test_compile_functionalize_basic():
     """Test basic compilation to pure function."""
     radius = Scalar(value=1.0, free=True, name='radius')
     sphere = Sphere(radius=radius)
 
     free_params, fixed_params = extract_parameters(sphere)
-    sdf_fn = to_function(sphere)
+    sdf_fn = functionalize(sphere)
 
     # Evaluate at a point
     point = jnp.array([2.0, 0.0, 0.0])
@@ -43,7 +43,7 @@ def test_compile_to_function_basic():
     assert jnp.abs(distance - 1.0) < 0.01
 
 
-def test_compile_to_function_jittable():
+def test_compile_functionalize_jittable():
     """Test that compiled function is JIT-compatible."""
     radius = Scalar(value=1.5, free=True, name='radius')
     offset = Vector(value=[1.0, 0.0, 0.0], free=True, name='offset')
@@ -52,7 +52,7 @@ def test_compile_to_function_jittable():
     translated = Translate(sphere, offset=offset)
 
     free_params, fixed_params = extract_parameters(translated)
-    sdf_fn = to_function(translated)
+    sdf_fn = functionalize(translated)
 
     # JIT compile the function
     @jax.jit
@@ -76,7 +76,7 @@ def test_gradient_through_compiled_function():
     sphere = Sphere(radius=radius)
 
     free_params, fixed_params = extract_parameters(sphere)
-    sdf_fn = to_function(sphere)
+    sdf_fn = functionalize(sphere)
 
     # Define loss function
     def loss_fn(free_p):
@@ -102,7 +102,7 @@ def test_jit_with_gradient():
     translated = Translate(sphere, offset=offset)
 
     free_params, fixed_params = extract_parameters(translated)
-    sdf_fn = to_function(translated)
+    sdf_fn = functionalize(translated)
 
     # Target point
     target = jnp.array([2.5, 0.0, 0.0])
@@ -133,7 +133,7 @@ def test_vmap_with_compiled_function():
     sphere = Sphere(radius=radius)
 
     free_params, fixed_params = extract_parameters(sphere)
-    sdf_fn = to_function(sphere)
+    sdf_fn = functionalize(sphere)
 
     # Batch of points
     points = jnp.array([
@@ -174,7 +174,7 @@ def test_complex_expression():
 
     # Extract and compile
     free_params, fixed_params = extract_parameters(scaled)
-    sdf_fn = to_function(scaled)
+    sdf_fn = functionalize(scaled)
 
     # Should have 2 free parameters (both radii)
     assert len(free_params) == 2
@@ -196,7 +196,7 @@ def test_optimization_convergence():
     sphere = Sphere(radius=radius)
 
     free_params, fixed_params = extract_parameters(sphere)
-    sdf_fn = to_function(sphere)
+    sdf_fn = functionalize(sphere)
 
     target_point = jnp.array([2.0, 0.0, 0.0])
 
@@ -230,7 +230,7 @@ def test_fixed_parameters_dont_change():
     translated = Translate(sphere, offset=offset)
 
     free_params, fixed_params = extract_parameters(translated)
-    sdf_fn = to_function(translated)
+    sdf_fn = functionalize(translated)
 
     # Check initial state
     assert 'sphere_1.radius' in fixed_params

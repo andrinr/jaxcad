@@ -8,20 +8,20 @@ from jax import Array
 from jaxcad.sdf import SDF
 
 
-def to_function(sdf: SDF) -> Callable:
+def functionalize(sdf: SDF) -> Callable:
     """Compile an SDF to a pure function with free and fixed parameters.
 
-    Returns a function with signature:
-        sdf_fn(point, free_params, fixed_params) -> distance
+    Returns a curried function with signature:
+        sdf_fn(free_params, fixed_params) -> (point -> distance)
 
     Args:
         sdf: The SDF to compile
 
     Returns:
         Pure function that takes:
-        - point: Array (3,) - query point
         - free_params: Dict[str, Array] - free parameter values
         - fixed_params: Dict[str, Array] - fixed parameter values
+        and returns an SDF callable: point: Array (3,) -> distance: Array ()
 
     Example:
         >>> from jaxcad.sdf.primitives import Sphere
@@ -30,12 +30,12 @@ def to_function(sdf: SDF) -> Callable:
         >>> radius = Scalar(value=1.0, free=True, name='radius')
         >>> sphere = Sphere(radius=radius)
         >>>
-        >>> sdf_fn = to_function(sphere)
+        >>> sdf_fn = functionalize(sphere)
         >>>
         >>> # Query with specific parameter values
         >>> free_vals = {'sphere_0.radius': 2.0}
         >>> fixed_vals = {}
-        >>> distance = sdf_fn(jnp.array([0., 0., 0.]), free_vals, fixed_vals)
+        >>> distance = sdf_fn(free_vals, fixed_vals)(jnp.array([0., 0., 0.]))
     """
     from jaxcad.sdf.primitives.base import Primitive
     from jaxcad.sdf.transforms.base import Transform
@@ -130,4 +130,5 @@ def to_function(sdf: SDF) -> Callable:
             # Fallback
             return lambda _p, _fp, _fp2: jnp.array(0.0)
 
-    return build_function(sdf)
+    inner = build_function(sdf)
+    return lambda free_params, fixed_params: lambda p: inner(p, free_params, fixed_params)

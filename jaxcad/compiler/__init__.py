@@ -9,11 +9,13 @@ The compiler layer bridges the parametric SDF layer with JAX optimization.
 """
 
 from jaxcad.compiler.extraction import extract_parameters
-from jaxcad.compiler.compilation import to_function
+from jaxcad.compiler.compilation import functionalize
 from jaxcad.compiler.constrained import extract_parameters_with_constraints
+from jaxcad.compiler.solve import solve_constraints
 
 __all__ = [
     'extract_parameters',
-    'to_function',
+    'functionalize',
     'extract_parameters_with_constraints',
+    'solve_constraints',
 ]
