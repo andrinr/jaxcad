@@ -227,6 +227,14 @@ class ConstraintGraph:
             else:
                 warnings.warn(f"Unknown parameter type {type(param)}", stacklevel=2)
 
+        # Also include fixed parameters referenced by constraints (needed for Jacobian evaluation)
+        for param in self.get_all_parameters():
+            if not param.free and param.name not in param_values:
+                if isinstance(param, Vector):
+                    param_values[param.name] = param.xyz
+                elif isinstance(param, Scalar):
+                    param_values[param.name] = param.value
+
         # Flatten to 1D array
         full_params_flat = jnp.concatenate(full_params)
         n_params = full_params_flat.shape[0]

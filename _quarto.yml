@@ -17,6 +17,8 @@ website:
             href: examples/constraints.ipynb
           - text: Optimization
             href: examples/optimization.ipynb
+          - text: Constrained Optimization
+            href: examples/constrained_optimization.ipynb
       - text: API Reference
         href: reference/index.qmd
     right:
