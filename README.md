@@ -68,6 +68,7 @@ for _ in range(50):
 print(p_current)  # [1.109 1.664 0.] -- closest point on the sphere to target
 ```
 
+![constraint](examples/optim.png)
 ---
 
 Inspired by [Fidget](https://www.mattkeeter.com/projects/fidget/) and [Inigo Quilez's distance functions](https://iquilezles.org/articles/distfunctions/).
