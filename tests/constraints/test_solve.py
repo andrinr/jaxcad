@@ -1,72 +1,13 @@
-"""Tests for constraints/solve.py — newton_raphson and solve_constraints."""
+"""Tests for constraints/solve.py — solve_constraints."""
 
 import jax.numpy as jnp
 import pytest
 
 from jaxcad.constraints import DistanceConstraint
-from jaxcad.constraints.solve import newton_raphson, solve_constraints
+from jaxcad.constraints.solve import solve_constraints
 from jaxcad.geometry.parameters import Vector
 from jaxcad.sdf.primitives.sphere import Sphere
 from jaxcad.sdf.transforms.affine.translate import Translate
-
-# ---------------------------------------------------------------------------
-# newton_raphson
-# ---------------------------------------------------------------------------
-
-
-def test_newton_raphson_linear():
-    """Solves a trivial linear system: x - 3 = 0."""
-
-    def residual(x):
-        return x - jnp.array([3.0])
-
-    x = newton_raphson(residual, jnp.array([0.0]))
-    assert jnp.allclose(x, jnp.array([3.0]), atol=1e-6)
-
-
-def test_newton_raphson_nonlinear():
-    """Solves x^2 - 4 = 0 starting near x=1 (should find x=2)."""
-
-    def residual(x):
-        return x**2 - jnp.array([4.0])
-
-    x = newton_raphson(residual, jnp.array([1.0]))
-    assert jnp.allclose(jnp.abs(x), jnp.array([2.0]), atol=1e-5)
-
-
-def test_newton_raphson_multivariate():
-    """Solves a 2D system: x+y-3=0, x-y-1=0 → x=2, y=1."""
-
-    def residual(x):
-        return jnp.array([x[0] + x[1] - 3.0, x[0] - x[1] - 1.0])
-
-    x = newton_raphson(residual, jnp.array([0.0, 0.0]))
-    assert jnp.allclose(x, jnp.array([2.0, 1.0]), atol=1e-6)
-
-
-def test_newton_raphson_already_converged():
-    """Returns immediately when x0 already satisfies the residual."""
-
-    def residual(x):
-        return x - jnp.array([5.0])
-
-    x = newton_raphson(residual, jnp.array([5.0]))
-    assert jnp.allclose(x, jnp.array([5.0]), atol=1e-6)
-
-
-def test_newton_raphson_no_convergence():
-    """Raises RuntimeError when max_iter is too small to converge."""
-
-    def residual(x):
-        return jnp.sin(x * 100)  # highly oscillatory — won't converge in 1 step
-
-    with pytest.raises(RuntimeError, match="did not converge"):
-        newton_raphson(residual, jnp.array([0.1]), max_iter=1)
-
-
-# ---------------------------------------------------------------------------
-# solve_constraints
-# ---------------------------------------------------------------------------
 
 
 def _trilateration_scene():

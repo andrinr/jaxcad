@@ -54,9 +54,9 @@ def extract_parameters_with_constraints(
 ) -> tuple[Array, Array, Array, list]:
     """Extract parameters from SDF and apply constraint-based DOF reduction.
 
-    Discovers all constraints registered on the free parameters, builds a
-    ConstraintGraph, and returns both the reduced coordinate vector and the
-    null-space matrix needed to project back to full parameter space.
+    Discovers all constraints registered on the free parameters and returns
+    the reduced coordinate vector and null-space matrix needed to project back
+    to full parameter space.
 
     Args:
         sdf: The SDF tree to extract parameters from.
@@ -73,7 +73,7 @@ def extract_parameters_with_constraints(
         full_params = base + null_space @ reduced
         ```
     """
-    from jaxcad.constraints.graph import ConstraintGraph
+    from jaxcad.constraints.dof import _collect_constraints, extract_free_dof
     from jaxcad.geometry.parameters import Scalar, Vector
 
     free_params_dict, _ = extract_parameters(sdf)
@@ -85,8 +85,8 @@ def extract_parameters_with_constraints(
             seen.add(param.name)
             param_list.append(param)
 
-    constraint_graph = ConstraintGraph.from_parameters(param_list)
-    reduced_params, null_space = constraint_graph.extract_free_dof(param_list)
+    constraints = _collect_constraints(param_list)
+    reduced_params, null_space = extract_free_dof(constraints, param_list)
 
     base_parts = []
     for param in param_list:

@@ -4,7 +4,7 @@ import jax
 import jax.numpy as jnp
 import pytest
 
-from jaxcad.constraints import ConstraintGraph, DistanceConstraint
+from jaxcad.constraints import DistanceConstraint, extract_free_dof
 from jaxcad.geometry.parameters import Vector
 
 
@@ -14,11 +14,8 @@ def test_constrained_optimization_gradient_flow():
     p1 = Vector([0, 0, 0], free=True, name="p1")
     p2 = Vector([1, 0, 0], free=True, name="p2")
 
-    graph = ConstraintGraph()
-    graph.add_constraint(DistanceConstraint(p1, p2, 1.0))
-
-    # Get reduced DOF
-    reduced, null_space = graph.extract_free_dof([p1, p2])
+    constraints = [DistanceConstraint(p1, p2, 1.0)]
+    reduced, null_space = extract_free_dof(constraints, [p1, p2])
 
     # Base point
     base_point = jnp.concatenate([p1.xyz, p2.xyz])
@@ -61,12 +58,13 @@ def test_constraint_preserves_dof_in_optimization():
     p2 = Vector([1, 0, 0], free=True, name="p2")
     p3 = Vector([0.5, 0.5, 0], free=True, name="p3")
 
-    graph = ConstraintGraph()
-    graph.add_constraint(DistanceConstraint(p1, p2, 1.0))
-    graph.add_constraint(DistanceConstraint(p1, p3, 0.7071))  # ~√2/2
+    constraints = [
+        DistanceConstraint(p1, p2, 1.0),
+        DistanceConstraint(p1, p3, 0.7071),  # ~√2/2
+    ]
 
     # 9 DOF - 2 constraints = 7 DOF
-    reduced, null_space = graph.extract_free_dof([p1, p2, p3])
+    reduced, null_space = extract_free_dof(constraints, [p1, p2, p3])
 
     assert reduced.shape[0] == 7
 
@@ -93,10 +91,8 @@ def test_optimization_convergence_with_learning_rate(learning_rate):
     p1 = Vector([0, 0, 0], free=True, name="p1")
     p2 = Vector([1, 0, 0], free=True, name="p2")
 
-    graph = ConstraintGraph()
-    graph.add_constraint(DistanceConstraint(p1, p2, 1.0))
-
-    reduced, null_space = graph.extract_free_dof([p1, p2])
+    constraints = [DistanceConstraint(p1, p2, 1.0)]
+    reduced, null_space = extract_free_dof(constraints, [p1, p2])
     base_point = jnp.concatenate([p1.xyz, p2.xyz])
 
     def loss_fn(reduced_params):

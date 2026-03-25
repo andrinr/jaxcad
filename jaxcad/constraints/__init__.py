@@ -5,13 +5,12 @@ relationships and automatically reduces degrees of freedom (DOF) during optimiza
 
 Architecture:
 - Constraints define relationships between parameters (distance, angle, etc.)
-- ConstraintGraph collects constraints and computes reduced DOF space
-- Null space projection maps reduced parameters to full parameter space
+- Free functions in dof.py compute reduced DOF space via null-space projection
 - Integration with extract_parameters() for optimization
 
 Example:
     from jaxcad.geometry import Vector, Scalar
-    from jaxcad.constraints import DistanceConstraint, ConstraintGraph
+    from jaxcad.constraints import DistanceConstraint, extract_free_dof
 
     # Two free points (6 DOF total)
     p1 = Vector([0, 0, 0], free=True, name='p1')
@@ -20,25 +19,32 @@ Example:
     # Distance constraint (reduces DOF by 1)
     constraint = DistanceConstraint(p1, p2, Scalar(0.2))
 
-    # Build constraint graph
-    graph = ConstraintGraph()
-    graph.add_constraint(constraint)
-
     # Extract reduced DOF (5 DOF instead of 6)
-    reduced_params = graph.extract_free_dof([p1, p2])
+    reduced_params, null_space = extract_free_dof([constraint], [p1, p2])
 """
 
 from __future__ import annotations
 
-from jaxcad.constraints.angle import AngleConstraint
-
 # Import all constraint types
 from jaxcad.constraints.base import Constraint
-from jaxcad.constraints.distance import DistanceConstraint
-from jaxcad.constraints.graph import ConstraintGraph
-from jaxcad.constraints.parallel import ParallelConstraint
-from jaxcad.constraints.perpendicular import PerpendicularConstraint
-from jaxcad.constraints.solve import newton_raphson, solve_constraints
+from jaxcad.constraints.dof import (
+    all_parameters,
+    extract_free_dof,
+    in_null_space,
+    linearize_at,
+    null_space_update,
+    project_gradient,
+    project_to_full,
+    project_to_manifold,
+    project_to_reduced,
+    projected_update,
+    total_dof_reduction,
+)
+from jaxcad.constraints.solve import solve_constraints
+from jaxcad.constraints.types.angle import AngleConstraint
+from jaxcad.constraints.types.distance import DistanceConstraint
+from jaxcad.constraints.types.parallel import ParallelConstraint
+from jaxcad.constraints.types.perpendicular import PerpendicularConstraint
 from jaxcad.extraction import extract_parameters_with_constraints
 
 # Re-export parameter types for convenience
@@ -61,11 +67,20 @@ __all__ = [
     "AngleConstraint",
     "ParallelConstraint",
     "PerpendicularConstraint",
-    # Graph
-    "ConstraintGraph",
+    # DOF free functions
+    "extract_free_dof",
+    "linearize_at",
+    "in_null_space",
+    "null_space_update",
+    "project_gradient",
+    "project_to_full",
+    "project_to_manifold",
+    "project_to_reduced",
+    "projected_update",
+    "total_dof_reduction",
+    "all_parameters",
     # Solver
     "solve_constraints",
-    "newton_raphson",
     "extract_parameters_with_constraints",
     # Aliases
     "Distance",
