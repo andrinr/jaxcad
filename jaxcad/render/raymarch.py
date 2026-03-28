@@ -48,8 +48,12 @@ def _camera_rays(
 
     fx = fov
     fy = fx / w * h
-    # mgrid produces rows top-to-bottom (y: +fy → -fy) so image is not upside-down
-    y, x = jnp.mgrid[fy : -fy : h * 1j, -fx : fx : w * 1j].reshape(2, -1)
+    # linspace works with abstract fov inside jax.jit (mgrid requires concrete bounds)
+    xs = jnp.linspace(-fx, fx, w)
+    ys = jnp.linspace(fy, -fy, h)
+    yy, xx = jnp.meshgrid(ys, xs, indexing="ij")
+    y = yy.reshape(-1)
+    x = xx.reshape(-1)
     dirs = jnp.stack([x, y, jnp.ones_like(x)], axis=1)
     R = jnp.stack([right, down, forward])
     dirs = dirs @ R

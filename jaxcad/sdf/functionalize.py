@@ -43,12 +43,21 @@ def functionalize(sdf: SDF) -> Callable:
                     result[attr_name] = fixed_params[path]  # path-keyed, plain Array
         return result
 
-    def build_function(obj: SDF) -> Callable:
+    def build_function(obj: SDF) -> Callable | None:
         node_id = f"{obj.__class__.__name__.lower()}_{node_counter['count']}"
         node_counter["count"] += 1
+
+        if not hasattr(obj.__class__, "sdf"):
+            # Non-SDF Fluent node (e.g. DiffMaterial) — keep counter in sync,
+            # recurse into children, but produce no SDF callable.
+            for c in obj.children():
+                build_function(c)
+            return None
+
         pure_sdf = obj.__class__.sdf
         params_snapshot = obj.params
-        child_fns = [build_function(c) for c in obj.children()]
+        raw_child_fns = [build_function(c) for c in obj.children()]
+        child_fns = [f for f in raw_child_fns if f is not None]
 
         def eval_fn(p: Array, free_params: dict, fixed_params: dict) -> Array:
             param_values = collect_params(node_id, params_snapshot, free_params, fixed_params)
