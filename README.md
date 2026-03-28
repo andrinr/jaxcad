@@ -120,4 +120,4 @@ Inspired by [Fidget](https://www.mattkeeter.com/projects/fidget/) and [Inigo Qui
 
 ## License
 
-[PolyForm Noncommercial License 1.0.0](LICENSE) — free for open source projects and research; commercial use is not permitted.
+[GNU Affero General Public License v3.0](LICENSE) — free for open source use; commercial use requires a separate license. Contact the authors if you want to use jaxcad in a proprietary product.
