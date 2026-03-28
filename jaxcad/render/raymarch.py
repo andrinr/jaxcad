@@ -455,7 +455,6 @@ def render_raymarched(
     fov: float = 0.6,
     max_steps: int = 64,
     max_dist: float = 20.0,
-    eps: float = 1e-3,
     shadow_steps: int = 32,
     shadow_hardness: float = 8.0,
     gamma: float = 2.2,
@@ -481,7 +480,6 @@ def render_raymarched(
         fov: Half-width field-of-view parameter.
         max_steps: Sphere tracing iterations per ray.
         max_dist: Miss threshold distance.
-        eps: Surface hit threshold.
         shadow_steps: Soft shadow ray iterations.
         shadow_hardness: Shadow edge sharpness.
         gamma: Gamma correction exponent.
@@ -508,7 +506,6 @@ def render_raymarched(
         fov=fov,
         max_steps=max_steps,
         max_dist=max_dist,
-        eps=eps,
         shadow_steps=shadow_steps,
         shadow_hardness=shadow_hardness,
         gamma=gamma,
