@@ -115,3 +115,9 @@ print(params["p"])  # [1.109, 1.664, 0.] — optimal point on |p|=2 closest to t
 ---
 
 Inspired by [Fidget](https://www.mattkeeter.com/projects/fidget/) and [Inigo Quilez's distance functions](https://iquilezles.org/articles/distfunctions/).
+
+---
+
+## License
+
+[PolyForm Noncommercial License 1.0.0](LICENSE) — free for open source projects and research; commercial use is not permitted.

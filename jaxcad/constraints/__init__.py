@@ -27,9 +27,11 @@ from __future__ import annotations
 
 from jaxcad.constraints.dof import (
     NullSpaceMap,
+    all_parameters,
     build_residual_fn,
     compute_param_vector,
     null_space,
+    total_dof_reduction,
     unpack_param_vector,
 )
 from jaxcad.constraints.solve import (
@@ -68,6 +70,8 @@ __all__ = [
     "PerpendicularConstraint",
     # DOF free functions
     "NullSpaceMap",
+    "all_parameters",
+    "total_dof_reduction",
     "build_residual_fn",
     "compute_param_vector",
     "unpack_param_vector",

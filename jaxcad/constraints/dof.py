@@ -174,6 +174,37 @@ def build_residual_fn(
     return flat_fn
 
 
+def all_parameters(constraints: list[Constraint]) -> list[Parameter]:
+    """Return a deduplicated list of all parameters referenced by constraints.
+
+    Args:
+        constraints: List of Constraint objects.
+
+    Returns:
+        Deduplicated list of Parameter objects, in order of first appearance.
+    """
+    seen: set = set()
+    result: list[Parameter] = []
+    for c in constraints:
+        for p in c.get_parameters():
+            if id(p) not in seen:
+                seen.add(id(p))
+                result.append(p)
+    return result
+
+
+def total_dof_reduction(constraints: list[Constraint]) -> int:
+    """Return the total number of DOF removed by a list of constraints.
+
+    Args:
+        constraints: List of Constraint objects.
+
+    Returns:
+        Sum of ``dof_reduction()`` across all constraints.
+    """
+    return sum(c.dof_reduction() for c in constraints)
+
+
 def null_space(
     free_params: dict[str, Array],
     metadata: dict[str, Parameter],

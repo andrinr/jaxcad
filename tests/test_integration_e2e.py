@@ -52,18 +52,18 @@ def test_e2e_parametric_sphere_optimization():
     sphere = from_point(center, radius)
 
     # Layer 4: Extract and compile
-    free_params, fixed_params = extract_parameters(sphere)
+    free_params, fixed_params, _ = extract_parameters(sphere)
 
     # Should have one free parameter (radius)
     assert len(free_params) == 1
-    assert "sphere_0.radius" in free_params
+    assert "radius" in free_params
 
     # Compile to pure function
     sdf_fn = functionalize(sphere)
 
     # Test gradient computation
     def loss_fn(r):
-        params = {"sphere_0.radius": r}
+        params = {"radius": r}
         point = jnp.array([2.0, 0.0, 0.0])
         return sdf_fn(params, {})(point) ** 2
 
@@ -119,7 +119,7 @@ def test_e2e_rectangle_extrusion():
     assert box._source_geometry is rect
 
     # Layer 4: Extract parameters
-    free_params, fixed_params = extract_parameters(box)
+    free_params, fixed_params, _ = extract_parameters(box)
 
     # Box was created from extrude which creates a new fixed size vector
     # The original width/height/depth parameters are in the rectangle, not extracted
@@ -153,7 +153,7 @@ def test_e2e_circle_to_cylinder_with_constraints():
 
     # Test evaluation
     point = jnp.array([0.0, 0.0, 0.0])
-    dist = sdf_fn({"cylinder_0.radius": 2.0, "cylinder_0.height": 5.0}, {})(point)
+    dist = sdf_fn({"radius": 2.0, "height": 5.0}, {})(point)
 
     # At origin, should be inside cylinder
     assert dist < 0
@@ -181,10 +181,10 @@ def test_e2e_line_properties_and_capsule():
     assert jnp.isclose(capsule.params["height"].value, 2.0)  # Half of line length
 
     # Layer 4: Extract parameters
-    free_params, fixed_params = extract_parameters(capsule)
+    free_params, fixed_params, _ = extract_parameters(capsule)
 
     # Should have one free parameter (radius)
-    assert "capsule_0.radius" in free_params
+    assert "radius" in free_params
 
 
 def test_e2e_multi_constraint_system():
@@ -219,14 +219,14 @@ def test_e2e_gradient_based_optimization_setup():
     sphere = Sphere(radius=radius)
 
     # Extract parameters
-    free_params, fixed_params = extract_parameters(sphere)
+    free_params, fixed_params, _ = extract_parameters(sphere)
 
     # Compile to function
     sdf_fn = functionalize(sphere)
 
     # Define loss function (distance to target point)
     def loss(r):
-        params_dict = {"sphere_0.radius": r}
+        params_dict = {"radius": r}
         target_point = jnp.array([2.0, 0.0, 0.0])
         distance = sdf_fn(params_dict, {})(target_point)
         return distance**2

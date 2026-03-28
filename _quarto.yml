@@ -45,18 +45,20 @@ quartodoc:
         - extraction.extract_parameters
     - title: Functionalize
       contents:
-        - functionalize.functionalize
+        - sdf.functionalize.functionalize
     - title: Constraints — types
       contents:
-        - constraints.base.Constraint
-        - constraints.distance.DistanceConstraint
-        - constraints.angle.AngleConstraint
-        - constraints.parallel.ParallelConstraint
-        - constraints.perpendicular.PerpendicularConstraint
+        - constraints.types.base.Constraint
+        - constraints.types.distance.DistanceConstraint
+        - constraints.types.angle.AngleConstraint
+        - constraints.types.parallel.ParallelConstraint
+        - constraints.types.perpendicular.PerpendicularConstraint
     - title: Constraints — solver
       contents:
         - constraints.solve.solve_constraints
-        - constraints.solve.newton_raphson
+        - constraints.solve.project_to_manifold
+        - constraints.solve.constraint_residuals
+        - constraints.solve.make_manifold_projection
     - title: Construction
       contents:
         - construction.from_point.from_point
