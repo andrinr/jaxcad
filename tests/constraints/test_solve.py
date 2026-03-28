@@ -1,13 +1,37 @@
-"""Tests for constraints/solve.py — solve_constraints."""
+"""Tests for constraints/solve.py — solve_constraints, project_to_manifold, constraint_residuals."""
 
 import jax.numpy as jnp
 import pytest
 
-from jaxcad.constraints import DistanceConstraint
+from jaxcad.constraints import (
+    DistanceConstraint,
+    constraint_residuals,
+    project_to_manifold,
+)
 from jaxcad.constraints.solve import solve_constraints
 from jaxcad.geometry.parameters import Vector
 from jaxcad.sdf.primitives.sphere import Sphere
 from jaxcad.sdf.transforms.affine.translate import Translate
+
+
+def _free_and_meta(*params):
+    return (
+        {p.name: p.value for p in params},
+        {p.name: p for p in params},
+    )
+
+
+def _sphere_constraint(distance=2.0, suffix=""):
+    """Sphere: distance from origin equals `distance`."""
+    anchor = Vector([0, 0, 0], free=False, name=f"anc_s{suffix}")
+    p = Vector([distance, 0, 0], free=True, name=f"p_s{suffix}")
+    DistanceConstraint(anchor, p, distance)
+    return _free_and_meta(p)
+
+
+# ---------------------------------------------------------------------------
+# solve_constraints
+# ---------------------------------------------------------------------------
 
 
 def _trilateration_scene():
@@ -53,7 +77,7 @@ def test_solve_constraints_under_constrained():
     p = Vector(jnp.array([1.0, 0.0, 0.0]), free=True, name="p_uc")
     scene = Translate(Sphere(radius=0.5), offset=p)
 
-    DistanceConstraint(p, anchor, 1.0)  # only 1 of 3 needed DOF removed
+    DistanceConstraint(p, anchor, 1.0)
 
     with pytest.raises(ValueError, match="Under-constrained"):
         solve_constraints(scene)
@@ -61,39 +85,102 @@ def test_solve_constraints_under_constrained():
 
 def test_solve_constraints_over_constrained():
     """Raises ValueError when constraints > DOF."""
-    Vector(jnp.array([0.0, 0.0, 0.0]), free=False, name="anchor_oc")
     p = Vector(jnp.array([1.0, 0.0, 0.0]), free=True, name="p_oc")
     scene = Translate(Sphere(radius=0.5), offset=p)
 
-    # 4 constraints on a 3-DOF parameter
-    for i, dist in enumerate([1.0, 1.0, 1.0, 1.0]):
+    for i in range(4):
         a = Vector(jnp.array([float(i), 0.0, 0.0]), free=False, name=f"anc_oc_{i}")
-        DistanceConstraint(p, a, dist)
+        DistanceConstraint(p, a, 1.0)
 
     with pytest.raises(ValueError, match="Over-constrained"):
         solve_constraints(scene)
 
 
-def test_solve_constraints_scalar_param():
-    """Solver works when the free parameter is a Scalar (1-DOF)."""
-    # One free scalar radius, constrained to equal 2.0 via a distance from origin
-    # to a point at [2,0,0]: ||[r,0,0] - [0,0,0]|| = 2 → r = 2
-    # We encode this as: p is free Vector along x, one distance constraint fixes it.
-    anchor = Vector(jnp.array([0.0, 0.0, 0.0]), free=False, name="anchor_sc")
-    p = Vector(jnp.array([1.0, 0.0, 0.0]), free=True, name="p_sc")
-    scene = Translate(Sphere(radius=0.5), offset=p)
+# ---------------------------------------------------------------------------
+# project_to_manifold
+# ---------------------------------------------------------------------------
 
-    DistanceConstraint(p, anchor, float(jnp.linalg.norm(jnp.array([2.0, 0.0, 0.0]))))
-    DistanceConstraint(
-        p,
-        Vector(jnp.array([0.0, 1.0, 0.0]), free=False, name="anc2_sc"),
-        float(jnp.linalg.norm(jnp.array([2.0, -1.0, 0.0]))),
-    )
-    DistanceConstraint(
-        p,
-        Vector(jnp.array([0.0, 0.0, 1.0]), free=False, name="anc3_sc"),
-        float(jnp.linalg.norm(jnp.array([2.0, 0.0, -1.0]))),
-    )
 
-    solved = solve_constraints(scene)
-    assert jnp.allclose(solved["p_sc"], jnp.array([2.0, 0.0, 0.0]), atol=1e-5)
+def test_project_to_manifold_snaps_to_sphere():
+    """Off-sphere point is projected onto the sphere."""
+    free, meta = _sphere_constraint(distance=2.0, suffix="_snap")
+    off = {"p_s_snap": jnp.array([3.0, 1.0, 0.0])}
+
+    projected = project_to_manifold(off, meta)
+
+    assert jnp.abs(jnp.linalg.norm(projected["p_s_snap"]) - 2.0) < 1e-5
+
+
+def test_project_to_manifold_no_op_when_on_manifold():
+    """Point already on the sphere should be unchanged."""
+    free, meta = _sphere_constraint(distance=2.0, suffix="_noop")
+    on = {"p_s_noop": jnp.array([0.0, 2.0, 0.0])}
+
+    projected = project_to_manifold(on, meta)
+
+    assert jnp.allclose(projected["p_s_noop"], on["p_s_noop"], atol=1e-5)
+
+
+def test_project_to_manifold_no_constraints_is_identity():
+    """Without any constraints, project_to_manifold is a no-op."""
+    p = Vector([1.0, 2.0, 3.0], free=True, name="p_nc_proj")
+    free, meta = _free_and_meta(p)
+
+    result = project_to_manifold(free, meta)
+
+    assert jnp.allclose(result["p_nc_proj"], free["p_nc_proj"])
+
+
+def test_project_to_manifold_multiple_steps_all_satisfy():
+    """All step counts should yield constraint satisfaction for the sphere."""
+    free, meta = _sphere_constraint(distance=2.0, suffix="_steps")
+    off = {"p_s_steps": jnp.array([4.0, 2.0, 1.0])}
+
+    for steps in [1, 2, 5]:
+        projected = project_to_manifold(off, meta, steps=steps)
+        assert jnp.abs(jnp.linalg.norm(projected["p_s_steps"]) - 2.0) < 1e-5
+
+
+# ---------------------------------------------------------------------------
+# constraint_residuals
+# ---------------------------------------------------------------------------
+
+
+def test_constraint_residuals_zero_on_manifold():
+    """Residuals should be zero when the constraint is exactly satisfied."""
+    free, meta = _sphere_constraint(distance=2.0, suffix="_res0")
+    on = {"p_s_res0": jnp.array([0.0, 0.0, 2.0])}
+
+    r = constraint_residuals(on, meta)
+
+    assert float(jnp.abs(r).max()) < 1e-5
+
+
+def test_constraint_residuals_nonzero_off_manifold():
+    """Residuals should be nonzero when the constraint is violated."""
+    free, meta = _sphere_constraint(distance=2.0, suffix="_res1")
+    off = {"p_s_res1": jnp.array([3.0, 0.0, 0.0])}  # |p| = 3, should be 2
+
+    r = constraint_residuals(off, meta)
+
+    assert float(jnp.abs(r).max()) > 0.5
+
+
+def test_constraint_residuals_measures_violation_magnitude():
+    """Residual magnitude should equal |p| - distance."""
+    free, meta = _sphere_constraint(distance=2.0, suffix="_mag")
+    off = {"p_s_mag": jnp.array([5.0, 0.0, 0.0])}  # |p| = 5, distance = 2 → residual = 3
+
+    r = constraint_residuals(off, meta)
+
+    assert jnp.allclose(jnp.abs(r), jnp.array([3.0]), atol=1e-5)
+
+
+def test_constraint_residuals_empty_without_constraints():
+    """Returns an empty array when there are no constraints."""
+    p = Vector([1.0, 0.0, 0.0], free=True, name="p_empty_r")
+    free, meta = _free_and_meta(p)
+
+    r = constraint_residuals(free, meta)
+
+    assert r.shape == (0,)
