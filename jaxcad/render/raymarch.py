@@ -231,6 +231,7 @@ def _render_pixel(
     edge_width: float,
     background_color: Array,
     refract_steps: int,
+    use_grad_ao: bool = True,
 ) -> Array:
     """Trace one ray and return its shaded RGB color.
 
@@ -251,8 +252,9 @@ def _render_pixel(
 
     # Normal from gradient
     raw_normal = jax.grad(sdf)(pos)
-    ao = jnp.linalg.norm(raw_normal)
-    normal = raw_normal / jnp.where(ao > 1e-6, ao, 1.0)
+    raw_mag = jnp.linalg.norm(raw_normal)
+    normal = raw_normal / jnp.where(raw_mag > 1e-6, raw_mag, 1.0)
+    ao = jnp.clip(raw_mag, 0.0, 1.0) if use_grad_ao else jnp.array(1.0)
 
     # Material at hit point
     mat = material_fn(pos)
@@ -294,8 +296,9 @@ def _render_pixel(
         bg_pos = bg_origin + t_bg * dir_out
         bg_hit = t_bg < max_dist
         raw_bg_n = jax.grad(sdf)(bg_pos)
-        bg_ao = jnp.linalg.norm(raw_bg_n)
-        bg_norm = raw_bg_n / jnp.where(bg_ao > 1e-6, bg_ao, 1.0)
+        bg_mag = jnp.linalg.norm(raw_bg_n)
+        bg_norm = raw_bg_n / jnp.where(bg_mag > 1e-6, bg_mag, 1.0)
+        bg_ao = jnp.clip(bg_mag, 0.0, 1.0)
         bg_mat = material_fn(bg_pos)
         rgb_behind = jnp.where(
             bg_hit,
@@ -344,7 +347,7 @@ def raymarch(
     fov: float = 0.6,
     max_steps: int = 64,
     max_dist: float = 20.0,
-    shadow_steps: int = 32,
+    shadow_steps: int = 24,
     shadow_hardness: float = 8.0,
     gamma: float = 2.2,
     ambient: float = 0.0,
@@ -413,6 +416,10 @@ def raymarch(
         def material_fn(_p):
             return Material().as_dict()
 
+    # For approximate SDFs (is_exact=False, e.g. Twist) the gradient magnitude
+    # is not a reliable AO proxy — use ao=1 (unoccluded) instead.
+    use_grad_ao = getattr(sdf, "is_exact", True)
+
     render_fn = jax.jit(
         jax.vmap(
             lambda ray_dir: _render_pixel(
@@ -430,6 +437,7 @@ def raymarch(
                 edge_width,
                 background_color,
                 refract_steps,
+                use_grad_ao,
             )
         )
     )
@@ -453,11 +461,11 @@ def render_raymarched(
     light_colors: Array | None = None,
     resolution: tuple[int, int] = (200, 200),
     fov: float = 0.6,
-    max_steps: int = 64,
+    max_steps: int = 48,
     max_dist: float = 20.0,
     shadow_steps: int = 32,
     shadow_hardness: float = 8.0,
-    gamma: float = 2.2,
+    gamma: float = 1.0,
     ambient: float = 0.0,
     aa_samples: int = 1,
     background_color: Array = jnp.array([0.0, 0.0, 0.0]),
