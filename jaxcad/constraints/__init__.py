@@ -33,6 +33,7 @@ from jaxcad.constraints.dof import (
     unpack_param_vector,
 )
 from jaxcad.constraints.solve import (
+    constraint_residuals,
     make_manifold_projection,
     project_to_manifold,
     solve_constraints,
@@ -74,6 +75,7 @@ __all__ = [
     # Solver
     "solve_constraints",
     "project_to_manifold",
+    "constraint_residuals",
     "make_manifold_projection",
     # Aliases
     "Distance",

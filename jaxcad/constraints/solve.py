@@ -124,6 +124,28 @@ def project_to_manifold(
     return unpack_param_vector(x, metadata)
 
 
+def constraint_residuals(
+    free_params: dict[str, Array],
+    metadata: dict[str, Parameter],
+) -> Array:
+    """Evaluate the constraint residuals at free_params.
+
+    Args:
+        free_params: Name-keyed parameter arrays.
+        metadata: Name-keyed Parameter objects (carries constraint info).
+
+    Returns:
+        Flat residual array (length = total constraint equations). Empty array
+        if there are no constraints.
+    """
+    constraints = _collect_constraints(metadata)
+    if not constraints:
+        return jnp.array([])
+    flat_fn = build_residual_fn(constraints, metadata)
+    x = jnp.concatenate([jnp.atleast_1d(free_params[name]) for name in metadata])
+    return flat_fn(x)
+
+
 def make_manifold_projection(
     metadata: dict[str, Parameter],
     *,
