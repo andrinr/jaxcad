@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>geometry.parameters.vector – jaxCAD</title>
+<title>render.raymarch.raymarch – jaxCAD</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -184,15 +184,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#jaxcad.geometry.parameters.Vector" id="toc-jaxcad.geometry.parameters.Vector" class="nav-link active" data-scroll-target="#jaxcad.geometry.parameters.Vector">geometry.parameters.Vector</a>
+  <li><a href="#jaxcad.render.raymarch.raymarch" id="toc-jaxcad.render.raymarch.raymarch" class="nav-link active" data-scroll-target="#jaxcad.render.raymarch.raymarch">render.raymarch.raymarch</a>
   <ul class="collapse">
-  <li><a href="#example" id="toc-example" class="nav-link" data-scroll-target="#example">Example</a></li>
-  <li><a href="#attributes" id="toc-attributes" class="nav-link" data-scroll-target="#attributes">Attributes</a></li>
-  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods">Methods</a>
-  <ul class="collapse">
-  <li><a href="#jaxcad.geometry.parameters.Vector.norm" id="toc-jaxcad.geometry.parameters.Vector.norm" class="nav-link" data-scroll-target="#jaxcad.geometry.parameters.Vector.norm">norm</a></li>
-  <li><a href="#jaxcad.geometry.parameters.Vector.normalize" id="toc-jaxcad.geometry.parameters.Vector.normalize" class="nav-link" data-scroll-target="#jaxcad.geometry.parameters.Vector.normalize">normalize</a></li>
-  </ul></li>
+  <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">Parameters</a></li>
+  <li><a href="#returns" id="toc-returns" class="nav-link" data-scroll-target="#returns">Returns</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -203,70 +198,170 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 
-<section id="jaxcad.geometry.parameters.Vector" class="level1">
-<h1>geometry.parameters.Vector</h1>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>geometry.parameters.Vector(</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    value,</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    free<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    bounds<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    _constraints<span class="op">=</span><span class="bu">list</span>(),</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>3D vector parameter (position, offset, direction, size).</p>
-<section id="example" class="level2 doc-section doc-section-example">
-<h2 class="doc-section doc-section-example anchored" data-anchor-id="example">Example</h2>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>position <span class="op">=</span> Vector(value<span class="op">=</span>[<span class="fl">1.0</span>, <span class="fl">2.0</span>, <span class="fl">3.0</span>], free<span class="op">=</span><span class="va">True</span>, name<span class="op">=</span><span class="st">'pos'</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>offset <span class="op">=</span> Vector(value<span class="op">=</span>[<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>], free<span class="op">=</span><span class="va">False</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</section>
-<section id="attributes" class="level2">
-<h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
+<section id="jaxcad.render.raymarch.raymarch" class="level1">
+<h1>render.raymarch.raymarch</h1>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>render.raymarch.raymarch(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    sdf,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    camera_pos<span class="op">=</span>jnp.array([<span class="fl">5.0</span>, <span class="fl">5.0</span>, <span class="fl">5.0</span>]),</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    look_at<span class="op">=</span>jnp.array([<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>]),</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    light_dirs<span class="op">=</span>jnp.array([<span class="fl">0.5</span>, <span class="fl">1.0</span>, <span class="fl">0.3</span>]),</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    light_colors<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    resolution<span class="op">=</span>(<span class="dv">200</span>, <span class="dv">200</span>),</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    fov<span class="op">=</span><span class="fl">0.6</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    max_steps<span class="op">=</span><span class="dv">64</span>,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    max_dist<span class="op">=</span><span class="fl">20.0</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    shadow_steps<span class="op">=</span><span class="dv">32</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    shadow_hardness<span class="op">=</span><span class="fl">8.0</span>,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    gamma<span class="op">=</span><span class="fl">2.2</span>,</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    ambient<span class="op">=</span><span class="fl">0.0</span>,</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    aa_samples<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    background_color<span class="op">=</span>jnp.array([<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>]),</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    refract_steps<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Render an SDF via sphere tracing and return an RGB image array.</p>
+<p>Uses <code>jax.vmap</code> over pixels and <code>jax.lax.scan</code> for the inner march loop. Supports multiple colored lights, transparency, and refraction.</p>
+<section id="parameters" class="level2 doc-section doc-section-parameters">
+<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
 <table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 15%">
+<col style="width: 60%">
+<col style="width: 15%">
+</colgroup>
 <thead>
 <tr class="header">
 <th>Name</th>
+<th>Type</th>
 <th>Description</th>
+<th>Default</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="#jaxcad.geometry.parameters.Vector.xyz">xyz</a></td>
-<td>Alias for .value (3D coordinates).</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="methods" class="level2">
-<h2 class="anchored" data-anchor-id="methods">Methods</h2>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><a href="#jaxcad.geometry.parameters.Vector.norm">norm</a></td>
-<td>Compute Euclidean norm.</td>
+<td>sdf</td>
+<td>Callable[[Array], Array]</td>
+<td>Signed distance function, callable <code>(point: Array[3]) → Array[]</code>.</td>
+<td><em>required</em></td>
 </tr>
 <tr class="even">
-<td><a href="#jaxcad.geometry.parameters.Vector.normalize">normalize</a></td>
-<td>Return a normalized Vector (unit length).</td>
+<td>camera_pos</td>
+<td>Array</td>
+<td>Camera position in world space.</td>
+<td><code>jnp.array([5.0, 5.0, 5.0])</code></td>
+</tr>
+<tr class="odd">
+<td>look_at</td>
+<td>Array</td>
+<td>Point the camera looks toward.</td>
+<td><code>jnp.array([0.0, 0.0, 0.0])</code></td>
+</tr>
+<tr class="even">
+<td>light_dirs</td>
+<td>Array</td>
+<td>Light direction(s) toward the light source(s). Shape <code>(3,)</code> for a single light or <code>(N, 3)</code> for N lights.</td>
+<td><code>jnp.array([0.5, 1.0, 0.3])</code></td>
+</tr>
+<tr class="odd">
+<td>light_colors</td>
+<td>Array | None</td>
+<td>RGB color(s) of the light(s), shape <code>(3,)</code> or <code>(N, 3)</code>. Defaults to white <code>[1, 1, 1]</code> for every light.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>resolution</td>
+<td>tuple[int, int]</td>
+<td>Output image size as (height, width).</td>
+<td><code>(200, 200)</code></td>
+</tr>
+<tr class="odd">
+<td>fov</td>
+<td>float</td>
+<td>Half-width field-of-view parameter.</td>
+<td><code>0.6</code></td>
+</tr>
+<tr class="even">
+<td>max_steps</td>
+<td>int</td>
+<td>Sphere tracing iterations per ray.</td>
+<td><code>64</code></td>
+</tr>
+<tr class="odd">
+<td>max_dist</td>
+<td>float</td>
+<td>Rays beyond this distance are treated as misses.</td>
+<td><code>20.0</code></td>
+</tr>
+<tr class="even">
+<td>shadow_steps</td>
+<td>int</td>
+<td>Iterations for the soft shadow ray.</td>
+<td><code>32</code></td>
+</tr>
+<tr class="odd">
+<td>shadow_hardness</td>
+<td>float</td>
+<td>Shadow sharpness (higher = harder edges).</td>
+<td><code>8.0</code></td>
+</tr>
+<tr class="even">
+<td>gamma</td>
+<td>float</td>
+<td>Gamma correction exponent (2.2 = sRGB standard).</td>
+<td><code>2.2</code></td>
+</tr>
+<tr class="odd">
+<td>ambient</td>
+<td>float</td>
+<td>Constant ambient light added to all hit pixels (0 = fully black shadows, higher = lifted shadows).</td>
+<td><code>0.0</code></td>
+</tr>
+<tr class="even">
+<td>aa_samples</td>
+<td>int</td>
+<td>Super-sampling factor for antialiasing. 1 = no AA; 2 = 2×2 SSAA (4× rays, box-filtered); 3 = 3×3, etc.</td>
+<td><code>1</code></td>
+</tr>
+<tr class="odd">
+<td>background_color</td>
+<td>Array</td>
+<td>RGB color returned for rays that miss all geometry and used as the edge fade target. Default is black.</td>
+<td><code>jnp.array([0.0, 0.0, 0.0])</code></td>
+</tr>
+<tr class="even">
+<td>refract_steps</td>
+<td>int</td>
+<td>Number of interior march steps for glass refraction. 0 disables refraction (legacy behaviour). Try 32–64 for glass.</td>
+<td><code>0</code></td>
 </tr>
 </tbody>
 </table>
-<section id="jaxcad.geometry.parameters.Vector.norm" class="level3">
-<h3 class="anchored" data-anchor-id="jaxcad.geometry.parameters.Vector.norm">norm</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>geometry.parameters.Vector.norm()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Compute Euclidean norm.</p>
 </section>
-<section id="jaxcad.geometry.parameters.Vector.normalize" class="level3">
-<h3 class="anchored" data-anchor-id="jaxcad.geometry.parameters.Vector.normalize">normalize</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>geometry.parameters.Vector.normalize()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Return a normalized Vector (unit length).</p>
+<section id="returns" class="level2 doc-section doc-section-returns">
+<h2 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 14%">
+<col style="width: 75%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>np.ndarray</td>
+<td>Float32 numpy array of shape (H, W, 3) with values in [0, 1].</td>
+</tr>
+</tbody>
+</table>
 
 
-</section>
 </section>
 </section>
 

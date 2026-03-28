@@ -140,6 +140,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="dropdown-text">Basics</span></a>
   </li>  
         <li>
+    <a class="dropdown-item" href="../examples/render.html">
+ <span class="dropdown-text">Render</span></a>
+  </li>  
+        <li>
     <a class="dropdown-item" href="../examples/constraints.html">
  <span class="dropdown-text">Constraints</span></a>
   </li>  
@@ -185,6 +189,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#build-a-constrained-scene" id="toc-build-a-constrained-scene" class="nav-link" data-scroll-target="#build-a-constrained-scene">Build a constrained scene</a></li>
   <li><a href="#optimize-on-the-constraint-manifold" id="toc-optimize-on-the-constraint-manifold" class="nav-link" data-scroll-target="#optimize-on-the-constraint-manifold">Optimize on the constraint manifold</a></li>
+  </ul></li>
+  <li><a href="#rendering" id="toc-rendering" class="nav-link" data-scroll-target="#rendering">Rendering</a>
+  <ul class="collapse">
+  <li><a href="#assign-materials" id="toc-assign-materials" class="nav-link" data-scroll-target="#assign-materials">Assign materials</a></li>
+  <li><a href="#basic-render" id="toc-basic-render" class="nav-link" data-scroll-target="#basic-render">Basic render</a></li>
+  <li><a href="#background-colour" id="toc-background-colour" class="nav-link" data-scroll-target="#background-colour">Background colour</a></li>
+  <li><a href="#transparency-and-glass-refraction" id="toc-transparency-and-glass-refraction" class="nav-link" data-scroll-target="#transparency-and-glass-refraction">Transparency and glass refraction</a></li>
   </ul></li>
   <li><a href="#next-steps" id="toc-next-steps" class="nav-link" data-scroll-target="#next-steps">Next steps</a></li>
   </ul>
@@ -259,11 +270,120 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(p_current)  <span class="co"># [1.109 1.664 0.] -- closest point on the sphere to target</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The constraint stays satisfied throughout: <code>||p|| = 2.0</code> at every step.</p>
 <hr>
+<hr>
+</section>
+</section>
+<section id="rendering" class="level2">
+<h2 class="anchored" data-anchor-id="rendering">Rendering</h2>
+<p>jaxCAD includes a sphere-tracing raymarcher that supports physically-inspired shading, soft shadows, anti-aliasing, transparency, and glass refraction.</p>
+<section id="assign-materials" class="level3">
+<h3 class="anchored" data-anchor-id="assign-materials">Assign materials</h3>
+<p>Attach a <code>Material</code> to any primitive. The <code>material_at</code> method is queried per hit point during rendering; <code>Union</code> blends materials smoothly at boundaries.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.render <span class="im">import</span> Material</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.sdf.primitives <span class="im">import</span> Sphere</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>sphere <span class="op">=</span> Sphere(</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    radius<span class="op">=</span><span class="fl">1.0</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    material<span class="op">=</span>Material(</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        color<span class="op">=</span>[<span class="fl">0.22</span>, <span class="fl">0.50</span>, <span class="fl">0.95</span>],  <span class="co"># blue</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        roughness<span class="op">=</span><span class="fl">0.35</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        metallic<span class="op">=</span><span class="fl">0.0</span>,</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>        opacity<span class="op">=</span><span class="fl">1.0</span>,</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        ior<span class="op">=</span><span class="fl">1.0</span>,                   <span class="co"># index of refraction</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="basic-render" class="level3">
+<h3 class="anchored" data-anchor-id="basic-render">Basic render</h3>
+<p><code>raymarch()</code> returns a <code>(H, W, 3)</code> float32 NumPy array. <code>render_raymarched()</code> wraps it and displays on a matplotlib axis.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax.numpy <span class="im">as</span> jnp</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.render <span class="im">import</span> render_raymarched</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>render_raymarched(</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    sphere,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    camera_pos<span class="op">=</span>jnp.array([<span class="fl">3.0</span>, <span class="fl">2.0</span>, <span class="fl">3.0</span>]),</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    light_dirs<span class="op">=</span>jnp.array([[<span class="fl">1.0</span>, <span class="fl">1.5</span>, <span class="fl">1.5</span>], [<span class="op">-</span><span class="fl">1.5</span>, <span class="fl">0.5</span>, <span class="op">-</span><span class="fl">0.5</span>]]),</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    light_colors<span class="op">=</span>jnp.array([[<span class="fl">1.0</span>, <span class="fl">0.90</span>, <span class="fl">0.70</span>], [<span class="fl">0.20</span>, <span class="fl">0.35</span>, <span class="fl">0.60</span>]]),</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    resolution<span class="op">=</span>(<span class="dv">400</span>, <span class="dv">400</span>),</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    aa_samples<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="background-colour" class="level3">
+<h3 class="anchored" data-anchor-id="background-colour">Background colour</h3>
+<p>Set <code>background_color</code> to control the colour returned for rays that miss all geometry. It is also used as the target for the smooth edge fade.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>render_raymarched(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    sphere,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    background_color<span class="op">=</span>jnp.array([<span class="fl">0.78</span>, <span class="fl">0.91</span>, <span class="fl">1.0</span>]),  <span class="co"># sky blue</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="transparency-and-glass-refraction" class="level3">
+<h3 class="anchored" data-anchor-id="transparency-and-glass-refraction">Transparency and glass refraction</h3>
+<p>Set <code>opacity &lt; 1</code> on a material for transparency. With <code>refract_steps=0</code> (default) the surface simply fades to the background colour. With <code>refract_steps &gt; 0</code> the renderer performs two-bounce Snell’s-law refraction:</p>
+<ol type="1">
+<li>The primary ray hits the front face and bends <strong>into</strong> the material.</li>
+<li>An interior march finds the back face (using <code>−sdf</code> as the distance field).</li>
+<li>The ray bends back <strong>into air</strong> and continues through the rest of the scene.</li>
+</ol>
+<p>The Fresnel effect (Schlick approximation) adds realistic edge highlights — the rim of a glass sphere brightens at grazing angles.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax.numpy <span class="im">as</span> jnp</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.render <span class="im">import</span> raymarch, Material</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.sdf.boolean <span class="im">import</span> Union</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.sdf.primitives <span class="im">import</span> Sphere</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.sdf.transforms <span class="im">import</span> Translate</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>glass <span class="op">=</span> Sphere(</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    radius<span class="op">=</span><span class="fl">1.0</span>,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    material<span class="op">=</span>Material(color<span class="op">=</span>[<span class="fl">0.92</span>, <span class="fl">0.97</span>, <span class="fl">1.0</span>], roughness<span class="op">=</span><span class="fl">0.05</span>, opacity<span class="op">=</span><span class="fl">0.04</span>, ior<span class="op">=</span><span class="fl">1.5</span>),</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>red_ball <span class="op">=</span> Translate(</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    Sphere(radius<span class="op">=</span><span class="fl">0.65</span>, material<span class="op">=</span>Material(color<span class="op">=</span>[<span class="fl">0.93</span>, <span class="fl">0.26</span>, <span class="fl">0.22</span>])),</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    offset<span class="op">=</span>jnp.array([<span class="op">-</span><span class="fl">1.1</span>, <span class="fl">0.5</span>, <span class="op">-</span><span class="fl">3.0</span>]),</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>scene <span class="op">=</span> Union((glass, red_ball), smoothness<span class="op">=</span><span class="fl">0.0</span>)</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>image <span class="op">=</span> raymarch(</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    scene,</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    camera_pos<span class="op">=</span>jnp.array([<span class="fl">0.0</span>, <span class="fl">0.5</span>, <span class="fl">5.5</span>]),</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    resolution<span class="op">=</span>(<span class="dv">400</span>, <span class="dv">400</span>),</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    background_color<span class="op">=</span>jnp.array([<span class="fl">0.07</span>, <span class="fl">0.09</span>, <span class="fl">0.16</span>]),</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    refract_steps<span class="op">=</span><span class="dv">48</span>,   <span class="co"># enable two-bounce refraction</span></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    max_steps<span class="op">=</span><span class="dv">80</span>,</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    aa_samples<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>IOR reference values:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>material</th>
+<th><code>ior</code></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>air / disabled</td>
+<td>1.0</td>
+</tr>
+<tr class="even">
+<td>water</td>
+<td>1.33</td>
+</tr>
+<tr class="odd">
+<td>glass</td>
+<td>1.5</td>
+</tr>
+<tr class="even">
+<td>diamond</td>
+<td>2.42</td>
+</tr>
+</tbody>
+</table>
+<hr>
 </section>
 </section>
 <section id="next-steps" class="level2">
 <h2 class="anchored" data-anchor-id="next-steps">Next steps</h2>
 <ul>
+<li><a href="../examples/render.html">Rendering notebook</a> - full gallery of rendering features including glass refraction</li>
 <li><a href="../examples/optimization.html">Optimization</a> - differentiating through geometry parameters</li>
 <li><a href="../examples/constraints.html">Constraints</a> - solving fully-determined constraint systems</li>
 <li><a href="../examples/constrained_optimization.html">Constrained Optimization</a> - the full workflow with trajectory visualization</li>

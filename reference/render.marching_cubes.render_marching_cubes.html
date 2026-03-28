@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>render.render_marching_cubes – jaxCAD</title>
+<title>render.marching_cubes.render_marching_cubes – jaxCAD</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -140,6 +140,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="dropdown-text">Basics</span></a>
   </li>  
         <li>
+    <a class="dropdown-item" href="../examples/render.html">
+ <span class="dropdown-text">Render</span></a>
+  </li>  
+        <li>
     <a class="dropdown-item" href="../examples/constraints.html">
  <span class="dropdown-text">Constraints</span></a>
   </li>  
@@ -180,7 +184,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#jaxcad.render.render_marching_cubes" id="toc-jaxcad.render.render_marching_cubes" class="nav-link active" data-scroll-target="#jaxcad.render.render_marching_cubes">render.render_marching_cubes</a>
+  <li><a href="#jaxcad.render.marching_cubes.render_marching_cubes" id="toc-jaxcad.render.marching_cubes.render_marching_cubes" class="nav-link active" data-scroll-target="#jaxcad.render.marching_cubes.render_marching_cubes">render.marching_cubes.render_marching_cubes</a>
   <ul class="collapse">
   <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">Parameters</a></li>
   <li><a href="#returns" id="toc-returns" class="nav-link" data-scroll-target="#returns">Returns</a></li>
@@ -194,9 +198,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 
-<section id="jaxcad.render.render_marching_cubes" class="level1">
-<h1>render.render_marching_cubes</h1>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>render.render_marching_cubes(</span>
+<section id="jaxcad.render.marching_cubes.render_marching_cubes" class="level1">
+<h1>render.marching_cubes.render_marching_cubes</h1>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>render.marching_cubes.render_marching_cubes(</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    sdf,</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    bounds<span class="op">=</span>(<span class="op">-</span><span class="dv">3</span>, <span class="op">-</span><span class="dv">3</span>, <span class="op">-</span><span class="dv">3</span>),</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    size<span class="op">=</span>(<span class="dv">6</span>, <span class="dv">6</span>, <span class="dv">6</span>),</span>
@@ -207,16 +211,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">10</span>),</span>
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Render SDF using marching cubes to extract mesh.</p>
-<p>Requires scikit-image for marching cubes algorithm.</p>
+<p>Render an SDF by extracting a mesh with marching cubes.</p>
+<p>Requires <code>scikit-image</code>.</p>
 <section id="parameters" class="level2 doc-section doc-section-parameters">
 <h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
 <table class="caption-top table">
 <colgroup>
+<col style="width: 9%">
+<col style="width: 23%">
+<col style="width: 54%">
 <col style="width: 12%">
-<col style="width: 30%">
-<col style="width: 42%">
-<col style="width: 16%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -229,56 +233,56 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td>sdf</td>
-<td>SDF</td>
-<td>The SDF to render</td>
+<td>Callable[[Array], Array]</td>
+<td>Signed distance function, callable <code>(point: Array[3]) → Array[]</code>.</td>
 <td><em>required</em></td>
 </tr>
 <tr class="even">
 <td>bounds</td>
 <td>tuple[float, float, float]</td>
-<td>Lower corner (x, y, z)</td>
+<td>Lower corner (x, y, z) of the evaluation volume.</td>
 <td><code>(-3, -3, -3)</code></td>
 </tr>
 <tr class="odd">
 <td>size</td>
 <td>tuple[float, float, float]</td>
-<td>Size in each dimension (dx, dy, dz)</td>
+<td>Extent in each dimension (dx, dy, dz).</td>
 <td><code>(6, 6, 6)</code></td>
 </tr>
 <tr class="even">
 <td>resolution</td>
 <td>int</td>
-<td>Grid resolution per dimension</td>
+<td>Grid points per dimension.</td>
 <td><code>50</code></td>
 </tr>
 <tr class="odd">
 <td>ax</td>
-<td>Optional[plt.Axes]</td>
-<td>Matplotlib 3D axes (creates new if None)</td>
+<td>plt.Axes | None</td>
+<td>Existing 3D axes; creates new figure if None.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="even">
 <td>color</td>
 <td>str</td>
-<td>Mesh color</td>
+<td>Mesh face colour.</td>
 <td><code>'cyan'</code></td>
 </tr>
 <tr class="odd">
 <td>alpha</td>
 <td>float</td>
-<td>Mesh transparency</td>
+<td>Mesh transparency.</td>
 <td><code>0.7</code></td>
 </tr>
 <tr class="even">
 <td>title</td>
-<td>Optional[str]</td>
-<td>Plot title</td>
+<td>str | None</td>
+<td>Axes title.</td>
 <td><code>None</code></td>
 </tr>
 <tr class="odd">
 <td>figsize</td>
 <td>tuple[float, float]</td>
-<td>Figure size as (width, height) in inches</td>
+<td>Figure size in inches (width, height).</td>
 <td><code>(10, 10)</code></td>
 </tr>
 </tbody>
@@ -298,7 +302,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="odd">
 <td></td>
 <td>plt.Axes</td>
-<td>The matplotlib axes object</td>
+<td>The matplotlib 3D axes.</td>
 </tr>
 </tbody>
 </table>
