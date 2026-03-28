@@ -94,23 +94,6 @@ image = raymarch(
 # image is a (400, 400, 3) float32 numpy array
 ```
 
-**Material parameters:**
-
-| field | default | meaning |
-|-------|---------|---------|
-| `color` | `[1,1,1]` | RGB surface colour |
-| `roughness` | `0.5` | 0 = mirror, 1 = fully diffuse |
-| `metallic` | `0.0` | 0 = dielectric, 1 = metallic specular |
-| `opacity` | `1.0` | 0 = fully transparent, 1 = opaque |
-| `ior` | `1.0` | index of refraction (1.33 water, 1.5 glass, 2.42 diamond) |
-
-**Key render parameters:**
-
-| parameter | default | meaning |
-|-----------|---------|---------|
-| `background_color` | `[0,0,0]` | colour for rays that miss all geometry |
-| `refract_steps` | `0` | interior march steps; 0 disables refraction |
-
 ---
 
 ## Constraint example — Riemannian gradient descent
