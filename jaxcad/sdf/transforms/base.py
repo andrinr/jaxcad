@@ -20,3 +20,6 @@ class Transform(SDF):
     - self.sdf: The child SDF being transformed
     - self.params: Dictionary of Parameter objects
     """
+
+    def children(self) -> list:
+        return [self.sdf]

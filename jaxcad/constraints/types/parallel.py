@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import jax.numpy as jnp
 from jax import Array
 
-from jaxcad.constraints.base import Constraint
+from jaxcad.constraints.types.base import Constraint
 from jaxcad.geometry.parameters import Parameter, Vector
 
 
@@ -33,16 +33,6 @@ class ParallelConstraint(Constraint):
 
     vector1: Vector
     vector2: Vector
-
-    def __post_init__(self):
-        """Populate params dict."""
-        self.params = {
-            "vector1": self.vector1,
-            "vector2": self.vector2,
-        }
-
-        # Register constraint on parameters
-        self._register_constraint()
 
     def compute_residual(self, param_values: dict[str, Array]) -> Array:
         """Compute parallel constraint residual: v1 × v2.

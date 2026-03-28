@@ -11,7 +11,7 @@ from jaxcad.geometry.parameters import Vector
     "v1_xyz,v2_xyz,target_angle,expected_residual",
     [
         ([1, 0, 0], [0, 1, 0], jnp.pi / 2, 0.0),  # Perpendicular
-        ([1, 0, 0], [2, 0, 0], jnp.pi / 2, -jnp.pi / 2),  # Parallel, should be 0
+        ([1, 0, 0], [2, 0, 0], jnp.pi / 2, 1.0),  # Parallel vectors, target 90°: cos(0°)-cos(90°)=1
         ([1, 0, 0], [0, 0, 1], jnp.pi / 2, 0.0),  # Perpendicular in different plane
         ([1, 0, 0], [-1, 0, 0], jnp.pi, 0.0),  # Opposite direction
     ],

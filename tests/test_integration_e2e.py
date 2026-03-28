@@ -11,7 +11,7 @@ import jax
 import jax.numpy as jnp
 
 from jaxcad import extract_parameters, functionalize
-from jaxcad.constraints import ConstraintGraph, DistanceConstraint
+from jaxcad.constraints import DistanceConstraint, all_parameters, total_dof_reduction
 from jaxcad.construction import extrude, from_circle, from_line, from_point
 from jaxcad.geometry.parameters import Scalar, Vector
 from jaxcad.geometry.primitives import Circle, Line, Rectangle
@@ -25,15 +25,13 @@ def test_e2e_constrained_geometry_to_sdf():
     p2 = Vector([0, 0, 5], free=True, name="p2")
 
     # Layer 2: Add distance constraint
-    constraint = DistanceConstraint(p1, p2, distance=5.0)
-    graph = ConstraintGraph()
-    graph.add_constraint(constraint)
+    constraints = [DistanceConstraint(p1, p2, distance=5.0)]
 
     # Verify constraint DOF reduction
-    all_params = graph.get_all_parameters()
-    total_dof = sum(3 if isinstance(p, Vector) else 1 for p in all_params)
+    params = all_parameters(constraints)
+    total_dof = sum(3 if isinstance(p, Vector) else 1 for p in params)
     assert total_dof == 6  # 2 points * 3 DOF
-    assert graph.get_total_dof_reduction() == 1  # Distance constraint removes 1 DOF
+    assert total_dof_reduction(constraints) == 1  # Distance constraint removes 1 DOF
 
     # Layer 3: Convert to SDF via construction
     line = Line(start=p1, end=p2)
@@ -83,15 +81,13 @@ def test_e2e_constrained_two_spheres():
     center2 = Vector([3, 0, 0], free=True, name="c2")
 
     # Layer 2: Distance constraint
-    constraint = DistanceConstraint(center1, center2, distance=3.0)
-    graph = ConstraintGraph()
-    graph.add_constraint(constraint)
+    constraints = [DistanceConstraint(center1, center2, distance=3.0)]
 
     # Total DOF: 6 (2 points * 3), DOF reduction: 1
-    all_params = graph.get_all_parameters()
-    total_dof = sum(3 if isinstance(p, Vector) else 1 for p in all_params)
+    params = all_parameters(constraints)
+    total_dof = sum(3 if isinstance(p, Vector) else 1 for p in params)
     assert total_dof == 6
-    assert graph.get_total_dof_reduction() == 1
+    assert total_dof_reduction(constraints) == 1
 
     # Layer 3: Construct SDFs
     radius1 = Scalar(1.0, free=False, name="r1")
@@ -199,26 +195,21 @@ def test_e2e_multi_constraint_system():
     p3 = Vector([0, 4, 0], free=True, name="p3")
 
     # Layer 2: Multiple constraints
-    graph = ConstraintGraph()
-
-    # Distance constraints
-    c1 = DistanceConstraint(p1, p2, distance=3.0)
-    c2 = DistanceConstraint(p1, p3, distance=4.0)
-    c3 = DistanceConstraint(p2, p3, distance=5.0)
-
-    graph.add_constraint(c1)
-    graph.add_constraint(c2)
-    graph.add_constraint(c3)
+    constraints = [
+        DistanceConstraint(p1, p2, distance=3.0),
+        DistanceConstraint(p1, p3, distance=4.0),
+        DistanceConstraint(p2, p3, distance=5.0),
+    ]
 
     # Total DOF: 9 (3 points * 3)
     # Constraints: 3 distance constraints = 3 DOF removed
-    all_params = graph.get_all_parameters()
-    total_dof = sum(3 if isinstance(p, Vector) else 1 for p in all_params)
+    params = all_parameters(constraints)
+    total_dof = sum(3 if isinstance(p, Vector) else 1 for p in params)
     assert total_dof == 9
-    assert graph.get_total_dof_reduction() == 3
+    assert total_dof_reduction(constraints) == 3
 
-    # Verify all constraints are registered
-    assert len(graph.constraints) == 3
+    # Verify constraint count
+    assert len(constraints) == 3
 
 
 def test_e2e_gradient_based_optimization_setup():

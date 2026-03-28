@@ -23,7 +23,7 @@ import jax.numpy as jnp
 from jax import Array
 
 if TYPE_CHECKING:
-    from jaxcad.constraints.base import Constraint
+    from jaxcad.constraints.types.base import Constraint
 
 
 @dataclass
@@ -228,3 +228,23 @@ def as_parameter(
             f"Cannot auto-convert value with shape {arr.shape} to Parameter. "
             f"Use Scalar for scalars or Vector for 3D vectors."
         )
+
+
+# Semantic type aliases — both are dict[str, Parameter] at runtime.
+PathParams = dict  # path-keyed: "node_id.param_name" → Parameter
+NamedParams = dict  # name-keyed: "param_name" → Parameter (deduplicated)
+
+
+def deduplicate_params(params: PathParams | NamedParams) -> NamedParams:
+    """Deduplicate parameters by identity, using param.name as canonical key.
+
+    Handles both name-keyed dicts (from direct construction) and path-keyed
+    dicts (from extract_parameters, e.g. "sphere_0.radius").
+    """
+    seen: set = set()
+    result: NamedParams = {}
+    for param in params.values():
+        if id(param) not in seen:
+            seen.add(id(param))
+            result[param.name] = param
+    return result

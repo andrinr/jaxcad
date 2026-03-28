@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import jax.numpy as jnp
 from jax import Array
 
-from jaxcad.constraints.base import Constraint
+from jaxcad.constraints.types.base import Constraint
 from jaxcad.geometry.parameters import Parameter, Scalar, Vector
 
 
@@ -37,24 +37,18 @@ class AngleConstraint(Constraint):
     angle: Scalar | float
 
     def __post_init__(self):
-        """Convert angle to Scalar and populate params dict."""
         from jaxcad.geometry.parameters import as_parameter
 
         if not isinstance(self.angle, Scalar):
             self.angle = as_parameter(self.angle)
-
-        # Store in params dict for Fluent pattern
-        self.params = {
-            "vector1": self.vector1,
-            "vector2": self.vector2,
-            "angle": self.angle,
-        }
-
-        # Register constraint on parameters
-        self._register_constraint()
+        self._cos_target = jnp.cos(self.angle.value)
+        super().__post_init__()
 
     def compute_residual(self, param_values: dict[str, Array]) -> Array:
-        """Compute angle constraint residual: arccos(v1·v2/(||v1||||v2||)) - θ.
+        """Compute angle constraint residual: v1·v2/(||v1||||v2||) - cos(θ).
+
+        Using cos(θ) instead of arccos avoids singularities at 0/π where
+        the arccos gradient vanishes, which can stall the LM solver.
 
         Args:
             param_values: Dict with keys matching parameter names
@@ -75,12 +69,8 @@ class AngleConstraint(Constraint):
         v1_norm = v1_val / jnp.linalg.norm(v1_val)
         v2_norm = v2_val / jnp.linalg.norm(v2_val)
 
-        # Compute angle via dot product
-        cos_angle = jnp.clip(jnp.dot(v1_norm, v2_norm), -1.0, 1.0)
-        current_angle = jnp.arccos(cos_angle)
-
-        # Residual
-        return current_angle - self.angle.value
+        # Residual: cos(current_angle) - cos(target_angle)
+        return jnp.dot(v1_norm, v2_norm) - self._cos_target
 
     def dof_reduction(self) -> int:
         """Angle constraint adds 1 scalar equation, reducing DOF by 1."""

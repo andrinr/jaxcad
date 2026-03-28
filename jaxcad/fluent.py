@@ -46,6 +46,14 @@ class Fluent(ABC):
             # as_parameter already handles case where value is already a Parameter
             self.params[key] = as_parameter(value)
 
+    def children(self) -> list[Fluent]:
+        """Return the direct child nodes of this object in the tree.
+
+        Override in subclasses that have children (e.g. Transform, BooleanOp).
+        The default implementation returns an empty list (leaf node).
+        """
+        return []
+
     def _extract_param_values(self) -> dict:
         """Extract raw numeric values from Parameter objects for compilation.
 

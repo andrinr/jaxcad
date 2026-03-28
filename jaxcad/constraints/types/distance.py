@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import jax.numpy as jnp
 from jax import Array
 
-from jaxcad.constraints.base import Constraint
+from jaxcad.constraints.types.base import Constraint
 from jaxcad.geometry.parameters import Parameter, Scalar, Vector
 
 
@@ -37,21 +37,11 @@ class DistanceConstraint(Constraint):
     distance: Scalar | float
 
     def __post_init__(self):
-        """Convert distance to Scalar and populate params dict."""
         from jaxcad.geometry.parameters import as_parameter
 
         if not isinstance(self.distance, Scalar):
             self.distance = as_parameter(self.distance)
-
-        # Store in params dict for Fluent pattern
-        self.params = {
-            "param1": self.param1,
-            "param2": self.param2,
-            "distance": self.distance,
-        }
-
-        # Register constraint on parameters
-        self._register_constraint()
+        super().__post_init__()
 
     def compute_residual(self, param_values: dict[str, Array]) -> Array:
         """Compute distance constraint residual: ||p1 - p2|| - d.
