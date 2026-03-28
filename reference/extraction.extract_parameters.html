@@ -77,7 +77,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-6a358f6ceb7e990de7190ea1ad7e5996.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-1bacb4435680e45c9ebf9ff2856e7072.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -184,6 +184,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">Parameters</a></li>
   <li><a href="#returns" id="toc-returns" class="nav-link" data-scroll-target="#returns">Returns</a></li>
+  <li><a href="#raises" id="toc-raises" class="nav-link" data-scroll-target="#raises">Raises</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -196,11 +197,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="jaxcad.extraction.extract_parameters" class="level1">
 <h1>extraction.extract_parameters</h1>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>extraction.extract_parameters(sdf)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Extract free and fixed parameters from an SDF tree.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>extraction.extract_parameters(root)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Extract parameters from a Fluent tree.</p>
 <section id="parameters" class="level2 doc-section doc-section-parameters">
 <h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
 <table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 67%">
+<col style="width: 14%">
+</colgroup>
 <thead>
 <tr class="header">
 <th>Name</th>
@@ -211,9 +218,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td>sdf</td>
-<td>SDF</td>
-<td>The SDF to extract parameters from</td>
+<td>root</td>
+<td>Fluent</td>
+<td>The root of the Fluent tree to extract parameters from.</td>
 <td><em>required</em></td>
 </tr>
 </tbody>
@@ -223,9 +230,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h2>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 9%">
-<col style="width: 5%">
-<col style="width: 85%">
+<col style="width: 11%">
+<col style="width: 19%">
+<col style="width: 69%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -237,13 +244,42 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td>free_params</td>
-<td>dict</td>
-<td>Dict mapping parameter paths to free Parameter objects. Paths are in format “node_id.param_name” (e.g., “sphere_0.radius”).</td>
+<td>dict[name, Array]</td>
+<td>Name-keyed, deduplicated plain arrays for free params.</td>
 </tr>
 <tr class="even">
 <td>fixed_params</td>
-<td>dict</td>
-<td>Dict mapping parameter paths to fixed Parameter objects.</td>
+<td>dict[path, Array]</td>
+<td>Path-keyed plain arrays for fixed params.</td>
+</tr>
+<tr class="odd">
+<td>metadata</td>
+<td>dict[name, Parameter]</td>
+<td>Name-keyed Parameter objects for free params (carries constraints, bounds, type info).</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raises" class="level2 doc-section doc-section-raises">
+<h2 class="doc-section doc-section-raises anchored" data-anchor-id="raises">Raises</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 13%">
+<col style="width: 78%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>ValueError</td>
+<td>If a free parameter has no name, or two free parameters share a name.</td>
 </tr>
 </tbody>
 </table>

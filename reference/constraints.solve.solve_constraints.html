@@ -77,7 +77,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-6a358f6ceb7e990de7190ea1ad7e5996.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-1bacb4435680e45c9ebf9ff2856e7072.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -198,16 +198,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="jaxcad.constraints.solve.solve_constraints" class="level1">
 <h1>constraints.solve.solve_constraints</h1>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>constraints.solve.solve_constraints(sdf, <span class="op">*</span>, tol<span class="op">=</span><span class="fl">1e-06</span>, max_iter<span class="op">=</span><span class="dv">100</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>constraints.solve.solve_constraints(sdf, <span class="op">*</span>, tol<span class="op">=</span><span class="fl">1e-06</span>, max_steps<span class="op">=</span><span class="dv">256</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Solve geometric constraints attached to a scene’s free parameters.</p>
-<p>Extracts free parameters from the SDF tree, discovers all constraints registered on them, checks that the system is exactly constrained, then runs Newton-Raphson to find parameter values that satisfy all constraints.</p>
+<p>Extracts free parameters from the SDF tree, discovers all constraints registered on them, checks that the system is exactly constrained, then runs Levenberg-Marquardt (via optimistix) to find parameter values that satisfy all constraints.</p>
 <section id="parameters" class="level2 doc-section doc-section-parameters">
 <h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 11%">
+<col style="width: 12%">
 <col style="width: 9%">
-<col style="width: 64%">
+<col style="width: 63%">
 <col style="width: 14%">
 </colgroup>
 <thead>
@@ -221,21 +221,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td>sdf</td>
-<td>SDF</td>
+<td>Fluent</td>
 <td>The SDF tree whose free parameters should be solved.</td>
 <td><em>required</em></td>
 </tr>
 <tr class="even">
 <td>tol</td>
 <td>float</td>
-<td>Convergence tolerance for the residual norm.</td>
+<td>Convergence tolerance (used as both rtol and atol).</td>
 <td><code>1e-06</code></td>
 </tr>
 <tr class="odd">
-<td>max_iter</td>
+<td>max_steps</td>
 <td>int</td>
-<td>Maximum Newton-Raphson iterations.</td>
-<td><code>100</code></td>
+<td>Maximum solver iterations.</td>
+<td><code>256</code></td>
 </tr>
 </tbody>
 </table>
@@ -288,7 +288,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="even">
 <td></td>
 <td>RuntimeError</td>
-<td>If Newton-Raphson does not converge.</td>
+<td>If the solver does not converge.</td>
 </tr>
 </tbody>
 </table>

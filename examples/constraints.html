@@ -77,7 +77,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-6a358f6ceb7e990de7190ea1ad7e5996.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-1bacb4435680e45c9ebf9ff2856e7072.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -212,7 +212,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p><code>solve_constraints</code> finds parameter values that satisfy all geometric constraints attached to a scene. It errors immediately if the system is under- or over-constrained, so you never silently get a wrong result.</p>
-<div id="acae54e37e7d407bbb7b55eff062a284" class="cell" data-execution_count="2">
+<div id="acae54e37e7d407bbb7b55eff062a284" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax.numpy <span class="im">as</span> jnp</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.patches <span class="im">as</span> patches</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
@@ -232,7 +232,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><code>p</code> is <strong>free</strong> (<code>free=True</code>) - the unknown we want to solve for.</li>
 </ul>
 <p>We also define <code>true_p = [2, 1, 0]</code> - the intended solution - so we can compute exact target distances.</p>
-<div id="8dd0d8092fe74a7c96281538738b07e2" class="cell" data-execution_count="3">
+<div id="8dd0d8092fe74a7c96281538738b07e2" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>anchor_a <span class="op">=</span> Vector(jnp.array([<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>]), free<span class="op">=</span><span class="va">False</span>, name<span class="op">=</span><span class="st">"anchor_a"</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>anchor_b <span class="op">=</span> Vector(jnp.array([<span class="fl">4.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>]), free<span class="op">=</span><span class="va">False</span>, name<span class="op">=</span><span class="st">"anchor_b"</span>)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>anchor_c <span class="op">=</span> Vector(jnp.array([<span class="fl">2.0</span>, <span class="fl">3.0</span>, <span class="fl">0.0</span>]), free<span class="op">=</span><span class="va">False</span>, name<span class="op">=</span><span class="st">"anchor_c"</span>)</span>
@@ -244,7 +244,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>scene <span class="op">=</span> Translate(Sphere(radius<span class="op">=</span><span class="fl">0.5</span>), offset<span class="op">=</span>p)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Each distance constraint is a circle centered on an anchor with radius equal to the distance from that anchor to <code>true_p</code>. The solver finds where all three circles intersect.</p>
-<div id="8edb47106e1a46a883d545849b8ab81b" class="cell" data-execution_count="4">
+<div id="8edb47106e1a46a883d545849b8ab81b" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>anchors <span class="op">=</span> {</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"A"</span>: np.array([<span class="fl">0.0</span>, <span class="fl">0.0</span>]),</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"B"</span>: np.array([<span class="fl">4.0</span>, <span class="fl">0.0</span>]),</span>
@@ -314,7 +314,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="under-constrained-error" class="level2">
 <h2 class="anchored" data-anchor-id="under-constrained-error">Under-constrained error</h2>
 <p>Adding only one constraint leaves 2 DOF - <code>solve_constraints</code> raises a clear error.</p>
-<div id="8763a12b2bbd4a93a75aff182afb95dc" class="cell" data-execution_count="5">
+<div id="8763a12b2bbd4a93a75aff182afb95dc" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>DistanceConstraint(p, anchor_a, <span class="bu">float</span>(jnp.linalg.norm(true_p <span class="op">-</span> anchor_a.value)))</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
@@ -329,33 +329,33 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="fully-constrain-the-scene" class="level2">
 <h2 class="anchored" data-anchor-id="fully-constrain-the-scene">Fully constrain the scene</h2>
 <p>Add the remaining two constraints - one per anchor - each with the exact distance from <code>true_p</code> to that anchor.</p>
-<div id="7cdc8c89c7104fffa095e18ddfef8986" class="cell" data-execution_count="6">
+<div id="7cdc8c89c7104fffa095e18ddfef8986" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>DistanceConstraint(p, anchor_b, <span class="bu">float</span>(jnp.linalg.norm(true_p <span class="op">-</span> anchor_b.value)))</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>DistanceConstraint(p, anchor_c, <span class="bu">float</span>(jnp.linalg.norm(true_p <span class="op">-</span> anchor_c.value)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display" data-execution_count="6">
+<div class="cell-output cell-output-display" data-execution_count="5">
 <pre><code>DistanceConstraint(p, anchor_c, d=2.0)</code></pre>
 </div>
 </div>
 </section>
 <section id="solve" class="level2">
 <h2 class="anchored" data-anchor-id="solve">Solve</h2>
-<p><code>solve_constraints</code> runs Newton-Raphson starting from the wrong initial guess <code>(0.5, 0.5, 0)</code> and converges to the true position <code>(2, 1, 0)</code>.</p>
-<div id="938c804e27f84196a10c8828c723f798" class="cell" data-execution_count="7">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>free_params, fixed_params <span class="op">=</span> extract_parameters(scene)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>solved_params <span class="op">=</span> solve_constraints(scene, max_iter<span class="op">=</span><span class="dv">10</span>)</span>
+<p><code>solve_constraints</code> runs Levenberg-Marquardt (via optimistix) starting from the wrong initial guess <code>(0.5, 0.5, 0)</code> and converges to the true position <code>(2, 1, 0)</code>.</p>
+<div id="938c804e27f84196a10c8828c723f798" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>free_params, fixed_params, metadata <span class="op">=</span> extract_parameters(scene)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>solved_params <span class="op">=</span> solve_constraints(scene, max_steps<span class="op">=</span><span class="dv">10</span>)</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Initial p: "</span>, p.value)</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Solved p:  "</span>, solved_params[<span class="st">"translate_0.offset"</span>].value)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Solved p:  "</span>, solved_params[<span class="st">"p"</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Initial p:  [0.5 0.5 0. ]
-Solved p:   [1.9999998 0.9999998 0.       ]</code></pre>
+Solved p:   [1.9999999 0.9999999 0.       ]</code></pre>
 </div>
 </div>
 </section>
 <section id="render-at-the-solved-position" class="level2">
 <h2 class="anchored" data-anchor-id="render-at-the-solved-position">Render at the solved position</h2>
 <p>The solved parameter dict is drop-in compatible with <code>functionalize</code>, so the constrained scene slots directly into the optimization workflow.</p>
-<div id="59bbdb311c014d738909a11f9e486628" class="cell" data-execution_count="8">
+<div id="59bbdb311c014d738909a11f9e486628" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>render_marching_cubes(</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    functionalize(scene)(solved_params, fixed_params),</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    figsize<span class="op">=</span>(<span class="dv">4</span>, <span class="dv">4</span>),</span>

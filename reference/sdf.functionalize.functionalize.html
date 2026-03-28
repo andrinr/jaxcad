@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>constraints.graph.constraintgraph – jaxCAD</title>
+<title>sdf.functionalize.functionalize – jaxCAD</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -77,7 +77,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-6a358f6ceb7e990de7190ea1ad7e5996.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-1bacb4435680e45c9ebf9ff2856e7072.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -180,20 +180,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#jaxcad.constraints.graph.ConstraintGraph" id="toc-jaxcad.constraints.graph.ConstraintGraph" class="nav-link active" data-scroll-target="#jaxcad.constraints.graph.ConstraintGraph">constraints.graph.ConstraintGraph</a>
+  <li><a href="#jaxcad.sdf.functionalize.functionalize" id="toc-jaxcad.sdf.functionalize.functionalize" class="nav-link active" data-scroll-target="#jaxcad.sdf.functionalize.functionalize">sdf.functionalize.functionalize</a>
   <ul class="collapse">
+  <li><a href="#returns-a-curried-function-with-signature" id="toc-returns-a-curried-function-with-signature" class="nav-link" data-scroll-target="#returns-a-curried-function-with-signature">Returns a curried function with signature</a></li>
+  <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">Parameters</a></li>
+  <li><a href="#returns" id="toc-returns" class="nav-link" data-scroll-target="#returns">Returns</a></li>
   <li><a href="#example" id="toc-example" class="nav-link" data-scroll-target="#example">Example</a></li>
-  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods">Methods</a>
-  <ul class="collapse">
-  <li><a href="#jaxcad.constraints.graph.ConstraintGraph.add_constraint" id="toc-jaxcad.constraints.graph.ConstraintGraph.add_constraint" class="nav-link" data-scroll-target="#jaxcad.constraints.graph.ConstraintGraph.add_constraint">add_constraint</a></li>
-  <li><a href="#jaxcad.constraints.graph.ConstraintGraph.build_constraint_jacobian" id="toc-jaxcad.constraints.graph.ConstraintGraph.build_constraint_jacobian" class="nav-link" data-scroll-target="#jaxcad.constraints.graph.ConstraintGraph.build_constraint_jacobian">build_constraint_jacobian</a></li>
-  <li><a href="#jaxcad.constraints.graph.ConstraintGraph.compute_null_space" id="toc-jaxcad.constraints.graph.ConstraintGraph.compute_null_space" class="nav-link" data-scroll-target="#jaxcad.constraints.graph.ConstraintGraph.compute_null_space">compute_null_space</a></li>
-  <li><a href="#jaxcad.constraints.graph.ConstraintGraph.extract_free_dof" id="toc-jaxcad.constraints.graph.ConstraintGraph.extract_free_dof" class="nav-link" data-scroll-target="#jaxcad.constraints.graph.ConstraintGraph.extract_free_dof">extract_free_dof</a></li>
-  <li><a href="#jaxcad.constraints.graph.ConstraintGraph.from_parameters" id="toc-jaxcad.constraints.graph.ConstraintGraph.from_parameters" class="nav-link" data-scroll-target="#jaxcad.constraints.graph.ConstraintGraph.from_parameters">from_parameters</a></li>
-  <li><a href="#jaxcad.constraints.graph.ConstraintGraph.get_all_parameters" id="toc-jaxcad.constraints.graph.ConstraintGraph.get_all_parameters" class="nav-link" data-scroll-target="#jaxcad.constraints.graph.ConstraintGraph.get_all_parameters">get_all_parameters</a></li>
-  <li><a href="#jaxcad.constraints.graph.ConstraintGraph.get_total_dof_reduction" id="toc-jaxcad.constraints.graph.ConstraintGraph.get_total_dof_reduction" class="nav-link" data-scroll-target="#jaxcad.constraints.graph.ConstraintGraph.get_total_dof_reduction">get_total_dof_reduction</a></li>
-  <li><a href="#jaxcad.constraints.graph.ConstraintGraph.project_to_full" id="toc-jaxcad.constraints.graph.ConstraintGraph.project_to_full" class="nav-link" data-scroll-target="#jaxcad.constraints.graph.ConstraintGraph.project_to_full">project_to_full</a></li>
-  </ul></li>
   </ul></li>
   </ul>
 </nav>
@@ -204,474 +196,67 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 
-<section id="jaxcad.constraints.graph.ConstraintGraph" class="level1">
-<h1>constraints.graph.ConstraintGraph</h1>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>constraints.graph.ConstraintGraph(constraints<span class="op">=</span><span class="bu">list</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Manages a collection of constraints and computes reduced DOF space.</p>
-<p>The constraint graph: 1. Collects all constraints 2. Identifies which parameters are involved 3. Computes the constraint Jacobian matrix J 4. Finds the null space N of J (free directions) 5. Maps reduced parameters to full parameters via null space projection</p>
-<p>This enables optimization in a reduced DOF space where constraints are automatically satisfied.</p>
+<section id="jaxcad.sdf.functionalize.functionalize" class="level1">
+<h1>sdf.functionalize.functionalize</h1>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>sdf.functionalize.functionalize(sdf)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Compile an SDF to a pure function with free and fixed parameters.</p>
+<section id="returns-a-curried-function-with-signature" class="level2 doc-section doc-section-returns-a-curried-function-with-signature">
+<h2 class="doc-section doc-section-returns-a-curried-function-with-signature anchored" data-anchor-id="returns-a-curried-function-with-signature">Returns a curried function with signature</h2>
+<p>sdf_fn(free_params, fixed_params) -&gt; (point -&gt; distance)</p>
+</section>
+<section id="parameters" class="level2 doc-section doc-section-parameters">
+<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>sdf</td>
+<td>SDF</td>
+<td>The SDF to compile</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level2 doc-section doc-section-returns">
+<h2 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 89%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Callable</td>
+<td>Callable</td>
+<td>Curried function <code>sdf_fn(free_params, fixed_params) -&gt; (point -&gt; distance)</code> mapping parameter dicts to a callable <code>point: Array (3,) -&gt; distance: Array ()</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="example" class="level2 doc-section doc-section-example">
 <h2 class="doc-section doc-section-example anchored" data-anchor-id="example">Example</h2>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>p1 <span class="op">=</span> Vector([<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>], free<span class="op">=</span><span class="va">True</span>, name<span class="op">=</span><span class="st">'p1'</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>p2 <span class="op">=</span> Vector([<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>], free<span class="op">=</span><span class="va">True</span>, name<span class="op">=</span><span class="st">'p2'</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>graph <span class="op">=</span> ConstraintGraph()</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>graph.add_constraint(DistanceConstraint(p1, p2, <span class="fl">0.2</span>))</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>reduced_params, projection <span class="op">=</span> graph.extract_free_dof([p1, p2])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</section>
-<section id="methods" class="level2">
-<h2 class="anchored" data-anchor-id="methods">Methods</h2>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><a href="#jaxcad.constraints.graph.ConstraintGraph.add_constraint">add_constraint</a></td>
-<td>Add a constraint to the graph.</td>
-</tr>
-<tr class="even">
-<td><a href="#jaxcad.constraints.graph.ConstraintGraph.build_constraint_jacobian">build_constraint_jacobian</a></td>
-<td>Build the full constraint Jacobian matrix.</td>
-</tr>
-<tr class="odd">
-<td><a href="#jaxcad.constraints.graph.ConstraintGraph.compute_null_space">compute_null_space</a></td>
-<td>Compute null space of constraint Jacobian.</td>
-</tr>
-<tr class="even">
-<td><a href="#jaxcad.constraints.graph.ConstraintGraph.extract_free_dof">extract_free_dof</a></td>
-<td>Extract reduced degrees of freedom from parameters under constraints.</td>
-</tr>
-<tr class="odd">
-<td><a href="#jaxcad.constraints.graph.ConstraintGraph.from_parameters">from_parameters</a></td>
-<td>Build a ConstraintGraph by discovering all constraints attached to the given parameters.</td>
-</tr>
-<tr class="even">
-<td><a href="#jaxcad.constraints.graph.ConstraintGraph.get_all_parameters">get_all_parameters</a></td>
-<td>Get unique list of all parameters involved in constraints.</td>
-</tr>
-<tr class="odd">
-<td><a href="#jaxcad.constraints.graph.ConstraintGraph.get_total_dof_reduction">get_total_dof_reduction</a></td>
-<td>Compute total DOF reduction from all constraints.</td>
-</tr>
-<tr class="even">
-<td><a href="#jaxcad.constraints.graph.ConstraintGraph.project_to_full">project_to_full</a></td>
-<td>Project reduced DOF parameters back to full parameter space.</td>
-</tr>
-</tbody>
-</table>
-<section id="jaxcad.constraints.graph.ConstraintGraph.add_constraint" class="level3">
-<h3 class="anchored" data-anchor-id="jaxcad.constraints.graph.ConstraintGraph.add_constraint">add_constraint</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>constraints.graph.ConstraintGraph.add_constraint(constraint)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Add a constraint to the graph.</p>
-<section id="parameters" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-<th>Default</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>constraint</td>
-<td>Constraint</td>
-<td>Constraint to add</td>
-<td><em>required</em></td>
-</tr>
-</tbody>
-</table>
-</section>
-</section>
-<section id="jaxcad.constraints.graph.ConstraintGraph.build_constraint_jacobian" class="level3">
-<h3 class="anchored" data-anchor-id="jaxcad.constraints.graph.ConstraintGraph.build_constraint_jacobian">build_constraint_jacobian</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>constraints.graph.ConstraintGraph.build_constraint_jacobian(</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    param_values,</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    all_param_names,</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Build the full constraint Jacobian matrix.</p>
-<section id="parameters-1" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 19%">
-<col style="width: 23%">
-<col style="width: 43%">
-<col style="width: 13%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-<th>Default</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>param_values</td>
-<td>dict[str, Array]</td>
-<td>Current values of all parameters</td>
-<td><em>required</em></td>
-</tr>
-<tr class="even">
-<td>all_param_names</td>
-<td>list[str]</td>
-<td>Ordered list of all parameter names</td>
-<td><em>required</em></td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="returns" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 10%">
-<col style="width: 10%">
-<col style="width: 78%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td></td>
-<td>Array</td>
-<td>Jacobian matrix J of shape (n_constraints, n_total_params)</td>
-</tr>
-</tbody>
-</table>
-</section>
-</section>
-<section id="jaxcad.constraints.graph.ConstraintGraph.compute_null_space" class="level3">
-<h3 class="anchored" data-anchor-id="jaxcad.constraints.graph.ConstraintGraph.compute_null_space">compute_null_space</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>constraints.graph.ConstraintGraph.compute_null_space(</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    jacobian,</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    n_params,</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    tolerance<span class="op">=</span><span class="fl">1e-10</span>,</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Compute null space of constraint Jacobian.</p>
-<p>The null space N contains all directions in parameter space that satisfy the constraints (i.e., J @ N = 0).</p>
-<section id="parameters-2" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 12%">
-<col style="width: 8%">
-<col style="width: 65%">
-<col style="width: 13%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-<th>Default</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>jacobian</td>
-<td>Array</td>
-<td>Constraint Jacobian matrix</td>
-<td><em>required</em></td>
-</tr>
-<tr class="even">
-<td>n_params</td>
-<td>int</td>
-<td>Total number of parameters (dimension of parameter space)</td>
-<td><em>required</em></td>
-</tr>
-<tr class="odd">
-<td>tolerance</td>
-<td>float</td>
-<td>Threshold for considering singular values as zero</td>
-<td><code>1e-10</code></td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="returns-1" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 11%">
-<col style="width: 11%">
-<col style="width: 76%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td></td>
-<td>Array</td>
-<td>Null space matrix N of shape (n_params, n_free_dof)</td>
-</tr>
-</tbody>
-</table>
-</section>
-</section>
-<section id="jaxcad.constraints.graph.ConstraintGraph.extract_free_dof" class="level3">
-<h3 class="anchored" data-anchor-id="jaxcad.constraints.graph.ConstraintGraph.extract_free_dof">extract_free_dof</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>constraints.graph.ConstraintGraph.extract_free_dof(parameters)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Extract reduced degrees of freedom from parameters under constraints.</p>
-<p>This computes: 1. Current parameter values as a flat array 2. Constraint Jacobian J 3. Null space N of J 4. Reduced coordinates in null space</p>
-<section id="parameters-3" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h4>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 13%">
-<col style="width: 20%">
-<col style="width: 53%">
-<col style="width: 13%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-<th>Default</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>parameters</td>
-<td>list[Parameter]</td>
-<td>List of Parameter objects (should be free=True)</td>
-<td><em>required</em></td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="returns-2" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h4>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 19%">
-<col style="width: 9%">
-<col style="width: 71%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>reduced_params</td>
-<td>Array</td>
-<td>Reduced DOF vector (size = original_dof - constraint_dof).</td>
-</tr>
-<tr class="even">
-<td>null_space</td>
-<td>Array</td>
-<td>Null space matrix for projecting reduced → full params.</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="example-1" class="level4 doc-section doc-section-example">
-<h4 class="doc-section doc-section-example anchored" data-anchor-id="example-1">Example</h4>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>p1 <span class="op">=</span> Vector([<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>], free<span class="op">=</span><span class="va">True</span>, name<span class="op">=</span><span class="st">'p1'</span>)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>p2 <span class="op">=</span> Vector([<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>], free<span class="op">=</span><span class="va">True</span>, name<span class="op">=</span><span class="st">'p2'</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>graph <span class="op">=</span> ConstraintGraph()</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>graph.add_constraint(DistanceConstraint(p1, p2, <span class="fl">0.5</span>))</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>reduced, null_space <span class="op">=</span> graph.extract_free_dof([p1, p2])</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co"># full_params = base_point + null_space @ reduced</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</section>
-</section>
-<section id="jaxcad.constraints.graph.ConstraintGraph.from_parameters" class="level3">
-<h3 class="anchored" data-anchor-id="jaxcad.constraints.graph.ConstraintGraph.from_parameters">from_parameters</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>constraints.graph.ConstraintGraph.from_parameters(param_list)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Build a ConstraintGraph by discovering all constraints attached to the given parameters.</p>
-<p>Constraints register themselves on their parameters at construction time, so this collects them without any explicit graph management by the caller.</p>
-<section id="parameters-4" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h4>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 11%">
-<col style="width: 17%">
-<col style="width: 60%">
-<col style="width: 11%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-<th>Default</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>param_list</td>
-<td>list[Parameter]</td>
-<td>Free parameters whose attached constraints should be collected.</td>
-<td><em>required</em></td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="returns-3" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-3">Returns</h4>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 8%">
-<col style="width: 17%">
-<col style="width: 74%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td></td>
-<td>ConstraintGraph</td>
-<td>A ConstraintGraph containing all discovered constraints (deduplicated).</td>
-</tr>
-</tbody>
-</table>
-</section>
-</section>
-<section id="jaxcad.constraints.graph.ConstraintGraph.get_all_parameters" class="level3">
-<h3 class="anchored" data-anchor-id="jaxcad.constraints.graph.ConstraintGraph.get_all_parameters">get_all_parameters</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>constraints.graph.ConstraintGraph.get_all_parameters()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Get unique list of all parameters involved in constraints.</p>
-<section id="returns-4" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-4">Returns</h4>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td></td>
-<td>list[Parameter]</td>
-<td>List of unique Parameter objects</td>
-</tr>
-</tbody>
-</table>
-</section>
-</section>
-<section id="jaxcad.constraints.graph.ConstraintGraph.get_total_dof_reduction" class="level3">
-<h3 class="anchored" data-anchor-id="jaxcad.constraints.graph.ConstraintGraph.get_total_dof_reduction">get_total_dof_reduction</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>constraints.graph.ConstraintGraph.get_total_dof_reduction()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Compute total DOF reduction from all constraints.</p>
-<section id="returns-5" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-5">Returns</h4>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td></td>
-<td>int</td>
-<td>Sum of DOF reductions from all constraints</td>
-</tr>
-</tbody>
-</table>
-</section>
-</section>
-<section id="jaxcad.constraints.graph.ConstraintGraph.project_to_full" class="level3">
-<h3 class="anchored" data-anchor-id="jaxcad.constraints.graph.ConstraintGraph.project_to_full">project_to_full</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>constraints.graph.ConstraintGraph.project_to_full(</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    reduced_params,</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    null_space,</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    base_point<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Project reduced DOF parameters back to full parameter space.</p>
-<p>Computes: full_params = base_point + null_space @ reduced_params</p>
-<section id="parameters-5" class="level4 doc-section doc-section-parameters">
-<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h4>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 18%">
-<col style="width: 17%">
-<col style="width: 50%">
-<col style="width: 13%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-<th>Default</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>reduced_params</td>
-<td>Array</td>
-<td>Reduced DOF vector</td>
-<td><em>required</em></td>
-</tr>
-<tr class="even">
-<td>null_space</td>
-<td>Array</td>
-<td>Null space matrix from extract_free_dof</td>
-<td><em>required</em></td>
-</tr>
-<tr class="odd">
-<td>base_point</td>
-<td>Array | None</td>
-<td>Base point in full space (default: origin)</td>
-<td><code>None</code></td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="returns-6" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns</h4>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td></td>
-<td>Array</td>
-<td>Full parameter vector</td>
-</tr>
-</tbody>
-</table>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>radius <span class="op">=</span> Scalar(value<span class="op">=</span><span class="fl">1.0</span>, free<span class="op">=</span><span class="va">True</span>, name<span class="op">=</span><span class="st">'radius'</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>sphere <span class="op">=</span> Sphere(radius<span class="op">=</span>radius)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>sdf_fn <span class="op">=</span> functionalize(sphere)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>distance <span class="op">=</span> sdf_fn({<span class="st">'sphere_0.radius'</span>: <span class="fl">2.0</span>}, {})(jnp.array([<span class="fl">0.</span>, <span class="fl">0.</span>, <span class="fl">0.</span>]))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 
-</section>
-</section>
 </section>
 </section>
 

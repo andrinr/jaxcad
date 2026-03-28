@@ -42,7 +42,7 @@ ul.task-list li input[type="checkbox"] {
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-6a358f6ceb7e990de7190ea1ad7e5996.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-1bacb4435680e45c9ebf9ff2856e7072.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -149,7 +149,8 @@ ul.task-list li input[type="checkbox"] {
   <ul class="collapse">
   <li><a href="#parameter-extraction" id="toc-parameter-extraction" class="nav-link" data-scroll-target="#parameter-extraction">Parameter Extraction</a></li>
   <li><a href="#functionalize" id="toc-functionalize" class="nav-link" data-scroll-target="#functionalize">Functionalize</a></li>
-  <li><a href="#constraints" id="toc-constraints" class="nav-link" data-scroll-target="#constraints">Constraints</a></li>
+  <li><a href="#constraints-types" id="toc-constraints-types" class="nav-link" data-scroll-target="#constraints-types">Constraints — types</a></li>
+  <li><a href="#constraints-solver" id="toc-constraints-solver" class="nav-link" data-scroll-target="#constraints-solver">Constraints — solver</a></li>
   <li><a href="#construction" id="toc-construction" class="nav-link" data-scroll-target="#construction">Construction</a></li>
   <li><a href="#geometry" id="toc-geometry" class="nav-link" data-scroll-target="#geometry">Geometry</a></li>
   <li><a href="#render" id="toc-render" class="nav-link" data-scroll-target="#render">Render</a></li>
@@ -171,11 +172,7 @@ ul.task-list li input[type="checkbox"] {
 <tbody>
 <tr class="odd">
 <td><a href="../reference/extraction.extract_parameters.html#jaxcad.extraction.extract_parameters">extraction.extract_parameters</a></td>
-<td>Extract free and fixed parameters from an SDF tree.</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/extraction.extract_parameters_with_constraints.html#jaxcad.extraction.extract_parameters_with_constraints">extraction.extract_parameters_with_constraints</a></td>
-<td>Extract parameters from SDF and apply constraint-based DOF reduction.</td>
+<td>Extract parameters from a Fluent tree.</td>
 </tr>
 </tbody>
 </table>
@@ -185,14 +182,41 @@ ul.task-list li input[type="checkbox"] {
 <table class="caption-top table">
 <tbody>
 <tr class="odd">
-<td><a href="../reference/functionalize.functionalize.html#jaxcad.functionalize.functionalize">functionalize.functionalize</a></td>
+<td><a href="../reference/sdf.functionalize.functionalize.html#jaxcad.sdf.functionalize.functionalize">sdf.functionalize.functionalize</a></td>
 <td>Compile an SDF to a pure function with free and fixed parameters.</td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="constraints" class="level2">
-<h2 class="anchored" data-anchor-id="constraints">Constraints</h2>
+<section id="constraints-types" class="level2">
+<h2 class="anchored" data-anchor-id="constraints-types">Constraints — types</h2>
+<table class="caption-top table">
+<tbody>
+<tr class="odd">
+<td><a href="../reference/constraints.types.base.Constraint.html#jaxcad.constraints.types.base.Constraint">constraints.types.base.Constraint</a></td>
+<td>Base class for geometric constraints.</td>
+</tr>
+<tr class="even">
+<td><a href="../reference/constraints.types.distance.DistanceConstraint.html#jaxcad.constraints.types.distance.DistanceConstraint">constraints.types.distance.DistanceConstraint</a></td>
+<td>Constraint that fixes the distance between two points/vectors.</td>
+</tr>
+<tr class="odd">
+<td><a href="../reference/constraints.types.angle.AngleConstraint.html#jaxcad.constraints.types.angle.AngleConstraint">constraints.types.angle.AngleConstraint</a></td>
+<td>Constraint that fixes the angle between two vectors.</td>
+</tr>
+<tr class="even">
+<td><a href="../reference/constraints.types.parallel.ParallelConstraint.html#jaxcad.constraints.types.parallel.ParallelConstraint">constraints.types.parallel.ParallelConstraint</a></td>
+<td>Constraint that forces two vectors to be parallel.</td>
+</tr>
+<tr class="odd">
+<td><a href="../reference/constraints.types.perpendicular.PerpendicularConstraint.html#jaxcad.constraints.types.perpendicular.PerpendicularConstraint">constraints.types.perpendicular.PerpendicularConstraint</a></td>
+<td>Constraint that forces two vectors to be perpendicular.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="constraints-solver" class="level2">
+<h2 class="anchored" data-anchor-id="constraints-solver">Constraints — solver</h2>
 <table class="caption-top table">
 <tbody>
 <tr class="odd">
@@ -200,28 +224,16 @@ ul.task-list li input[type="checkbox"] {
 <td>Solve geometric constraints attached to a scene’s free parameters.</td>
 </tr>
 <tr class="even">
-<td><a href="../reference/constraints.solve.newton_raphson.html#jaxcad.constraints.solve.newton_raphson">constraints.solve.newton_raphson</a></td>
-<td>Find x such that residual_fn(x) ≈ 0 using Newton-Raphson.</td>
+<td><a href="../reference/constraints.solve.project_to_manifold.html#jaxcad.constraints.solve.project_to_manifold">constraints.solve.project_to_manifold</a></td>
+<td>Project free_params onto the constraint manifold via Newton correction(s).</td>
 </tr>
 <tr class="odd">
-<td><a href="../reference/constraints.distance.DistanceConstraint.html#jaxcad.constraints.distance.DistanceConstraint">constraints.distance.DistanceConstraint</a></td>
-<td>Constraint that fixes the distance between two points/vectors.</td>
+<td><a href="../reference/constraints.solve.constraint_residuals.html#jaxcad.constraints.solve.constraint_residuals">constraints.solve.constraint_residuals</a></td>
+<td>Evaluate the constraint residuals at free_params.</td>
 </tr>
 <tr class="even">
-<td><a href="../reference/constraints.angle.AngleConstraint.html#jaxcad.constraints.angle.AngleConstraint">constraints.angle.AngleConstraint</a></td>
-<td>Constraint that fixes the angle between two vectors.</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/constraints.parallel.ParallelConstraint.html#jaxcad.constraints.parallel.ParallelConstraint">constraints.parallel.ParallelConstraint</a></td>
-<td>Constraint that forces two vectors to be parallel.</td>
-</tr>
-<tr class="even">
-<td><a href="../reference/constraints.perpendicular.PerpendicularConstraint.html#jaxcad.constraints.perpendicular.PerpendicularConstraint">constraints.perpendicular.PerpendicularConstraint</a></td>
-<td>Constraint that forces two vectors to be perpendicular.</td>
-</tr>
-<tr class="odd">
-<td><a href="../reference/constraints.graph.ConstraintGraph.html#jaxcad.constraints.graph.ConstraintGraph">constraints.graph.ConstraintGraph</a></td>
-<td>Manages a collection of constraints and computes reduced DOF space.</td>
+<td><a href="../reference/constraints.solve.make_manifold_projection.html#jaxcad.constraints.solve.make_manifold_projection">constraints.solve.make_manifold_projection</a></td>
+<td>Return an optax transform that projects params onto the constraint manifold.</td>
 </tr>
 </tbody>
 </table>

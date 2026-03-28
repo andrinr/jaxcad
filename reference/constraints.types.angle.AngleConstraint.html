@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>extraction.extract_parameters_with_constraints – jaxCAD</title>
+<title>constraints.types.angle.angleconstraint – jaxCAD</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -77,7 +77,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-6a358f6ceb7e990de7190ea1ad7e5996.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-1bacb4435680e45c9ebf9ff2856e7072.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -180,11 +180,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#jaxcad.extraction.extract_parameters_with_constraints" id="toc-jaxcad.extraction.extract_parameters_with_constraints" class="nav-link active" data-scroll-target="#jaxcad.extraction.extract_parameters_with_constraints">extraction.extract_parameters_with_constraints</a>
+  <li><a href="#jaxcad.constraints.types.angle.AngleConstraint" id="toc-jaxcad.constraints.types.angle.AngleConstraint" class="nav-link active" data-scroll-target="#jaxcad.constraints.types.angle.AngleConstraint">constraints.types.angle.AngleConstraint</a>
   <ul class="collapse">
   <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">Parameters</a></li>
-  <li><a href="#returns" id="toc-returns" class="nav-link" data-scroll-target="#returns">Returns</a></li>
   <li><a href="#example" id="toc-example" class="nav-link" data-scroll-target="#example">Example</a></li>
+  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods">Methods</a>
+  <ul class="collapse">
+  <li><a href="#jaxcad.constraints.types.angle.AngleConstraint.compute_residual" id="toc-jaxcad.constraints.types.angle.AngleConstraint.compute_residual" class="nav-link" data-scroll-target="#jaxcad.constraints.types.angle.AngleConstraint.compute_residual">compute_residual</a></li>
+  <li><a href="#jaxcad.constraints.types.angle.AngleConstraint.dof_reduction" id="toc-jaxcad.constraints.types.angle.AngleConstraint.dof_reduction" class="nav-link" data-scroll-target="#jaxcad.constraints.types.angle.AngleConstraint.dof_reduction">dof_reduction</a></li>
+  <li><a href="#jaxcad.constraints.types.angle.AngleConstraint.get_parameters" id="toc-jaxcad.constraints.types.angle.AngleConstraint.get_parameters" class="nav-link" data-scroll-target="#jaxcad.constraints.types.angle.AngleConstraint.get_parameters">get_parameters</a></li>
+  </ul></li>
   </ul></li>
   </ul>
 </nav>
@@ -195,19 +200,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 
-<section id="jaxcad.extraction.extract_parameters_with_constraints" class="level1">
-<h1>extraction.extract_parameters_with_constraints</h1>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>extraction.extract_parameters_with_constraints(sdf)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Extract parameters from SDF and apply constraint-based DOF reduction.</p>
-<p>Discovers all constraints registered on the free parameters, builds a ConstraintGraph, and returns both the reduced coordinate vector and the null-space matrix needed to project back to full parameter space.</p>
+<section id="jaxcad.constraints.types.angle.AngleConstraint" class="level1">
+<h1>constraints.types.angle.AngleConstraint</h1>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>constraints.types.angle.AngleConstraint(vector1, vector2, angle, <span class="op">*</span>, weight<span class="op">=</span><span class="fl">1.0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Constraint that fixes the angle between two vectors.</p>
+<p>This constraint enforces: arccos(v1 · v2 / (||v1|| ||v2||)) = angle</p>
+<p>Reduces DOF by 1 (one scalar equation).</p>
 <section id="parameters" class="level2 doc-section doc-section-parameters">
 <h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 11%">
-<col style="width: 11%">
-<col style="width: 60%">
-<col style="width: 17%">
+<col style="width: 9%">
+<col style="width: 18%">
+<col style="width: 58%">
+<col style="width: 13%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -219,22 +225,91 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td>sdf</td>
-<td>SDF</td>
-<td>The SDF tree to extract parameters from.</td>
+<td>vector1</td>
+<td>Vector</td>
+<td>First direction vector (Vector parameter)</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>vector2</td>
+<td>Vector</td>
+<td>Second direction vector (Vector parameter)</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td>angle</td>
+<td>Scalar | float</td>
+<td>Target angle in radians (Scalar parameter or float)</td>
 <td><em>required</em></td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="returns" class="level2 doc-section doc-section-returns">
-<h2 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h2>
+<section id="example" class="level2 doc-section doc-section-example">
+<h2 class="doc-section doc-section-example anchored" data-anchor-id="example">Example</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>v1 <span class="op">=</span> Vector([<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>], free<span class="op">=</span><span class="va">True</span>, name<span class="op">=</span><span class="st">'v1'</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>v2 <span class="op">=</span> Vector([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>], free<span class="op">=</span><span class="va">True</span>, name<span class="op">=</span><span class="st">'v2'</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>constraint <span class="op">=</span> AngleConstraint(v1, v2, jnp.pi <span class="op">/</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="methods" class="level2">
+<h2 class="anchored" data-anchor-id="methods">Methods</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#jaxcad.constraints.types.angle.AngleConstraint.compute_residual">compute_residual</a></td>
+<td>Compute angle constraint residual: v1·v2/(||v1||||v2||) - cos(θ).</td>
+</tr>
+<tr class="even">
+<td><a href="#jaxcad.constraints.types.angle.AngleConstraint.dof_reduction">dof_reduction</a></td>
+<td>Angle constraint adds 1 scalar equation, reducing DOF by 1.</td>
+</tr>
+<tr class="odd">
+<td><a href="#jaxcad.constraints.types.angle.AngleConstraint.get_parameters">get_parameters</a></td>
+<td>Return both vectors involved in the angle constraint.</td>
+</tr>
+</tbody>
+</table>
+<section id="jaxcad.constraints.types.angle.AngleConstraint.compute_residual" class="level3">
+<h3 class="anchored" data-anchor-id="jaxcad.constraints.types.angle.AngleConstraint.compute_residual">compute_residual</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>constraints.types.angle.AngleConstraint.compute_residual(param_values)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Compute angle constraint residual: v1·v2/(||v1||||v2||) - cos(θ).</p>
+<p>Using cos(θ) instead of arccos avoids singularities at 0/π where the arccos gradient vanishes, which can stall the LM solver.</p>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 19%">
-<col style="width: 9%">
-<col style="width: 70%">
+<col style="width: 16%">
+<col style="width: 22%">
+<col style="width: 47%">
+<col style="width: 13%">
 </colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>param_values</td>
+<td>dict[str, Array]</td>
+<td>Dict with keys matching parameter names</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<table class="caption-top table">
 <thead>
 <tr class="header">
 <th>Name</th>
@@ -244,34 +319,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td>reduced_params</td>
+<td></td>
 <td>Array</td>
-<td>Reduced DOF vector (size = total_dof - constraint_dof).</td>
-</tr>
-<tr class="even">
-<td>null_space</td>
-<td>Array</td>
-<td>Matrix mapping reduced → full parameter space.</td>
-</tr>
-<tr class="odd">
-<td>base_point</td>
-<td>Array</td>
-<td>Current parameter values as a flat array.</td>
-</tr>
-<tr class="even">
-<td>param_list</td>
-<td>list</td>
-<td>Ordered list of free Parameter objects.</td>
+<td>Scalar residual (0 when constraint is satisfied)</td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="example" class="level2 doc-section doc-section-example">
-<h2 class="doc-section doc-section-example anchored" data-anchor-id="example">Example</h2>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>reduced, null_space, base, params <span class="op">=</span> extract_parameters_with_constraints(scene)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>full_params <span class="op">=</span> base <span class="op">+</span> null_space <span class="op">@</span> reduced</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="jaxcad.constraints.types.angle.AngleConstraint.dof_reduction" class="level3">
+<h3 class="anchored" data-anchor-id="jaxcad.constraints.types.angle.AngleConstraint.dof_reduction">dof_reduction</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>constraints.types.angle.AngleConstraint.dof_reduction()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Angle constraint adds 1 scalar equation, reducing DOF by 1.</p>
+</section>
+<section id="jaxcad.constraints.types.angle.AngleConstraint.get_parameters" class="level3">
+<h3 class="anchored" data-anchor-id="jaxcad.constraints.types.angle.AngleConstraint.get_parameters">get_parameters</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>constraints.types.angle.AngleConstraint.get_parameters()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Return both vectors involved in the angle constraint.</p>
 
 
+</section>
 </section>
 </section>
 
