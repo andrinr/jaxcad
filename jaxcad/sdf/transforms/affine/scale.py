@@ -29,6 +29,10 @@ class Scale(Transform):
         self.params = {"scale": scale}
 
     @staticmethod
+    def _transform_point(p: Array, scale: Array) -> Array:
+        return p / scale
+
+    @staticmethod
     def sdf(child_sdf, p: Array, scale: Array) -> Array:
         """Pure function for component-wise scaling.
 
@@ -45,17 +49,19 @@ class Scale(Transform):
 
         # Use jnp.where for JAX-compatible branching
         def uniform_scale():
-            s = scale[0]
-            return child_sdf(p / s) * s
+            return child_sdf(Scale._transform_point(p, scale)) * scale[0]
 
         def nonuniform_scale():
-            return child_sdf(p / scale)
+            return child_sdf(Scale._transform_point(p, scale))
 
         return jnp.where(is_uniform, uniform_scale(), nonuniform_scale())
 
     def __call__(self, p: Array) -> Array:
         """Evaluate scaled SDF."""
         return Scale.sdf(self.sdf, p, self.params["scale"].xyz)
+
+    def material_at(self, p: Array) -> dict:
+        return self.sdf.material_at(Scale._transform_point(p, self.params["scale"].xyz))
 
     def to_functional(self):
         """Return pure function for compilation."""

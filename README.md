@@ -5,7 +5,7 @@ Differentiable SDF primitives, transformations, and constraint system built with
 > [!WARNING]
 > The API is not stable. Expect breaking changes.
 
-![primitives](examples/primitives.png)
+![primitives](examples/ior.png)
 
 
 ---
@@ -57,6 +57,59 @@ print(scene(p))  # signed distance from p to the surface
 ```
 
 Every node is a pure JAX function — `jax.grad`, `jax.jit`, and `jax.vmap` work directly on the scene.
+
+---
+
+## Rendering example
+
+Assign materials to primitives and render with the sphere-tracing raymarcher.
+`background_color`, `refract_steps`, and `ior` are all new in this release.
+
+```python
+import jax.numpy as jnp
+from jaxcad.render import raymarch, Material
+from jaxcad.sdf.primitives import Sphere
+from jaxcad.sdf.boolean import Union
+from jaxcad.sdf.transforms import Translate
+
+# Glass sphere (ior=1.5) in front of two coloured spheres
+glass = Sphere(
+    radius=1.0,
+    material=Material(color=[0.92, 0.97, 1.0], roughness=0.05, opacity=0.04, ior=1.5),
+)
+red   = Translate(Sphere(radius=0.65, material=Material(color=[0.93, 0.26, 0.22])),
+                  offset=jnp.array([-1.1, 0.5, -3.0]))
+green = Translate(Sphere(radius=0.65, material=Material(color=[0.05, 0.72, 0.50])),
+                  offset=jnp.array([ 1.1, -0.5, -3.0]))
+scene = Union((glass, red, green), smoothness=0.0)
+
+image = raymarch(
+    scene,
+    camera_pos=jnp.array([0.0, 0.5, 5.5]),
+    resolution=(400, 400),
+    background_color=jnp.array([0.07, 0.09, 0.16]),  # dark night sky
+    refract_steps=48,   # two-bounce Snell's-law refraction
+    aa_samples=2,
+)
+# image is a (400, 400, 3) float32 numpy array
+```
+
+**Material parameters:**
+
+| field | default | meaning |
+|-------|---------|---------|
+| `color` | `[1,1,1]` | RGB surface colour |
+| `roughness` | `0.5` | 0 = mirror, 1 = fully diffuse |
+| `metallic` | `0.0` | 0 = dielectric, 1 = metallic specular |
+| `opacity` | `1.0` | 0 = fully transparent, 1 = opaque |
+| `ior` | `1.0` | index of refraction (1.33 water, 1.5 glass, 2.42 diamond) |
+
+**Key render parameters:**
+
+| parameter | default | meaning |
+|-----------|---------|---------|
+| `background_color` | `[0,0,0]` | colour for rays that miss all geometry |
+| `refract_steps` | `0` | interior march steps; 0 disables refraction |
 
 ---
 
@@ -117,6 +170,8 @@ print(params["p"])  # [1.109, 1.664, 0.] — optimal point on |p|=2 closest to t
 Inspired by [Fidget](https://www.mattkeeter.com/projects/fidget/) and [Inigo Quilez's distance functions](https://iquilezles.org/articles/distfunctions/).
 
 ---
+
+![primitives](examples/thingy.png)
 
 ## License
 

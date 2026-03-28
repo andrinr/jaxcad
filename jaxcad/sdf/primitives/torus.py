@@ -17,8 +17,14 @@ class Torus(Primitive):
         minor_radius: Tube radius (float or Scalar)
     """
 
-    def __init__(self, major_radius: float | Scalar, minor_radius: float | Scalar):
+    def __init__(self, major_radius: float | Scalar, minor_radius: float | Scalar, material=None):
+        from jaxcad.render.material import Material
+
+        self.material = material if material is not None else Material()
         self.params = {"major_radius": major_radius, "minor_radius": minor_radius}
+
+    def material_at(self, _p):
+        return self.material.as_dict()
 
     @staticmethod
     def sdf(p: Array, major_radius: float, minor_radius: float) -> Array:

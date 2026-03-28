@@ -13,6 +13,8 @@ website:
         menu:
           - text: Basics
             href: examples/basics.ipynb
+          - text: Render
+            href: examples/render.ipynb
           - text: Constraints
             href: examples/constraints.ipynb
           - text: Optimization
@@ -71,4 +73,6 @@ quartodoc:
         - geometry.parameters.Scalar
     - title: Render
       contents:
-        - render.render_marching_cubes
+        - render.raymarch.raymarch
+        - render.raymarch.render_raymarched
+        - render.marching_cubes.render_marching_cubes

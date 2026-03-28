@@ -19,8 +19,14 @@ class Box(Primitive):
         box = Box(size=Vector([1, 2, 3], free=True, name='size'))
     """
 
-    def __init__(self, size: Vector):
+    def __init__(self, size: Vector, material=None):
+        from jaxcad.render.material import Material
+
+        self.material = material if material is not None else Material()
         self.params = {"size": size}
+
+    def material_at(self, _p):
+        return self.material.as_dict()
 
     @staticmethod
     def sdf(p: Array, size: Array) -> Array:
@@ -34,7 +40,8 @@ class Box(Primitive):
             Signed distance to box
         """
         q = jnp.abs(p) - size
-        return jnp.linalg.norm(jnp.maximum(q, 0.0), axis=-1) + jnp.minimum(jnp.max(q, axis=-1), 0.0)
+        d = jnp.maximum(q, 0.0)
+        return jnp.sqrt(jnp.sum(d * d, axis=-1) + 1e-20) + jnp.minimum(jnp.max(q, axis=-1), 0.0)
 
     def __call__(self, p: Array) -> Array:
         """Evaluate SDF at point(s) p."""

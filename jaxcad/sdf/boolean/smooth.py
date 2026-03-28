@@ -17,7 +17,7 @@ def smooth_min(a: Array, b: Array, k: float = 0.1) -> Array:
     Returns:
         Smoothly blended minimum value
     """
-    k_scaled = k * 4.0
+    k_scaled = jnp.maximum(k * 4.0, 1e-10)
     h = jnp.maximum(k_scaled - jnp.abs(a - b), 0.0)
     return jnp.minimum(a, b) - h * h * 0.25 / k_scaled
 

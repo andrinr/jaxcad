@@ -25,6 +25,10 @@ class Translate(Transform):
         self.params = {"offset": offset}
 
     @staticmethod
+    def _transform_point(p: Array, offset: Array) -> Array:
+        return p - offset
+
+    @staticmethod
     def sdf(child_sdf, p: Array, offset: Array) -> Array:
         """Pure function for translation.
 
@@ -36,11 +40,14 @@ class Translate(Transform):
         Returns:
             Translated SDF value
         """
-        return child_sdf(p - offset)
+        return child_sdf(Translate._transform_point(p, offset))
 
     def __call__(self, p: Array) -> Array:
         """Evaluate translated SDF."""
         return Translate.sdf(self.sdf, p, self.params["offset"].xyz)
+
+    def material_at(self, p: Array) -> dict:
+        return self.sdf.material_at(Translate._transform_point(p, self.params["offset"].xyz))
 
     def to_functional(self):
         """Return pure function for compilation."""

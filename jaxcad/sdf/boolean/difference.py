@@ -49,6 +49,16 @@ class Difference(BooleanOp):
         """Difference: subtract all subsequent SDFs from first"""
         return Difference.sdf(self.sdfs, p, self.params["smoothness"].value)
 
+    def material_at(self, p: Array) -> dict:
+        from jaxcad.render.material import Material
+
+        k = jnp.maximum(self.params["smoothness"].value * 4.0, 1e-10)
+        d1, d2 = self.sdfs[0](p), self.sdfs[1](p)
+        m1, m2 = self.sdfs[0].material_at(p), self.sdfs[1].material_at(p)
+        # Difference is max(d1, -d2): blend toward m2 where -d2 dominates (cut surface)
+        t = jnp.clip(0.5 + 0.5 * (d1 + d2) / k, 0.0, 1.0)
+        return Material.blend(m1, m2, t)
+
     def to_functional(self):
         """Return pure function for compilation."""
         return Difference.sdf

@@ -38,8 +38,14 @@ class Sphere(Primitive):
         distance = Sphere.sdf(point, radius=1.0)
     """
 
-    def __init__(self, radius: float | Scalar):
+    def __init__(self, radius: float | Scalar, material=None):
+        from jaxcad.render.material import Material
+
+        self.material = material if material is not None else Material()
         self.params = {"radius": radius}
+
+    def material_at(self, _p):
+        return self.material.as_dict()
 
     @staticmethod
     def sdf(p: Array, radius: float) -> Array:

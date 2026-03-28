@@ -17,8 +17,14 @@ class Capsule(Primitive):
         height: Half-height of cylindrical section (float or Scalar)
     """
 
-    def __init__(self, radius: float | Scalar, height: float | Scalar):
+    def __init__(self, radius: float | Scalar, height: float | Scalar, material=None):
+        from jaxcad.render.material import Material
+
+        self.material = material if material is not None else Material()
         self.params = {"radius": radius, "height": height}
+
+    def material_at(self, _p):
+        return self.material.as_dict()
 
     @staticmethod
     def sdf(p: Array, radius: float, height: float) -> Array:

@@ -40,14 +40,26 @@ class Union(BooleanOp):
         result = child_sdfs[0](p)
         for child in child_sdfs[1:]:
             d = child(p)
-            result = jnp.where(
-                smoothness > 0, smooth_min(result, d, smoothness), jnp.minimum(result, d)
-            )
+            result = smooth_min(result, d, smoothness)
         return result
 
     def __call__(self, p: Array) -> Array:
         """Union: min over all children with smooth blending"""
         return Union.sdf(self.sdfs, p, self.params["smoothness"].value)
+
+    def material_at(self, p: Array) -> dict:
+        from jaxcad.render.material import Material
+
+        k = jnp.maximum(self.params["smoothness"].value * 4.0, 1e-10)
+        result_m = self.sdfs[0].material_at(p)
+        result_d = self.sdfs[0](p)
+        for child in self.sdfs[1:]:
+            d = child(p)
+            m = child.material_at(p)
+            t = jnp.clip(0.5 + 0.5 * (d - result_d) / k, 0.0, 1.0)
+            result_m = Material.blend(result_m, m, t)
+            result_d = smooth_min(result_d, d, self.params["smoothness"].value)
+        return result_m
 
     def to_functional(self):
         """Return pure function for compilation."""
