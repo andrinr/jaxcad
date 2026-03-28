@@ -10,7 +10,7 @@ Architecture:
 
 Example:
     from jaxcad.geometry import Vector, Scalar
-    from jaxcad.constraints import DistanceConstraint, extract_free_dof
+    from jaxcad.constraints import DistanceConstraint, null_space
 
     # Two free points (6 DOF total)
     p1 = Vector([0, 0, 0], free=True, name='p1')
@@ -20,32 +20,30 @@ Example:
     constraint = DistanceConstraint(p1, p2, Scalar(0.2))
 
     # Extract reduced DOF (5 DOF instead of 6)
-    reduced_params, null_space = extract_free_dof([constraint], [p1, p2])
+    reduced_params, null_space = null_space([constraint], [p1, p2])
 """
 
 from __future__ import annotations
 
-# Import all constraint types
-from jaxcad.constraints.base import Constraint
 from jaxcad.constraints.dof import (
-    all_parameters,
-    extract_free_dof,
-    in_null_space,
-    linearize_at,
-    null_space_update,
-    project_gradient,
-    project_to_full,
-    project_to_manifold,
-    project_to_reduced,
-    projected_update,
-    total_dof_reduction,
+    NullSpaceMap,
+    build_residual_fn,
+    compute_param_vector,
+    null_space,
+    unpack_param_vector,
 )
-from jaxcad.constraints.solve import solve_constraints
+from jaxcad.constraints.solve import (
+    make_manifold_projection,
+    project_to_manifold,
+    solve_constraints,
+)
 from jaxcad.constraints.types.angle import AngleConstraint
+
+# Import all constraint types
+from jaxcad.constraints.types.base import Constraint
 from jaxcad.constraints.types.distance import DistanceConstraint
 from jaxcad.constraints.types.parallel import ParallelConstraint
 from jaxcad.constraints.types.perpendicular import PerpendicularConstraint
-from jaxcad.extraction import extract_parameters_with_constraints
 
 # Re-export parameter types for convenience
 from jaxcad.geometry.parameters import Parameter, Scalar, Vector
@@ -68,20 +66,15 @@ __all__ = [
     "ParallelConstraint",
     "PerpendicularConstraint",
     # DOF free functions
-    "extract_free_dof",
-    "linearize_at",
-    "in_null_space",
-    "null_space_update",
-    "project_gradient",
-    "project_to_full",
-    "project_to_manifold",
-    "project_to_reduced",
-    "projected_update",
-    "total_dof_reduction",
-    "all_parameters",
+    "NullSpaceMap",
+    "build_residual_fn",
+    "compute_param_vector",
+    "unpack_param_vector",
+    "null_space",
     # Solver
     "solve_constraints",
-    "extract_parameters_with_constraints",
+    "project_to_manifold",
+    "make_manifold_projection",
     # Aliases
     "Distance",
     "Angle",

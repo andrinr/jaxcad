@@ -1,5 +1,7 @@
 """Tests for parameter extraction from SDF trees."""
 
+import jax.numpy as jnp
+
 from jaxcad import extract_parameters
 from jaxcad.geometry.parameters import Scalar, Vector
 from jaxcad.sdf.primitives.box import Box
@@ -11,12 +13,12 @@ def test_extract_free_parameter():
     radius = Scalar(1.0, free=True, name="radius")
     sphere = Sphere(radius=radius)
 
-    free_params, fixed_params = extract_parameters(sphere)
+    free_params, fixed_params, metadata = extract_parameters(sphere)
 
-    # Should have one free parameter
     assert len(free_params) == 1
-    assert "sphere_0.radius" in free_params
-    assert free_params["sphere_0.radius"] is radius
+    assert "radius" in free_params
+    assert jnp.array_equal(free_params["radius"], radius.value)
+    assert metadata["radius"] is radius
 
 
 def test_extract_fixed_parameter():
@@ -24,11 +26,10 @@ def test_extract_fixed_parameter():
     radius = Scalar(2.0, free=False, name="radius")
     sphere = Sphere(radius=radius)
 
-    free_params, fixed_params = extract_parameters(sphere)
+    free_params, fixed_params, metadata = extract_parameters(sphere)
 
-    # Should have one fixed parameter
-    assert len(fixed_params) == 1
     assert len(free_params) == 0
+    assert len(fixed_params) == 1
     assert "sphere_0.radius" in fixed_params
 
 
@@ -37,11 +38,11 @@ def test_extract_mixed_parameters():
     size = Vector([1, 2, 3], free=True, name="size")
     box = Box(size=size)
 
-    free_params, fixed_params = extract_parameters(box)
+    free_params, fixed_params, metadata = extract_parameters(box)
 
-    # Box has a free size parameter
-    assert "box_0.size" in free_params
-    assert free_params["box_0.size"] is size
+    assert "size" in free_params
+    assert jnp.array_equal(free_params["size"], size.value)
+    assert metadata["size"] is size
 
 
 def test_extract_multiple_primitives():
@@ -53,12 +54,11 @@ def test_extract_multiple_primitives():
     sphere2 = Sphere(radius=r2)
 
     # Extract from each separately
-    free1, _ = extract_parameters(sphere1)
-    free2, _ = extract_parameters(sphere2)
+    free1, _, _ = extract_parameters(sphere1)
+    free2, _, _ = extract_parameters(sphere2)
 
-    # Each should have sphere_0.radius (independent extractions)
-    assert "sphere_0.radius" in free1
-    assert "sphere_0.radius" in free2
+    assert "r1" in free1
+    assert "r2" in free2
 
 
 def test_extract_no_free_parameters():
@@ -66,7 +66,7 @@ def test_extract_no_free_parameters():
     radius = Scalar(1.0, free=False, name="radius")
     sphere = Sphere(radius=radius)
 
-    free_params, fixed_params = extract_parameters(sphere)
+    free_params, fixed_params, metadata = extract_parameters(sphere)
 
     assert len(free_params) == 0
     assert len(fixed_params) == 1

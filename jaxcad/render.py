@@ -16,6 +16,7 @@ def render_raymarched(
     camera_pos: Array = jnp.array([5.0, 5.0, 5.0]),
     look_at: Array = jnp.array([0.0, 0.0, 0.0]),
     resolution: tuple[int, int] = (200, 200),
+    fov: float = 0.8,
     max_steps: int = 64,
     _max_dist: float = 20.0,
     eps: float = 1e-3,
@@ -29,7 +30,9 @@ def render_raymarched(
         camera_pos: Camera position
         look_at: Vector to look at
         resolution: Image resolution (height, width)
+        fov: Field of view (controls ray spread)
         max_steps: Maximum raymarching steps
+        min_dist: Minimum hit distance threshold
         max_dist: Maximum ray distance
         eps: Surface threshold
         ax: Matplotlib axes (creates new if None)
@@ -53,7 +56,6 @@ def render_raymarched(
     up = jnp.cross(forward, right)
 
     # Generate all ray directions (vectorized)
-    fov = 0.8
     j_coords = jnp.arange(width)
     i_coords = jnp.arange(height)
     j_grid, i_grid = jnp.meshgrid(j_coords, i_coords)

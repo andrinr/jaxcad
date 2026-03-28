@@ -7,6 +7,7 @@ independent constraint equations it introduces.
 
 from __future__ import annotations
 
+import dataclasses
 from abc import abstractmethod
 from dataclasses import dataclass, field
 
@@ -40,6 +41,11 @@ class Constraint(Fluent):
 
     def __post_init__(self):
         """Register this constraint on all parameters it references."""
+        self.params = {
+            f.name: getattr(self, f.name)
+            for f in dataclasses.fields(self)
+            if isinstance(getattr(self, f.name), Parameter)
+        }
         for param in self.get_parameters():
             param.add_constraint(self)
 

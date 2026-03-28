@@ -2,22 +2,24 @@
 
 from typing import Any
 
+import jax
+import jax.numpy as jnp
+import optax
 import optimistix as optx
 from jax import Array
 
 from jaxcad.constraints.dof import (
-    _build_residual_fn,
-    _build_x0,
     _collect_constraints,
-    _fixed_params,
-    total_dof_reduction,
+    build_residual_fn,
+    compute_param_vector,
+    unpack_param_vector,
 )
-from jaxcad.geometry.parameters import Scalar, Vector
-from jaxcad.sdf import SDF
+from jaxcad.fluent import Fluent
+from jaxcad.geometry.parameters import Parameter, Scalar
 
 
 def solve_constraints(
-    sdf: SDF,
+    sdf: Fluent,
     *,
     tol: float = 1e-6,
     max_steps: int = 256,
@@ -51,22 +53,13 @@ def solve_constraints(
     # Local import avoids a circular dependency: constraints.solve → jaxcad → constraints
     from jaxcad.extraction import extract_parameters
 
-    free_params_dict, _ = extract_parameters(sdf)
+    free_params, _, metadata = extract_parameters(sdf)
 
-    # Deduplicate free params by name to get an ordered list
-    seen: set = set()
-    param_list = []
-    for param in free_params_dict.values():
-        if param.name not in seen:
-            seen.add(param.name)
-            param_list.append(param)
-
-    # Discover all constraints from the free parameters
-    constraints = _collect_constraints(param_list)
+    constraints = _collect_constraints(metadata)
 
     # DOF check
-    total_dof = sum(p.value.size for p in param_list)
-    constraint_dof = total_dof_reduction(constraints)
+    total_dof = sum(p.value.size for p in metadata.values())
+    constraint_dof = sum(c.dof_reduction() for c in constraints)
     remaining = total_dof - constraint_dof
     if remaining > 0:
         raise ValueError(
@@ -76,34 +69,93 @@ def solve_constraints(
     if remaining < 0:
         raise ValueError(f"Over-constrained by {-remaining} equations.")
 
-    fixed = _fixed_params(constraints)
-    flat_fn = _build_residual_fn(constraints, param_list, fixed)
+    flat_fn = build_residual_fn(constraints, metadata)
     residual_fn = lambda x, _: flat_fn(x)  # noqa: E731
-    x0 = _build_x0(param_list)
+    x0 = compute_param_vector(metadata)
 
     solver = optx.LevenbergMarquardt(rtol=tol, atol=tol)
     sol = optx.least_squares(residual_fn, solver, x0, max_steps=max_steps)
     x = sol.value
 
-    # Reconstruct the solved free_params dict
-    name_to_solved: dict[str, Array] = {}
+    # Reconstruct solved free_params as dict[name, Array]
+    result: dict[str, Array] = {}
     offset = 0
-    for p in param_list:
+    for name, p in metadata.items():
         size = p.value.size
-        name_to_solved[p.name] = x[offset : offset + size]
-        if isinstance(p, Scalar):
-            name_to_solved[p.name] = name_to_solved[p.name][0]
+        val = x[offset : offset + size]
+        result[name] = val[0] if isinstance(p, Scalar) else val
         offset += size
+    return result
 
-    return {
-        path: (
-            Vector(
-                value=name_to_solved[param.name], free=True, name=param.name, bounds=param.bounds
-            )
-            if isinstance(param, Vector)
-            else Scalar(
-                value=name_to_solved[param.name], free=True, name=param.name, bounds=param.bounds
-            )
-        )
-        for path, param in free_params_dict.items()
-    }
+
+def project_to_manifold(
+    free_params: dict[str, Array],
+    metadata: dict[str, Parameter],
+    *,
+    steps: int = 1,
+) -> dict[str, Array]:
+    """Project free_params onto the constraint manifold via Newton correction(s).
+
+    Applies ``steps`` Newton steps: ``Δ = Jᵀ(JJᵀ)⁻¹ c(p)``, ``p ← p − Δ``.
+    One step is exact for linear constraints and first-order accurate for
+    nonlinear ones (e.g. sphere). Increase ``steps`` for tighter satisfaction.
+
+    Args:
+        free_params: Current name-keyed parameter arrays (may be off-manifold).
+        metadata: Name-keyed Parameter objects (carries constraint info).
+        steps: Number of Newton corrections to apply (default 1).
+
+    Returns:
+        Projected ``dict[str, Array]`` satisfying constraints to first order.
+    """
+    constraints = _collect_constraints(metadata)
+    if not constraints:
+        return free_params
+
+    flat_fn = build_residual_fn(constraints, metadata)
+    x = jnp.concatenate([jnp.atleast_1d(free_params[name]) for name in metadata])
+
+    for _ in range(steps):
+        r = flat_fn(x)
+        J = jax.jacobian(flat_fn)(x)
+        delta = J.T @ jnp.linalg.solve(J @ J.T, r)
+        x = x - delta
+
+    return unpack_param_vector(x, metadata)
+
+
+def make_manifold_projection(
+    metadata: dict[str, Parameter],
+    *,
+    steps: int = 1,
+) -> optax.GradientTransformationExtraArgs:
+    """Return an optax transform that projects params onto the constraint manifold.
+
+    Chain after an optimizer to enforce constraints after each gradient step:
+
+        optimizer = optax.chain(optax.adam(0.05), make_manifold_projection(metadata))
+        state = optimizer.init(free_params)
+        updates, state = optimizer.update(grads, state, free_params)
+        free_params = optax.apply_updates(free_params, updates)
+
+    Args:
+        metadata: Name-keyed Parameter objects (carries constraint info).
+        steps: Number of Newton corrections to apply (default 1).
+
+    Returns:
+        An optax.GradientTransformationExtraArgs that projects updates onto the
+        constraint manifold. Requires ``params`` to be passed to ``update``.
+    """
+
+    def init_fn(_params):
+        return ()
+
+    def update_fn(updates, state, params=None, **_):
+        if params is None:
+            return updates, state
+        new_params = optax.apply_updates(params, updates)
+        projected = project_to_manifold(new_params, metadata, steps=steps)
+        corrected = jax.tree.map(lambda a, b: b - a, params, projected)
+        return corrected, state
+
+    return optax.GradientTransformationExtraArgs(init_fn, update_fn)

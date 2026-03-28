@@ -17,7 +17,7 @@ def test_compile_sphere_basic():
 
     # Query at origin (inside sphere)
     point = jnp.array([0.0, 0.0, 0.0])
-    free_vals = {"sphere_0.radius": 1.0}
+    free_vals = {"radius": 1.0}
     fixed_vals = {}
 
     distance = sdf_fn(free_vals, fixed_vals)(point)
@@ -53,15 +53,15 @@ def test_compile_with_parameter_variation():
     point = jnp.array([2.0, 0.0, 0.0])
 
     # Test with radius = 1.0
-    dist1 = sdf_fn({"sphere_0.radius": 1.0}, {})(point)
+    dist1 = sdf_fn({"radius": 1.0}, {})(point)
     assert jnp.isclose(dist1, 1.0)
 
     # Test with radius = 1.5
-    dist2 = sdf_fn({"sphere_0.radius": 1.5}, {})(point)
+    dist2 = sdf_fn({"radius": 1.5}, {})(point)
     assert jnp.isclose(dist2, 0.5)
 
     # Test with radius = 2.0
-    dist3 = sdf_fn({"sphere_0.radius": 2.0}, {})(point)
+    dist3 = sdf_fn({"radius": 2.0}, {})(point)
     assert jnp.isclose(dist3, 0.0)
 
 
@@ -74,7 +74,7 @@ def test_compile_box():
 
     # Query at origin (inside box)
     point = jnp.array([0.0, 0.0, 0.0])
-    free_vals = {"box_0.size": jnp.array([1.0, 1.0, 1.0])}
+    free_vals = {"size": jnp.array([1.0, 1.0, 1.0])}
     fixed_vals = {}
 
     distance = sdf_fn(free_vals, fixed_vals)(point)

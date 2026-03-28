@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import jax.numpy as jnp
 from jax import Array
 
-from jaxcad.constraints.base import Constraint
+from jaxcad.constraints.types.base import Constraint
 from jaxcad.geometry.parameters import Parameter, Vector
 
 

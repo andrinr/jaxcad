@@ -22,6 +22,7 @@ from jaxcad.sdf.boolean import (
     union,
     xor,
 )
+from jaxcad.sdf.functionalize import functionalize
 from jaxcad.sdf.measure import volume
 from jaxcad.sdf.primitives import (
     Box,
@@ -42,6 +43,8 @@ from jaxcad.sdf.transforms import (
 __all__ = [
     # Base
     "SDF",
+    # Compilation
+    "functionalize",
     # Measure
     "measure",
     "volume",

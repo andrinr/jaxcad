@@ -33,8 +33,7 @@ def test_solve_constraints_trilateration():
 
     solved = solve_constraints(scene)
 
-    solved_p = solved["translate_0.offset"].value
-    assert jnp.allclose(solved_p, true_p, atol=1e-5)
+    assert jnp.allclose(solved["p"], true_p, atol=1e-5)
 
 
 def test_solve_constraints_returns_free_params_dict():
@@ -42,7 +41,7 @@ def test_solve_constraints_returns_free_params_dict():
     from jaxcad.extraction import extract_parameters
 
     scene, _, _ = _trilateration_scene()
-    free_params, _ = extract_parameters(scene)
+    free_params, _, _ = extract_parameters(scene)
     solved = solve_constraints(scene)
 
     assert set(solved.keys()) == set(free_params.keys())
@@ -97,5 +96,4 @@ def test_solve_constraints_scalar_param():
     )
 
     solved = solve_constraints(scene)
-    solved_p = solved["translate_0.offset"].value
-    assert jnp.allclose(solved_p, jnp.array([2.0, 0.0, 0.0]), atol=1e-5)
+    assert jnp.allclose(solved["p_sc"], jnp.array([2.0, 0.0, 0.0]), atol=1e-5)

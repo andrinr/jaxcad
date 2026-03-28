@@ -4,113 +4,86 @@ import jax
 import jax.numpy as jnp
 import pytest
 
-from jaxcad.constraints import DistanceConstraint, extract_free_dof
+from jaxcad.constraints import DistanceConstraint, null_space
 from jaxcad.geometry.parameters import Vector
 
 
+def _free_and_meta(*params):
+    return (
+        {p.name: p.value for p in params},
+        {p.name: p for p in params},
+    )
+
+
 def test_constrained_optimization_gradient_flow():
-    """Test that gradients flow correctly through constrained optimization."""
-    # Two points that should maintain distance 1.0
     p1 = Vector([0, 0, 0], free=True, name="p1")
     p2 = Vector([1, 0, 0], free=True, name="p2")
+    DistanceConstraint(p1, p2, 1.0)
 
-    constraints = [DistanceConstraint(p1, p2, 1.0)]
-    reduced, null_space = extract_free_dof(constraints, [p1, p2])
+    free, meta = _free_and_meta(p1, p2)
+    N = null_space(free, meta)
+    base_vec = N.pack(free)
+    reduced = jnp.zeros(N.shape[1])
 
-    # Base point
-    base_point = jnp.concatenate([p1.xyz, p2.xyz])
+    def loss_fn(r):
+        p1_new = (base_vec + N.matrix @ r)[:3]
+        return jnp.sum((p1_new - jnp.array([0.0, 1.0, 0.0])) ** 2)
 
-    # Define a loss function: move p1 to [0, 1, 0]
-    def loss_fn(reduced_params):
-        full = base_point + null_space @ reduced_params
-        p1_new = full[:3]
-        target = jnp.array([0.0, 1.0, 0.0])
-        return jnp.sum((p1_new - target) ** 2)
-
-    # Initial loss
     initial_loss = loss_fn(reduced)
-
-    # Gradient
     grad_fn = jax.grad(loss_fn)
-    grad = grad_fn(reduced)
 
-    # Gradient should be well-defined
+    grad = grad_fn(reduced)
     assert grad.shape == reduced.shape
     assert not jnp.any(jnp.isnan(grad))
 
-    # Perform optimization steps
-    learning_rate = 0.05
-    current_reduced = reduced
-
+    current = reduced
     for _ in range(20):
-        grad = grad_fn(current_reduced)
-        current_reduced = current_reduced - learning_rate * grad
+        current = current - 0.05 * grad_fn(current)
 
-    # Check that loss decreased
-    final_loss = loss_fn(current_reduced)
-    assert final_loss < initial_loss
+    assert loss_fn(current) < initial_loss
 
 
 def test_constraint_preserves_dof_in_optimization():
-    """Test that constraints correctly reduce DOF during optimization."""
-    # Three points with two distance constraints
     p1 = Vector([0, 0, 0], free=True, name="p1")
     p2 = Vector([1, 0, 0], free=True, name="p2")
     p3 = Vector([0.5, 0.5, 0], free=True, name="p3")
+    DistanceConstraint(p1, p2, 1.0)
+    DistanceConstraint(p1, p3, 0.7071)
 
-    constraints = [
-        DistanceConstraint(p1, p2, 1.0),
-        DistanceConstraint(p1, p3, 0.7071),  # ~√2/2
-    ]
+    free, meta = _free_and_meta(p1, p2, p3)
+    N = null_space(free, meta)
 
-    # 9 DOF - 2 constraints = 7 DOF
-    reduced, null_space = extract_free_dof(constraints, [p1, p2, p3])
+    assert N.shape[1] == 7
 
-    assert reduced.shape[0] == 7
+    base_vec = N.pack(free)
+    reduced = jnp.zeros(N.shape[1])
 
-    # Base point
-    base_point = jnp.concatenate([p1.xyz, p2.xyz, p3.xyz])
+    def loss_fn(r):
+        return jnp.sum((base_vec + N.matrix @ r)[2::3])
 
-    # Define optimization problem: minimize z-coordinates
-    def loss_fn(reduced_params):
-        full = base_point + null_space @ reduced_params
-        # Minimize sum of z-coordinates
-        return jnp.sum(full[2::3])  # Every 3rd element starting from index 2
-
-    # Check gradients work
-    grad_fn = jax.grad(loss_fn)
-    grad = grad_fn(reduced)
-
+    grad = jax.grad(loss_fn)(reduced)
     assert grad.shape == (7,)
     assert not jnp.any(jnp.isnan(grad))
 
 
 @pytest.mark.parametrize("learning_rate", [0.01, 0.05, 0.1])
 def test_optimization_convergence_with_learning_rate(learning_rate):
-    """Test optimization convergence with different learning rates."""
     p1 = Vector([0, 0, 0], free=True, name="p1")
     p2 = Vector([1, 0, 0], free=True, name="p2")
+    DistanceConstraint(p1, p2, 1.0)
 
-    constraints = [DistanceConstraint(p1, p2, 1.0)]
-    reduced, null_space = extract_free_dof(constraints, [p1, p2])
-    base_point = jnp.concatenate([p1.xyz, p2.xyz])
+    free, meta = _free_and_meta(p1, p2)
+    N = null_space(free, meta)
+    base_vec = N.pack(free)
+    reduced = jnp.zeros(N.shape[1])
 
-    def loss_fn(reduced_params):
-        full = base_point + null_space @ reduced_params
-        p1_new = full[:3]
-        target = jnp.array([0.0, 1.0, 0.0])
-        return jnp.sum((p1_new - target) ** 2)
-
-    initial_loss = loss_fn(reduced)
+    def loss_fn(r):
+        p1_new = (base_vec + N.matrix @ r)[:3]
+        return jnp.sum((p1_new - jnp.array([0.0, 1.0, 0.0])) ** 2)
 
     grad_fn = jax.grad(loss_fn)
-    current_reduced = reduced
-
+    current = reduced
     for _ in range(50):
-        grad = grad_fn(current_reduced)
-        current_reduced = current_reduced - learning_rate * grad
+        current = current - learning_rate * grad_fn(current)
 
-    final_loss = loss_fn(current_reduced)
-
-    # All learning rates should reduce loss
-    assert final_loss < initial_loss
+    assert loss_fn(current) < loss_fn(reduced)
