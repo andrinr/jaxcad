@@ -1,10 +1,12 @@
 # jaxCAD
 
+Differentiable SDF primitives, transformations, and constraint system built with JAX.
+
+> [!WARNING]
+> The API is not stable. Expect breaking changes.
+
 ![primitives](examples/primitives.png)
 
-Differentiable CAD built on JAX and Signed Distance Functions.
-
-Parametric geometry, geometric constraints, and automatic differentiation — composable with `jax.grad`, `jax.jit`, and `jax.vmap`.
 
 ---
 
