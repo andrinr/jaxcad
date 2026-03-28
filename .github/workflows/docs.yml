@@ -25,6 +25,7 @@ jobs:
         run: |
           pip install "jax[cpu]>=0.4.20" imageio numpy
           pip install -e . --no-deps
+          pip install optax optimistix
           pip install "quartodoc>=0.7" "griffe<1.0"
 
       - name: Build API reference

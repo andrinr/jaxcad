@@ -16,6 +16,7 @@ Clone this repo and
 ```bash
 cd jaxcad
 uv sync
+pre-commit install
 ```
 
 ## Tests

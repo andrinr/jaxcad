@@ -43,33 +43,20 @@ quartodoc:
     - title: Parameter Extraction
       contents:
         - extraction.extract_parameters
-        - extraction.extract_parameters_with_constraints
     - title: Functionalize
       contents:
         - functionalize.functionalize
     - title: Constraints — types
       contents:
         - constraints.base.Constraint
-        - constraints.types.distance.DistanceConstraint
-        - constraints.types.angle.AngleConstraint
-        - constraints.types.parallel.ParallelConstraint
-        - constraints.types.perpendicular.PerpendicularConstraint
-    - title: Constraints — DOF
-      contents:
-        - constraints.dof.extract_free_dof
-        - constraints.dof.linearize_at
-        - constraints.dof.in_null_space
-        - constraints.dof.null_space_update
-        - constraints.dof.projected_update
-        - constraints.dof.project_gradient
-        - constraints.dof.project_to_manifold
-        - constraints.dof.project_to_full
-        - constraints.dof.project_to_reduced
-        - constraints.dof.total_dof_reduction
-        - constraints.dof.all_parameters
+        - constraints.distance.DistanceConstraint
+        - constraints.angle.AngleConstraint
+        - constraints.parallel.ParallelConstraint
+        - constraints.perpendicular.PerpendicularConstraint
     - title: Constraints — solver
       contents:
         - constraints.solve.solve_constraints
+        - constraints.solve.newton_raphson
     - title: Construction
       contents:
         - construction.from_point.from_point
