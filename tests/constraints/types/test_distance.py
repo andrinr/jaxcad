@@ -1,6 +1,5 @@
 """Tests for DistanceConstraint."""
 
-import jax
 import jax.numpy as jnp
 import pytest
 
@@ -28,47 +27,6 @@ def test_distance_constraint_residual(p1_xyz, p2_xyz, target_dist, expected_resi
     residual = constraint.compute_residual(param_values)
 
     assert jnp.abs(residual - expected_residual) < 1e-6
-
-
-def test_distance_constraint_jacobian_shape():
-    """Test that Jacobian has correct shape."""
-    p1 = Vector([0, 0, 0], free=True, name="p1")
-    p2 = Vector([1, 0, 0], free=True, name="p2")
-
-    constraint = DistanceConstraint(p1, p2, 1.0)
-    param_values = {"p1": p1.xyz, "p2": p2.xyz}
-
-    jac = constraint.jacobian(param_values)
-
-    # Should be (6,) - gradient w.r.t. both 3D points
-    assert jac.shape == (6,)
-
-
-def test_distance_constraint_jacobian_correctness():
-    """Test that Jacobian matches numerical gradient."""
-    p1 = Vector([0, 0, 0], free=True, name="p1")
-    p2 = Vector([1, 0, 0], free=True, name="p2")
-
-    constraint = DistanceConstraint(p1, p2, 1.0)
-
-    param_values = {
-        "p1": jnp.array([0.0, 0.0, 0.0]),
-        "p2": jnp.array([1.0, 0.0, 0.0]),
-    }
-
-    # Analytical Jacobian
-    jac = constraint.jacobian(param_values)
-
-    # Numerical Jacobian via JAX autodiff
-    def residual_fn(p1, p2):
-        pv = {"p1": p1, "p2": p2}
-        return constraint.compute_residual(pv)
-
-    jac_p1_numerical = jax.grad(residual_fn, argnums=0)(param_values["p1"], param_values["p2"])
-    jac_p2_numerical = jax.grad(residual_fn, argnums=1)(param_values["p1"], param_values["p2"])
-    jac_numerical = jnp.concatenate([jac_p1_numerical, jac_p2_numerical])
-
-    assert jnp.allclose(jac, jac_numerical, atol=1e-5)
 
 
 def test_distance_constraint_dof_reduction():

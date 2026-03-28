@@ -10,10 +10,13 @@ The geometry layer is independent of SDFs and constraints.
 
 # Parameter types
 from jaxcad.geometry.parameters import (
+    NamedParams,
     Parameter,
+    PathParams,
     Scalar,
     Vector,
     as_parameter,
+    deduplicate_params,
 )
 
 # Geometric primitives
@@ -29,6 +32,9 @@ __all__ = [
     "Scalar",
     "Vector",
     "as_parameter",
+    "PathParams",
+    "NamedParams",
+    "deduplicate_params",
     # Primitives
     "Line",
     "Rectangle",

@@ -19,3 +19,6 @@ class BooleanOp(SDF):
     - self.sdfs: Tuple of child SDFs
     - self.params: Dictionary of Parameter objects
     """
+
+    def children(self) -> list:
+        return list(self.sdfs)

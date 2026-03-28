@@ -1,120 +1,165 @@
-"""Tests for constraint integration with optimization."""
+"""Tests for the optax-based constrained optimization API (make_manifold_projection)."""
 
 import jax
 import jax.numpy as jnp
-import pytest
+import optax
 
-from jaxcad.constraints import ConstraintGraph, DistanceConstraint
+from jaxcad.constraints import (
+    DistanceConstraint,
+    constraint_residuals,
+    make_manifold_projection,
+    null_space,
+)
 from jaxcad.geometry.parameters import Vector
 
 
-def test_constrained_optimization_gradient_flow():
-    """Test that gradients flow correctly through constrained optimization."""
-    # Two points that should maintain distance 1.0
-    p1 = Vector([0, 0, 0], free=True, name="p1")
-    p2 = Vector([1, 0, 0], free=True, name="p2")
+def _free_and_meta(*params):
+    return (
+        {p.name: p.value for p in params},
+        {p.name: p for p in params},
+    )
 
-    graph = ConstraintGraph()
-    graph.add_constraint(DistanceConstraint(p1, p2, 1.0))
 
-    # Get reduced DOF
-    reduced, null_space = graph.extract_free_dof([p1, p2])
+def _sphere_setup(distance=2.0, suffix=""):
+    """Single free point p with |p| = distance."""
+    anchor = Vector([0, 0, 0], free=False, name=f"anc{suffix}")
+    p = Vector([distance, 0, 0], free=True, name=f"p{suffix}")
+    DistanceConstraint(anchor, p, distance)
+    return _free_and_meta(p)
 
-    # Base point
-    base_point = jnp.concatenate([p1.xyz, p2.xyz])
 
-    # Define a loss function: move p1 to [0, 1, 0]
-    def loss_fn(reduced_params):
-        full = base_point + null_space @ reduced_params
-        p1_new = full[:3]
-        target = jnp.array([0.0, 1.0, 0.0])
-        return jnp.sum((p1_new - target) ** 2)
+# ---------------------------------------------------------------------------
+# make_manifold_projection unit tests
+# ---------------------------------------------------------------------------
 
-    # Initial loss
-    initial_loss = loss_fn(reduced)
 
-    # Gradient
-    grad_fn = jax.grad(loss_fn)
-    grad = grad_fn(reduced)
+def test_make_manifold_projection_init_returns_empty_state():
+    free, meta = _sphere_setup(suffix="_init")
+    transform = make_manifold_projection(meta)
+    assert transform.init(free) == ()
 
-    # Gradient should be well-defined
-    assert grad.shape == reduced.shape
-    assert not jnp.any(jnp.isnan(grad))
 
-    # Perform optimization steps
-    learning_rate = 0.05
-    current_reduced = reduced
+def test_make_manifold_projection_no_params_is_passthrough():
+    """When params=None the transform must return updates unchanged."""
+    free, meta = _sphere_setup(suffix="_nop")
+    transform = make_manifold_projection(meta)
+    state = transform.init(free)
+
+    updates = {"p_nop": jnp.array([0.1, 0.2, 0.0])}
+    out, _ = transform.update(updates, state, params=None)
+
+    assert jnp.allclose(out["p_nop"], updates["p_nop"])
+
+
+def test_make_manifold_projection_corrects_update_direction():
+    """Effective update should land on the manifold, not just move toward it."""
+    free, meta = _sphere_setup(distance=2.0, suffix="_corr")
+    transform = make_manifold_projection(meta)
+    state = transform.init(free)
+
+    # A gradient step that moves off the sphere
+    raw_updates = {"p_corr": jnp.array([-0.3, 0.5, 0.1])}
+    corrected, _ = transform.update(raw_updates, state, params=free)
+
+    new_params = optax.apply_updates(free, corrected)
+    assert jnp.abs(jnp.linalg.norm(new_params["p_corr"]) - 2.0) < 1e-5
+
+
+# ---------------------------------------------------------------------------
+# Adam + make_manifold_projection
+# ---------------------------------------------------------------------------
+
+
+def test_manifold_projection_zero_violation_every_step():
+    """Every iterate produced by adam + make_manifold_projection satisfies |p|=2."""
+    free, meta = _sphere_setup(distance=2.0, suffix="_zv")
+    target = jnp.array([1.0, 1.5, 0.0])
+
+    optimizer = optax.chain(optax.adam(0.05), make_manifold_projection(meta))
+    state = optimizer.init(free)
+    params = free
+
+    def objective(p):
+        return jnp.sum((p["p_zv"] - target) ** 2)
 
     for _ in range(20):
-        grad = grad_fn(current_reduced)
-        current_reduced = current_reduced - learning_rate * grad
+        g = jax.grad(objective)(params)
+        updates, state = optimizer.update(g, state, params)
+        params = optax.apply_updates(params, updates)
 
-    # Check that loss decreased
-    final_loss = loss_fn(current_reduced)
-    assert final_loss < initial_loss
-
-
-def test_constraint_preserves_dof_in_optimization():
-    """Test that constraints correctly reduce DOF during optimization."""
-    # Three points with two distance constraints
-    p1 = Vector([0, 0, 0], free=True, name="p1")
-    p2 = Vector([1, 0, 0], free=True, name="p2")
-    p3 = Vector([0.5, 0.5, 0], free=True, name="p3")
-
-    graph = ConstraintGraph()
-    graph.add_constraint(DistanceConstraint(p1, p2, 1.0))
-    graph.add_constraint(DistanceConstraint(p1, p3, 0.7071))  # ~√2/2
-
-    # 9 DOF - 2 constraints = 7 DOF
-    reduced, null_space = graph.extract_free_dof([p1, p2, p3])
-
-    assert reduced.shape[0] == 7
-
-    # Base point
-    base_point = jnp.concatenate([p1.xyz, p2.xyz, p3.xyz])
-
-    # Define optimization problem: minimize z-coordinates
-    def loss_fn(reduced_params):
-        full = base_point + null_space @ reduced_params
-        # Minimize sum of z-coordinates
-        return jnp.sum(full[2::3])  # Every 3rd element starting from index 2
-
-    # Check gradients work
-    grad_fn = jax.grad(loss_fn)
-    grad = grad_fn(reduced)
-
-    assert grad.shape == (7,)
-    assert not jnp.any(jnp.isnan(grad))
+        assert float(jnp.linalg.norm(constraint_residuals(params, meta))) < 1e-5
 
 
-@pytest.mark.parametrize("learning_rate", [0.01, 0.05, 0.1])
-def test_optimization_convergence_with_learning_rate(learning_rate):
-    """Test optimization convergence with different learning rates."""
-    p1 = Vector([0, 0, 0], free=True, name="p1")
-    p2 = Vector([1, 0, 0], free=True, name="p2")
+def test_manifold_projection_converges_to_constrained_optimum():
+    """Adam + projection converges close to the constrained minimum."""
+    free, meta = _sphere_setup(distance=2.0, suffix="_conv")
+    target = jnp.array([1.0, 1.5, 0.0])
+    p_star = target * (2.0 / jnp.linalg.norm(target))
+    optimal_loss = float(jnp.sum((p_star - target) ** 2))
 
-    graph = ConstraintGraph()
-    graph.add_constraint(DistanceConstraint(p1, p2, 1.0))
+    optimizer = optax.chain(optax.adam(0.05), make_manifold_projection(meta))
+    state = optimizer.init(free)
+    params = free
 
-    reduced, null_space = graph.extract_free_dof([p1, p2])
-    base_point = jnp.concatenate([p1.xyz, p2.xyz])
+    def objective(p):
+        return jnp.sum((p["p_conv"] - target) ** 2)
 
-    def loss_fn(reduced_params):
-        full = base_point + null_space @ reduced_params
-        p1_new = full[:3]
-        target = jnp.array([0.0, 1.0, 0.0])
-        return jnp.sum((p1_new - target) ** 2)
+    for _ in range(80):
+        g = jax.grad(objective)(params)
+        updates, state = optimizer.update(g, state, params)
+        params = optax.apply_updates(params, updates)
 
-    initial_loss = loss_fn(reduced)
+    final_loss = float(jnp.sum((params["p_conv"] - target) ** 2))
+    assert final_loss < optimal_loss * 1.1
 
-    grad_fn = jax.grad(loss_fn)
-    current_reduced = reduced
 
-    for _ in range(50):
-        grad = grad_fn(current_reduced)
-        current_reduced = current_reduced - learning_rate * grad
+# ---------------------------------------------------------------------------
+# Riemannian GD: relinearized null-space SGD + make_manifold_projection
+# ---------------------------------------------------------------------------
 
-    final_loss = loss_fn(current_reduced)
 
-    # All learning rates should reduce loss
-    assert final_loss < initial_loss
+def test_riemannian_gd_zero_violation_every_step():
+    """Tangent-space SGD + projection: |r(p)| = 0 at every iterate."""
+    free, meta = _sphere_setup(distance=2.0, suffix="_rgd_zv")
+    target = jnp.array([1.0, 1.5, 0.0])
+
+    optimizer = optax.chain(optax.sgd(0.15), make_manifold_projection(meta))
+    state = optimizer.init(free)
+    params = free
+
+    def objective(p):
+        return jnp.sum((p["p_rgd_zv"] - target) ** 2)
+
+    for _ in range(20):
+        N = null_space(params, meta)
+        g = jax.grad(objective)(params)
+        g_tangent = N @ (g @ N)
+        updates, state = optimizer.update(g_tangent, state, params)
+        params = optax.apply_updates(params, updates)
+
+        assert float(jnp.linalg.norm(constraint_residuals(params, meta))) < 1e-5
+
+
+def test_riemannian_gd_converges_to_optimum():
+    """Riemannian GD converges to within 2% of the constrained optimum."""
+    free, meta = _sphere_setup(distance=2.0, suffix="_rgd_opt")
+    target = jnp.array([1.0, 1.5, 0.0])
+    p_star = target * (2.0 / jnp.linalg.norm(target))
+    optimal_loss = float(jnp.sum((p_star - target) ** 2))
+
+    optimizer = optax.chain(optax.sgd(0.15), make_manifold_projection(meta))
+    state = optimizer.init(free)
+    params = free
+
+    def objective(p):
+        return jnp.sum((p["p_rgd_opt"] - target) ** 2)
+
+    for _ in range(40):
+        N = null_space(params, meta)
+        g = jax.grad(objective)(params)
+        g_tangent = N @ (g @ N)
+        updates, state = optimizer.update(g_tangent, state, params)
+        params = optax.apply_updates(params, updates)
+
+    final_loss = float(jnp.sum((params["p_rgd_opt"] - target) ** 2))
+    assert final_loss < optimal_loss * 1.02
