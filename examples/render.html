@@ -188,8 +188,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#boolean-operations" id="toc-boolean-operations" class="nav-link" data-scroll-target="#boolean-operations">2. Boolean operations</a></li>
   <li><a href="#shadow-hardness" id="toc-shadow-hardness" class="nav-link" data-scroll-target="#shadow-hardness">3. Shadow hardness</a></li>
   <li><a href="#complex-scene" id="toc-complex-scene" class="nav-link" data-scroll-target="#complex-scene">4. Complex scene</a></li>
-  <li><a href="#raymarcher-vs-marching-cubes" id="toc-raymarcher-vs-marching-cubes" class="nav-link" data-scroll-target="#raymarcher-vs-marching-cubes">5. Raymarcher vs marching cubes</a></li>
-  <li><a href="#glass-refraction" id="toc-glass-refraction" class="nav-link" data-scroll-target="#glass-refraction">6. Glass Refraction</a></li>
+  <li><a href="#glass-refraction" id="toc-glass-refraction" class="nav-link" data-scroll-target="#glass-refraction">5. Glass Refraction</a></li>
   </ul>
 </nav>
     </div>
@@ -215,16 +214,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<div id="b2c3d4e5" class="cell" data-execution_count="31">
+<div id="b2c3d4e5" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax.numpy <span class="im">as</span> jnp</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.render <span class="im">import</span> Material, raymarch, render_marching_cubes, render_raymarched</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.render <span class="im">import</span> Material, raymarch, render_raymarched</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.sdf.boolean <span class="im">import</span> Difference, Intersection, Union</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.sdf.primitives <span class="im">import</span> Box, Capsule, RoundBox, Sphere, Torus</span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.sdf.transforms <span class="im">import</span> Translate</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<div id="ib6hlvxfotr" class="cell" data-execution_count="32">
+<div id="ib6hlvxfotr" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ── Colour palette &amp; scene defaults ──────────────────────────────────────────</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Named materials and defaults used consistently across every example.</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>M <span class="op">=</span> {</span>
@@ -242,7 +241,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="primitives-side-by-side" class="level2">
 <h2 class="anchored" data-anchor-id="primitives-side-by-side">1. Primitives side-by-side</h2>
 <p>Each primitive rendered from the same camera position.</p>
-<div id="f6a7b8c9" class="cell" data-execution_count="33">
+<div id="f6a7b8c9" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>primitives <span class="op">=</span> {</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Sphere"</span>: Sphere(radius<span class="op">=</span><span class="fl">1.0</span>, material<span class="op">=</span>M[<span class="st">"blue"</span>]),</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Box"</span>: Box(size<span class="op">=</span>[<span class="fl">1.2</span>, <span class="fl">1.2</span>, <span class="fl">1.2</span>], material<span class="op">=</span>M[<span class="st">"red"</span>]),</span>
@@ -285,7 +284,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="boolean-operations" class="level2">
 <h2 class="anchored" data-anchor-id="boolean-operations">2. Boolean operations</h2>
 <p>Union, intersection, and difference of two overlapping shapes.</p>
-<div id="b8c9d0e1" class="cell" data-execution_count="34">
+<div id="b8c9d0e1" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> Sphere(radius<span class="op">=</span><span class="fl">1.0</span>, material<span class="op">=</span>M[<span class="st">"blue"</span>])</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>b <span class="op">=</span> Translate(Box(size<span class="op">=</span>[<span class="fl">1.2</span>, <span class="fl">0.2</span>, <span class="fl">1.2</span>], material<span class="op">=</span>M[<span class="st">"red"</span>]), offset<span class="op">=</span>jnp.array([<span class="fl">0.6</span>, <span class="fl">0.3</span>, <span class="fl">0.0</span>]))</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -320,7 +319,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="shadow-hardness">3. Shadow hardness</h2>
 <p>The <code>shadow_hardness</code> parameter controls shadow edge sharpness.<br>
 Low values give soft penumbra; high values give hard edges.</p>
-<div id="d0e1f2a3" class="cell" data-execution_count="35">
+<div id="d0e1f2a3" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>scene <span class="op">=</span> Union(</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    (</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        Translate(Sphere(radius<span class="op">=</span><span class="fl">0.6</span>, material<span class="op">=</span>M[<span class="st">"blue"</span>]), offset<span class="op">=</span>jnp.array([<span class="op">-</span><span class="fl">1.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>])),</span>
@@ -368,7 +367,7 @@ Low values give soft penumbra; high values give hard edges.</p>
 <section id="complex-scene" class="level2">
 <h2 class="anchored" data-anchor-id="complex-scene">4. Complex scene</h2>
 <p>A cluster of spheres smoothly blended together — the colour gradients at the joints are what make this visually striking.</p>
-<div id="b4c5d6e7" class="cell" data-execution_count="66">
+<div id="b4c5d6e7" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>blob <span class="op">=</span> Union(</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    (</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>        Sphere(radius<span class="op">=</span><span class="fl">0.80</span>, material<span class="op">=</span>M[<span class="st">"blue"</span>]),</span>
@@ -430,54 +429,8 @@ Low values give soft penumbra; high values give hard edges.</p>
 </div>
 </div>
 </section>
-<section id="raymarcher-vs-marching-cubes" class="level2">
-<h2 class="anchored" data-anchor-id="raymarcher-vs-marching-cubes">5. Raymarcher vs marching cubes</h2>
-<p>Both renderers on the same scene for comparison.</p>
-<div id="d6e7f8a9" class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>scene <span class="op">=</span> Union(</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    (</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        Translate(Sphere(radius<span class="op">=</span><span class="fl">0.8</span>, material<span class="op">=</span>M[<span class="st">"blue"</span>]), offset<span class="op">=</span>jnp.array([<span class="op">-</span><span class="fl">0.9</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>])),</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        Translate(Sphere(radius<span class="op">=</span><span class="fl">0.8</span>, material<span class="op">=</span>M[<span class="st">"red"</span>]), offset<span class="op">=</span>jnp.array([<span class="fl">0.9</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>])),</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    smoothness<span class="op">=</span><span class="fl">0.3</span>,</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">4</span>))</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Raymarcher</span></span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>ax1 <span class="op">=</span> fig.add_subplot(<span class="dv">121</span>)</span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>render_raymarched(</span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    scene,</span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    camera_pos<span class="op">=</span>jnp.array([<span class="fl">3.0</span>, <span class="fl">2.0</span>, <span class="fl">4.0</span>]),</span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    light_dirs<span class="op">=</span>jnp.array([[<span class="fl">1.5</span>, <span class="fl">2.0</span>, <span class="fl">1.5</span>], [<span class="op">-</span><span class="fl">1.0</span>, <span class="fl">0.4</span>, <span class="op">-</span><span class="fl">0.5</span>]]),</span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    light_colors<span class="op">=</span>jnp.array([[<span class="fl">1.0</span>, <span class="fl">0.90</span>, <span class="fl">0.70</span>], [<span class="fl">0.20</span>, <span class="fl">0.30</span>, <span class="fl">0.60</span>]]),</span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    background_color<span class="op">=</span>bg,</span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>    resolution<span class="op">=</span>(<span class="dv">350</span>, <span class="dv">350</span>),</span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    aa_samples<span class="op">=</span><span class="dv">2</span>,</span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span>ax1,</span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">"Sphere tracing"</span>,</span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Marching cubes</span></span>
-<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>ax2 <span class="op">=</span> fig.add_subplot(<span class="dv">122</span>, projection<span class="op">=</span><span class="st">"3d"</span>)</span>
-<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>render_marching_cubes(</span>
-<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>    scene,</span>
-<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>    bounds<span class="op">=</span>(<span class="op">-</span><span class="fl">2.5</span>, <span class="op">-</span><span class="fl">2.5</span>, <span class="op">-</span><span class="fl">2.5</span>),</span>
-<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>    size<span class="op">=</span>(<span class="dv">5</span>, <span class="dv">5</span>, <span class="dv">5</span>),</span>
-<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>    resolution<span class="op">=</span><span class="dv">60</span>,</span>
-<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="st">"#3A82F5"</span>,</span>
-<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>    alpha<span class="op">=</span><span class="fl">0.85</span>,</span>
-<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>    ax<span class="op">=</span>ax2,</span>
-<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">"Marching cubes"</span>,</span>
-<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>ax2.view_init(elev<span class="op">=</span><span class="dv">25</span>, azim<span class="op">=</span><span class="dv">45</span>)</span>
-<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-</section>
 <section id="glass-refraction" class="level2">
-<h2 class="anchored" data-anchor-id="glass-refraction">6. Glass Refraction</h2>
+<h2 class="anchored" data-anchor-id="glass-refraction">5. Glass Refraction</h2>
 <p>When <code>ior &gt; 1.0</code>, rays obey Snell’s law at entry and exit:</p>
 <ol type="1">
 <li>Primary ray hits the front face → bends <strong>into</strong> the material.</li>
@@ -486,65 +439,65 @@ Low values give soft penumbra; high values give hard edges.</p>
 </ol>
 <p>The <strong>Fresnel effect</strong> (Schlick approximation) brightens edges at grazing angles.<br>
 IOR sweep — air → water → glass → diamond.</p>
-<div id="5ev79xang49" class="cell" data-execution_count="67">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>red_ball <span class="op">=</span> Translate(Sphere(radius<span class="op">=</span><span class="fl">0.65</span>, material<span class="op">=</span>M[<span class="st">"red"</span>]), offset<span class="op">=</span>jnp.array([<span class="op">-</span><span class="fl">1.1</span>, <span class="fl">0.5</span>, <span class="op">-</span><span class="fl">3.0</span>]))</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>green_ball <span class="op">=</span> Translate(</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    Sphere(radius<span class="op">=</span><span class="fl">0.65</span>, material<span class="op">=</span>M[<span class="st">"green"</span>]), offset<span class="op">=</span>jnp.array([<span class="fl">1.1</span>, <span class="op">-</span><span class="fl">0.5</span>, <span class="op">-</span><span class="fl">3.0</span>])</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>cam_glass <span class="op">=</span> jnp.array([<span class="fl">0.0</span>, <span class="fl">0.5</span>, <span class="fl">5.5</span>])</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>look_glass <span class="op">=</span> jnp.array([<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>])</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>lights_g <span class="op">=</span> jnp.array([[<span class="fl">1.5</span>, <span class="fl">2.0</span>, <span class="fl">1.0</span>], [<span class="op">-</span><span class="fl">1.0</span>, <span class="fl">0.5</span>, <span class="op">-</span><span class="fl">0.8</span>]])</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>lcolors_g <span class="op">=</span> jnp.array([[<span class="fl">1.0</span>, <span class="fl">0.90</span>, <span class="fl">0.70</span>], [<span class="fl">0.20</span>, <span class="fl">0.35</span>, <span class="fl">0.60</span>]])</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> render_glass(ior, res<span class="op">=</span><span class="dv">300</span>):</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    scene <span class="op">=</span> Union(</span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>        (</span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>            Sphere(</span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>                radius<span class="op">=</span><span class="fl">1.0</span>,</span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>                material<span class="op">=</span>Material(color<span class="op">=</span>[<span class="fl">0.92</span>, <span class="fl">0.97</span>, <span class="fl">1.0</span>], roughness<span class="op">=</span><span class="fl">0.05</span>, opacity<span class="op">=</span><span class="fl">0.04</span>, ior<span class="op">=</span>ior),</span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>            ),</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>            red_ball,</span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>            green_ball,</span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>        ),</span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>        smoothness<span class="op">=</span><span class="fl">0.0</span>,</span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> raymarch(</span>
-<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>        scene,</span>
-<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>        camera_pos<span class="op">=</span>cam_glass,</span>
-<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>        look_at<span class="op">=</span>look_glass,</span>
-<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>        light_dirs<span class="op">=</span>lights_g,</span>
-<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>        light_colors<span class="op">=</span>lcolors_g,</span>
-<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>        resolution<span class="op">=</span>(res, res),</span>
-<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>        background_color<span class="op">=</span>bg,</span>
-<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>        refract_steps<span class="op">=</span><span class="dv">48</span>,</span>
-<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>        max_steps<span class="op">=</span><span class="dv">80</span>,</span>
-<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>        aa_samples<span class="op">=</span><span class="dv">2</span>,</span>
-<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>        ambient<span class="op">=</span><span class="fl">0.04</span>,</span>
-<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a>ior_cases <span class="op">=</span> [</span>
-<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a>    (<span class="fl">1.00</span>, <span class="st">"ior=1.00</span><span class="ch">\n</span><span class="st">(air)"</span>),</span>
-<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a>    (<span class="fl">1.33</span>, <span class="st">"ior=1.33</span><span class="ch">\n</span><span class="st">(water)"</span>),</span>
-<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a>    (<span class="fl">1.50</span>, <span class="st">"ior=1.50</span><span class="ch">\n</span><span class="st">(glass)"</span>),</span>
-<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a>    (<span class="fl">2.42</span>, <span class="st">"ior=2.42</span><span class="ch">\n</span><span class="st">(diamond)"</span>),</span>
-<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a>]</span>
-<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-46"><a href="#cb8-46" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">4</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">4</span>))</span>
-<span id="cb8-47"><a href="#cb8-47" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, (ior, label) <span class="kw">in</span> <span class="bu">zip</span>(axes, ior_cases):</span>
-<span id="cb8-48"><a href="#cb8-48" aria-hidden="true" tabindex="-1"></a>    ax.imshow(render_glass(ior), vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="dv">1</span>)</span>
-<span id="cb8-49"><a href="#cb8-49" aria-hidden="true" tabindex="-1"></a>    ax.axis(<span class="st">"off"</span>)</span>
-<span id="cb8-50"><a href="#cb8-50" aria-hidden="true" tabindex="-1"></a>    ax.set_title(label, fontsize<span class="op">=</span><span class="dv">11</span>)</span>
-<span id="cb8-51"><a href="#cb8-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-52"><a href="#cb8-52" aria-hidden="true" tabindex="-1"></a>plt.suptitle(<span class="st">"Index of Refraction comparison"</span>, fontsize<span class="op">=</span><span class="dv">13</span>)</span>
-<span id="cb8-53"><a href="#cb8-53" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb8-54"><a href="#cb8-54" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="5ev79xang49" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>red_ball <span class="op">=</span> Translate(Sphere(radius<span class="op">=</span><span class="fl">0.65</span>, material<span class="op">=</span>M[<span class="st">"red"</span>]), offset<span class="op">=</span>jnp.array([<span class="op">-</span><span class="fl">1.1</span>, <span class="fl">0.5</span>, <span class="op">-</span><span class="fl">3.0</span>]))</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>green_ball <span class="op">=</span> Translate(</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    Sphere(radius<span class="op">=</span><span class="fl">0.65</span>, material<span class="op">=</span>M[<span class="st">"green"</span>]), offset<span class="op">=</span>jnp.array([<span class="fl">1.1</span>, <span class="op">-</span><span class="fl">0.5</span>, <span class="op">-</span><span class="fl">3.0</span>])</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>cam_glass <span class="op">=</span> jnp.array([<span class="fl">0.0</span>, <span class="fl">0.5</span>, <span class="fl">5.5</span>])</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>look_glass <span class="op">=</span> jnp.array([<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>])</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>lights_g <span class="op">=</span> jnp.array([[<span class="fl">1.5</span>, <span class="fl">2.0</span>, <span class="fl">1.0</span>], [<span class="op">-</span><span class="fl">1.0</span>, <span class="fl">0.5</span>, <span class="op">-</span><span class="fl">0.8</span>]])</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>lcolors_g <span class="op">=</span> jnp.array([[<span class="fl">1.0</span>, <span class="fl">0.90</span>, <span class="fl">0.70</span>], [<span class="fl">0.20</span>, <span class="fl">0.35</span>, <span class="fl">0.60</span>]])</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> render_glass(ior, res<span class="op">=</span><span class="dv">300</span>):</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    scene <span class="op">=</span> Union(</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>        (</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>            Sphere(</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>                radius<span class="op">=</span><span class="fl">1.0</span>,</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>                material<span class="op">=</span>Material(color<span class="op">=</span>[<span class="fl">0.92</span>, <span class="fl">0.97</span>, <span class="fl">1.0</span>], roughness<span class="op">=</span><span class="fl">0.05</span>, opacity<span class="op">=</span><span class="fl">0.04</span>, ior<span class="op">=</span>ior),</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>            ),</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>            red_ball,</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>            green_ball,</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>        ),</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>        smoothness<span class="op">=</span><span class="fl">0.0</span>,</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> raymarch(</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>        scene,</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>        camera_pos<span class="op">=</span>cam_glass,</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>        look_at<span class="op">=</span>look_glass,</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>        light_dirs<span class="op">=</span>lights_g,</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>        light_colors<span class="op">=</span>lcolors_g,</span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>        resolution<span class="op">=</span>(res, res),</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>        background_color<span class="op">=</span>bg,</span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>        refract_steps<span class="op">=</span><span class="dv">48</span>,</span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>        max_steps<span class="op">=</span><span class="dv">80</span>,</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>        aa_samples<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>        ambient<span class="op">=</span><span class="fl">0.04</span>,</span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>ior_cases <span class="op">=</span> [</span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a>    (<span class="fl">1.00</span>, <span class="st">"ior=1.00</span><span class="ch">\n</span><span class="st">(air)"</span>),</span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>    (<span class="fl">1.33</span>, <span class="st">"ior=1.33</span><span class="ch">\n</span><span class="st">(water)"</span>),</span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a>    (<span class="fl">1.50</span>, <span class="st">"ior=1.50</span><span class="ch">\n</span><span class="st">(glass)"</span>),</span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a>    (<span class="fl">2.42</span>, <span class="st">"ior=2.42</span><span class="ch">\n</span><span class="st">(diamond)"</span>),</span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">4</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">4</span>))</span>
+<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, (ior, label) <span class="kw">in</span> <span class="bu">zip</span>(axes, ior_cases):</span>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a>    ax.imshow(render_glass(ior), vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a>    ax.axis(<span class="st">"off"</span>)</span>
+<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a>    ax.set_title(label, fontsize<span class="op">=</span><span class="dv">11</span>)</span>
+<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a>plt.suptitle(<span class="st">"Index of Refraction comparison"</span>, fontsize<span class="op">=</span><span class="dv">13</span>)</span>
+<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="render_files/figure-html/cell-9-output-1.png" class="img-fluid figure-img"></p>
+<p><img src="render_files/figure-html/cell-8-output-1.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>

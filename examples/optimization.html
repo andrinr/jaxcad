@@ -205,14 +205,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p>jaxCAD is a fully differentiable CAD system: every SDF is a pure JAX function, so gradients flow through geometry just like through any other computation. This makes it straightforward to optimize shape parameters directly with respect to any loss.</p>
-<div id="d7882962" class="cell" data-execution_count="1">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jax.numpy <span class="im">as</span> jnp</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad <span class="im">import</span> extract_parameters, functionalize</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.geometry <span class="im">import</span> Vector</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.render <span class="im">import</span> render_marching_cubes</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> jaxcad.sdf <span class="im">import</span> SDF, Sphere, Translate, Union, volume</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="d7882962" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> jaximport jax.numpy <span class="im">as</span> jnpfrom jaxcad <span class="im">import</span> extract_parameters, functionalizefrom jaxcad.geometry <span class="im">import</span> Vectorfrom jaxcad.render <span class="im">import</span> render_raymarchedfrom jaxcad.sdf <span class="im">import</span> SDF, Sphere, Translate, Union, volume</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Because SDFs are plain JAX functions, we can differentiate through them out of the box. As a running example, we define a scene builder that places two unit spheres at positions <code>p1</code> and <code>p2</code> and returns their union.</p>
 <div id="c25af622" class="cell">
@@ -222,18 +216,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    sphere2 <span class="op">=</span> Translate(Sphere(radius<span class="op">=</span>radius), offset<span class="op">=</span>p2)</span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> jax.jit(Union(sphere1, sphere2))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<div id="a35ea133" class="cell" data-execution_count="3">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>p1 <span class="op">=</span> jnp.array([<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>])</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>p2 <span class="op">=</span> jnp.array([<span class="fl">1.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>])</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>render_marching_cubes(double_sphere(p1, p2), figsize<span class="op">=</span>(<span class="dv">4</span>, <span class="dv">4</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="optimization_files/figure-html/cell-4-output-1.png" class="img-fluid figure-img"></p>
-</figure>
-</div>
-</div>
+<div id="a35ea133" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>p1 <span class="op">=</span> jnp.array([<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>])p2 <span class="op">=</span> jnp.array([<span class="fl">1.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>])render_raymarched(    double_sphere(p1, p2),    camera_pos<span class="op">=</span>jnp.array([<span class="fl">3.0</span>, <span class="fl">2.0</span>, <span class="fl">4.0</span>]),    look_at<span class="op">=</span>jnp.array([<span class="fl">0.5</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>]),    resolution<span class="op">=</span>(<span class="dv">300</span>, <span class="dv">300</span>),    aa_samples<span class="op">=</span><span class="dv">2</span>,)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>jaxCAD provides a <code>volume</code> function that integrates an SDF over a bounding volume. We can use it as a loss and differentiate with respect to the sphere positions using <code>jax.value_and_grad</code>.</p>
 <div id="41479e83" class="cell" data-execution_count="4">
