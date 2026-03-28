@@ -33,6 +33,17 @@ class Twist(Transform):
         self.params = {"strength": strength, "axis": axis}
 
     @staticmethod
+    def _transform_point(p: Array, strength: float, axis: Array) -> Array:
+        """Apply twist to a single point (1D)."""
+        height = jnp.dot(p, axis)
+        angle = strength * height
+        c, s = jnp.cos(angle), jnp.sin(angle)
+        p_along = height * axis
+        p_perp = p - p_along
+        cross = jnp.cross(axis, p_perp)
+        return p_along + c * p_perp + s * cross
+
+    @staticmethod
     def sdf(child_sdf, p: Array, strength: float, axis: Array) -> Array:
         """Pure function for twist deformation around an arbitrary axis.
 
@@ -48,13 +59,7 @@ class Twist(Transform):
         axis = axis / jnp.linalg.norm(axis)
 
         if p.ndim == 1:
-            height = jnp.dot(p, axis)
-            angle = strength * height
-            c, s = jnp.cos(angle), jnp.sin(angle)
-            p_along = height * axis
-            p_perp = p - p_along
-            cross = jnp.cross(axis, p_perp)
-            p_twisted = p_along + c * p_perp + s * cross
+            p_twisted = Twist._transform_point(p, strength, axis)
         else:
             height = jnp.einsum("...i,i->...", p, axis)
             angle = strength * height
@@ -69,6 +74,11 @@ class Twist(Transform):
     def __call__(self, p: Array) -> Array:
         """Evaluate twisted SDF."""
         return Twist.sdf(self.sdf, p, self.params["strength"].value, self.params["axis"].xyz)
+
+    def material_at(self, p: Array) -> dict:
+        axis = self.params["axis"].xyz / jnp.linalg.norm(self.params["axis"].xyz)
+        p_twisted = Twist._transform_point(p, self.params["strength"].value, axis)
+        return self.sdf.material_at(p_twisted)
 
     def to_functional(self):
         """Return pure function for compilation."""

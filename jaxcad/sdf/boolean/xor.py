@@ -40,6 +40,12 @@ class Xor(BooleanOp):
         """XOR: max(min(d1, d2), -max(d1, d2))"""
         return Xor.sdf(self.sdfs, p)
 
+    def material_at(self, p: Array) -> dict:
+        from jaxcad.render.material import Material
+
+        m1, m2 = self.sdfs[0].material_at(p), self.sdfs[1].material_at(p)
+        return Material.blend(m1, m2, jnp.array(0.5))
+
     def to_functional(self):
         """Return pure function for compilation."""
         return Xor.sdf

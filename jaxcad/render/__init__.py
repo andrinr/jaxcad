@@ -8,10 +8,12 @@ Two backends:
 """
 
 from jaxcad.render.marching_cubes import render_marching_cubes
+from jaxcad.render.material import Material
 from jaxcad.render.raymarch import raymarch, render_raymarched
 
 __all__ = [
     "raymarch",
     "render_raymarched",
     "render_marching_cubes",
+    "Material",
 ]

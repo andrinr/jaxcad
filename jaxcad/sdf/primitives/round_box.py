@@ -17,8 +17,14 @@ class RoundBox(Primitive):
         radius: Rounding radius (float or Scalar parameter)
     """
 
-    def __init__(self, size: Array | Vector, radius: float | Scalar):
+    def __init__(self, size: Array | Vector, radius: float | Scalar, material=None):
+        from jaxcad.render.material import Material
+
+        self.material = material if material is not None else Material()
         self.params = {"size": size, "radius": radius}
+
+    def material_at(self, _p):
+        return self.material.as_dict()
 
     @staticmethod
     def sdf(p: Array, size: Array, radius: float) -> Array:

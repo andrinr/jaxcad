@@ -32,6 +32,20 @@ class Rotate(Transform):
         self.params = {"axis": axis, "angle": angle}
 
     @staticmethod
+    def _rotation_matrix(axis: Array, angle: float) -> Array:
+        axis = axis / jnp.linalg.norm(axis)
+        c, s = jnp.cos(angle), jnp.sin(angle)
+        t = 1 - c
+        x, y, z = axis[0], axis[1], axis[2]
+        return jnp.array(
+            [
+                [t * x * x + c, t * x * y - s * z, t * x * z + s * y],
+                [t * x * y + s * z, t * y * y + c, t * y * z - s * x],
+                [t * x * z - s * y, t * y * z + s * x, t * z * z + c],
+            ]
+        )
+
+    @staticmethod
     def sdf(child_sdf, p: Array, axis: Array, angle: float) -> Array:
         """Pure function for rotation around arbitrary axis.
 
@@ -44,31 +58,17 @@ class Rotate(Transform):
         Returns:
             Rotated SDF value
         """
-        # Normalize axis
-        axis = axis / jnp.linalg.norm(axis)
-
-        # Rodrigues' rotation formula for arbitrary axis
-        c, s = jnp.cos(angle), jnp.sin(angle)
-        t = 1 - c
-        x, y, z = axis[0], axis[1], axis[2]
-
-        # Build rotation matrix
-        R = jnp.array(
-            [
-                [t * x * x + c, t * x * y - s * z, t * x * z + s * y],
-                [t * x * y + s * z, t * y * y + c, t * y * z - s * x],
-                [t * x * z - s * y, t * y * z + s * x, t * z * z + c],
-            ]
-        )
-
-        # Apply inverse rotation to point
+        R = Rotate._rotation_matrix(axis, angle)
         p_rotated = R.T @ p if p.ndim == 1 else jnp.einsum("ij,...j->...i", R.T, p)
-
         return child_sdf(p_rotated)
 
     def __call__(self, p: Array) -> Array:
         """Evaluate rotated SDF."""
         return Rotate.sdf(self.sdf, p, self.params["axis"].xyz, self.params["angle"].value)
+
+    def material_at(self, p: Array) -> dict:
+        R = Rotate._rotation_matrix(self.params["axis"].xyz, self.params["angle"].value)
+        return self.sdf.material_at(R.T @ p)
 
     def to_functional(self):
         """Return pure function for compilation."""

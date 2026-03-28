@@ -2,11 +2,13 @@
 
 from jaxcad.constraints.solve import solve_constraints
 from jaxcad.extraction import extract_parameters
+from jaxcad.render.material import Material
 from jaxcad.sdf import SDF, boolean, primitives, transforms
 from jaxcad.sdf.functionalize import functionalize
 
 __all__ = [
     "SDF",
+    "Material",
     "primitives",
     "boolean",
     "transforms",

@@ -146,3 +146,19 @@ class SDF(Fluent):
         from jaxcad.sdf.boolean import Xor
 
         return Xor((self, other))
+
+    def material_at(self, _p: Array) -> dict:
+        """Return material properties at point p.
+
+        Default implementation returns a white, matte, opaque material.
+        Subclasses override this to return per-primitive or blended materials.
+
+        Args:
+            p: Query point, shape (3,).
+
+        Returns:
+            Dict with keys 'color', 'roughness', 'metallic', 'opacity'.
+        """
+        from jaxcad.render.material import Material
+
+        return Material().as_dict()
