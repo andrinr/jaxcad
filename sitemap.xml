@@ -2,118 +2,118 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://andrinr.github.io/jaxcad/docs/getting-started.html</loc>
-    <lastmod>2026-03-28T14:06:17.390Z</lastmod>
+    <lastmod>2026-03-28T14:14:50.222Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/examples/optimization.html</loc>
-    <lastmod>2026-03-28T14:06:17.393Z</lastmod>
+    <lastmod>2026-03-28T14:14:50.225Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/examples/basics.html</loc>
-    <lastmod>2026-03-28T14:06:17.391Z</lastmod>
+    <lastmod>2026-03-28T14:14:50.223Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/reference/extraction.extract_parameters.html</loc>
-    <lastmod>2026-03-28T14:06:57.014Z</lastmod>
+    <lastmod>2026-03-28T14:15:34.214Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/reference/constraints.types.parallel.ParallelConstraint.html</loc>
-    <lastmod>2026-03-28T14:06:57.068Z</lastmod>
+    <lastmod>2026-03-28T14:15:34.268Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/reference/constraints.solve.make_manifold_projection.html</loc>
-    <lastmod>2026-03-28T14:06:57.101Z</lastmod>
+    <lastmod>2026-03-28T14:15:34.300Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/reference/construction.extrude.extrude.html</loc>
-    <lastmod>2026-03-28T14:06:57.119Z</lastmod>
+    <lastmod>2026-03-28T14:15:34.319Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/reference/constraints.solve.solve_constraints.html</loc>
-    <lastmod>2026-03-28T14:06:57.087Z</lastmod>
+    <lastmod>2026-03-28T14:15:34.286Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/reference/geometry.parameters.Vector.html</loc>
-    <lastmod>2026-03-28T14:06:57.127Z</lastmod>
+    <lastmod>2026-03-28T14:15:34.326Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/reference/constraints.types.distance.DistanceConstraint.html</loc>
-    <lastmod>2026-03-28T14:06:57.044Z</lastmod>
+    <lastmod>2026-03-28T14:15:34.243Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/reference/construction.from_line.from_line.html</loc>
-    <lastmod>2026-03-28T14:06:57.110Z</lastmod>
+    <lastmod>2026-03-28T14:15:34.309Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/reference/construction.from_circle.from_circle.html</loc>
-    <lastmod>2026-03-28T14:06:57.115Z</lastmod>
+    <lastmod>2026-03-28T14:15:34.314Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/index.html</loc>
-    <lastmod>2026-03-28T14:06:17.393Z</lastmod>
+    <lastmod>2026-03-28T14:14:50.225Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/research/constraints-optimization-ad.html</loc>
-    <lastmod>2026-03-28T14:06:17.397Z</lastmod>
+    <lastmod>2026-03-28T14:14:50.229Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/research/interactive-ui.html</loc>
-    <lastmod>2026-03-28T14:06:17.397Z</lastmod>
+    <lastmod>2026-03-28T14:14:50.229Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/research/rendering-gpu.html</loc>
-    <lastmod>2026-03-28T14:06:17.397Z</lastmod>
+    <lastmod>2026-03-28T14:14:50.229Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/research/constraints.html</loc>
-    <lastmod>2026-03-28T14:06:17.397Z</lastmod>
+    <lastmod>2026-03-28T14:14:50.229Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/reference/sdf.functionalize.functionalize.html</loc>
-    <lastmod>2026-03-28T14:06:57.019Z</lastmod>
+    <lastmod>2026-03-28T14:15:34.219Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/reference/render.render_marching_cubes.html</loc>
-    <lastmod>2026-03-28T14:06:57.140Z</lastmod>
+    <lastmod>2026-03-28T14:15:34.339Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/reference/constraints.types.angle.AngleConstraint.html</loc>
-    <lastmod>2026-03-28T14:06:57.056Z</lastmod>
+    <lastmod>2026-03-28T14:15:34.256Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/reference/constraints.types.base.Constraint.html</loc>
-    <lastmod>2026-03-28T14:06:57.031Z</lastmod>
+    <lastmod>2026-03-28T14:15:34.231Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/reference/index.html</loc>
-    <lastmod>2026-03-28T14:06:56.987Z</lastmod>
+    <lastmod>2026-03-28T14:15:34.187Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/reference/constraints.solve.constraint_residuals.html</loc>
-    <lastmod>2026-03-28T14:06:57.096Z</lastmod>
+    <lastmod>2026-03-28T14:15:34.296Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/reference/constraints.types.perpendicular.PerpendicularConstraint.html</loc>
-    <lastmod>2026-03-28T14:06:57.080Z</lastmod>
+    <lastmod>2026-03-28T14:15:34.279Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/reference/constraints.solve.project_to_manifold.html</loc>
-    <lastmod>2026-03-28T14:06:57.092Z</lastmod>
+    <lastmod>2026-03-28T14:15:34.291Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/reference/construction.from_point.from_point.html</loc>
-    <lastmod>2026-03-28T14:06:57.106Z</lastmod>
+    <lastmod>2026-03-28T14:15:34.305Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/reference/geometry.parameters.Scalar.html</loc>
-    <lastmod>2026-03-28T14:06:57.131Z</lastmod>
+    <lastmod>2026-03-28T14:15:34.330Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/examples/constraints.html</loc>
-    <lastmod>2026-03-28T14:06:17.392Z</lastmod>
+    <lastmod>2026-03-28T14:14:50.224Z</lastmod>
   </url>
   <url>
     <loc>https://andrinr.github.io/jaxcad/examples/constrained_optimization.html</loc>
-    <lastmod>2026-03-28T14:06:17.392Z</lastmod>
+    <lastmod>2026-03-28T14:14:50.224Z</lastmod>
   </url>
 </urlset>
