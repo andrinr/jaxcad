@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 import jax
 import jax.numpy as jnp
 
-from jaxcad.render.scene import Scene
+if TYPE_CHECKING:
+    from jaxcad.render.scene import Scene
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
