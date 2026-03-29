@@ -1,4 +1,4 @@
-"""Compile a Scene to a differentiable (free_params, resolution) -> image function."""
+"""Compile SDF trees and Scenes to differentiable JAX functions."""
 
 from __future__ import annotations
 
@@ -28,6 +28,72 @@ def _collect(node_id: str, params_snapshot: dict, free: dict, fixed: dict) -> di
 def _resolve(param, free_params: dict):
     """Return the current value of a Parameter (free → from dict, fixed → stored)."""
     return free_params[param.name] if param.free else param.value
+
+
+# ── functionalize ─────────────────────────────────────────────────────────────
+
+
+def functionalize(sdf) -> Callable:
+    """Compile an SDF to a pure function with free and fixed parameters.
+
+    Returns a curried function with signature:
+        sdf_fn(free_params, fixed_params) -> (point -> distance)
+
+    Args:
+        sdf: The SDF to compile
+
+    Returns:
+        Callable: Curried function ``sdf_fn(free_params, fixed_params) -> (point -> distance)``
+            mapping parameter dicts to a callable ``point: Array (3,) -> distance: Array ()``.
+
+    Example:
+        ```python
+        radius = Scalar(value=1.0, free=True, name='radius')
+        sphere = Sphere(radius=radius)
+        sdf_fn = functionalize(sphere)
+        distance = sdf_fn({'sphere_0.radius': 2.0}, {})(jnp.array([0., 0., 0.]))
+        ```
+    """
+    from jaxcad.sdf.boolean.base import BooleanOp
+
+    node_counter = {"count": 0}
+
+    def build_function(obj) -> Callable | None:
+        node_id = f"{obj.__class__.__name__.lower()}_{node_counter['count']}"
+        node_counter["count"] += 1
+
+        if not hasattr(obj.__class__, "sdf"):
+            for c in obj.children():
+                build_function(c)
+            return None
+
+        pure_sdf = obj.__class__.sdf
+        params_snapshot = obj.params
+        raw_child_fns = [build_function(c) for c in obj.children()]
+        child_fns = [f for f in raw_child_fns if f is not None]
+
+        def eval_fn(
+            p,
+            free_params: dict,
+            fixed_params: dict,
+            _nid=node_id,
+            _ps=params_snapshot,
+            _fn=pure_sdf,
+            _ch=child_fns,
+        ):
+            param_values = _collect(_nid, _ps, free_params, fixed_params)
+            child_evals = [lambda p_, fn=fn: fn(p_, free_params, fixed_params) for fn in _ch]
+            if isinstance(obj, BooleanOp):
+                return _fn(tuple(child_evals), p, **param_values)
+            elif child_evals:
+                return _fn(child_evals[0], p, **param_values)
+            else:
+                return _fn(p, **param_values)
+
+        return eval_fn
+
+    inner = build_function(sdf)
+    return lambda free_params, fixed_params: lambda p: inner(p, free_params, fixed_params)
 
 
 # ── functionalize_scene ───────────────────────────────────────────────────────
@@ -174,6 +240,8 @@ def functionalize_render(
     shadow_steps: int = 12,
     shadow_hardness: float = 6.0,
     gamma: float = 2.2,
+    fd_normals: bool = False,
+    normal_eps: float = 1e-4,
 ) -> Callable:
     """Compile a ``Scene`` to a differentiable render function.
 
@@ -194,6 +262,10 @@ def functionalize_render(
         shadow_steps: Soft shadow ray iterations.
         shadow_hardness: Shadow edge sharpness.
         gamma: Gamma correction exponent applied to the final image.
+        fd_normals: Use central finite differences for surface normals instead
+            of ``jax.grad``.  Set to True when calling inside
+            ``jax.grad(loss_fn)`` to avoid 2nd-order AD overhead.
+        normal_eps: Step size for finite-difference normal estimation.
 
     Returns:
         ``(free_params, resolution=(H, W)) -> JAX image (H, W, 3)``
@@ -215,10 +287,25 @@ def functionalize_render(
         fov = _resolve(rc.params["fov"], free_params)
         bg = jax.nn.sigmoid(_resolve(rc.params["bg_color"], free_params))
 
-        scene_dist = jnp.linalg.norm(camera_pos - look_at)
+        # Stop gradient through scene_dist: edge_width is a rendering-quality
+        # scalar, not an optimisation target, so it shouldn't pull camera params.
+        scene_dist = jax.lax.stop_gradient(jnp.linalg.norm(camera_pos - look_at))
         h, w = resolution
         edge_width = 2.0 * fov / min(h, w) * scene_dist
         rays = _camera_rays(camera_pos, look_at, resolution, fov)
+
+        # Resolve light params (free Vector list → (N,3) array; fixed → stored array)
+        if rc.free_lights:
+            light_dirs = jnp.stack(
+                [_resolve(rc.params[f"light_dir_{i}"], free_params) for i in range(rc.n_lights)]
+            )
+            light_dirs = light_dirs / jnp.linalg.norm(light_dirs, axis=1, keepdims=True)
+            light_colors = jnp.stack(
+                [_resolve(rc.params[f"light_color_{i}"], free_params) for i in range(rc.n_lights)]
+            )
+        else:
+            light_dirs = rc.light_dirs
+            light_colors = rc.light_colors
 
         def render_pixel(ray_dir):
             return _render_pixel(
@@ -226,8 +313,8 @@ def functionalize_render(
                 material_fn,
                 camera_pos,
                 ray_dir,
-                rc.light_dirs,
-                rc.light_colors,
+                light_dirs,
+                light_colors,
                 max_steps=max_steps,
                 max_dist=max_dist,
                 shadow_steps=shadow_steps,
@@ -236,6 +323,8 @@ def functionalize_render(
                 edge_width=edge_width,
                 background_color=bg,
                 refract_steps=0,
+                fd_normals=fd_normals,
+                normal_eps=normal_eps,
             )
 
         image = jax.vmap(render_pixel)(rays).reshape(h, w, 3)

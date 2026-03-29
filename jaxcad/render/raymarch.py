@@ -220,6 +220,30 @@ def _fresnel_schlick(cos_theta: Array, ior: Array) -> Array:
     return r0 + (1.0 - r0) * (1.0 - jnp.maximum(cos_theta, 0.0)) ** 5
 
 
+def _normal_fd(
+    sdf: Callable[[Array], Array],
+    pos: Array,
+    eps: float = 1e-4,
+) -> tuple[Array, Array]:
+    """Central finite-difference surface normal.
+
+    Uses 6 forward SDF evaluations instead of jax.grad(sdf)(pos).
+    Avoids nested backward-mode AD when called inside jax.grad(loss).
+    """
+    inv2e = 0.5 / eps
+    dx = jnp.array([eps, 0.0, 0.0])
+    dy = jnp.array([0.0, eps, 0.0])
+    dz = jnp.array([0.0, 0.0, eps])
+    raw = jnp.array(
+        [
+            (sdf(pos + dx) - sdf(pos - dx)) * inv2e,
+            (sdf(pos + dy) - sdf(pos - dy)) * inv2e,
+            (sdf(pos + dz) - sdf(pos - dz)) * inv2e,
+        ]
+    )
+    return raw, jnp.linalg.norm(raw)
+
+
 def _render_pixel(
     sdf: Callable[[Array], Array],
     material_fn: Callable[[Array], dict],
@@ -236,6 +260,8 @@ def _render_pixel(
     background_color: Array,
     refract_steps: int,
     use_grad_ao: bool = True,
+    fd_normals: bool = False,
+    normal_eps: float = 1e-4,
 ) -> Array:
     """Trace one ray and return its shaded RGB color.
 
@@ -254,9 +280,12 @@ def _render_pixel(
     t_hit, d_min = _sphere_trace(sdf, ray_origin, ray_dir, max_steps)
     pos = ray_origin + t_hit * ray_dir
 
-    # Normal from gradient
-    raw_normal = jax.grad(sdf)(pos)
-    raw_mag = jnp.linalg.norm(raw_normal)
+    # Normal from gradient or finite differences
+    if fd_normals:
+        raw_normal, raw_mag = _normal_fd(sdf, pos, normal_eps)
+    else:
+        raw_normal = jax.grad(sdf)(pos)
+        raw_mag = jnp.linalg.norm(raw_normal)
     normal = raw_normal / jnp.where(raw_mag > 1e-6, raw_mag, 1.0)
     ao = jnp.clip(raw_mag, 0.0, 1.0) if use_grad_ao else jnp.array(1.0)
 
@@ -290,8 +319,12 @@ def _render_pixel(
         t_exit, _ = _sphere_trace(lambda p: -sdf(p), pos + 1e-3 * dir_in, dir_in, refract_steps)
         exit_pos = pos + 1e-3 * dir_in + t_exit * dir_in
         # 3. Exit normal — flip outward gradient so it opposes dir_in (for Snell's law)
-        raw_exit_n = jax.grad(sdf)(exit_pos)
-        exit_norm = -raw_exit_n / jnp.linalg.norm(raw_exit_n)
+        if fd_normals:
+            raw_exit_n, exit_mag = _normal_fd(sdf, exit_pos, normal_eps)
+        else:
+            raw_exit_n = jax.grad(sdf)(exit_pos)
+            exit_mag = jnp.linalg.norm(raw_exit_n)
+        exit_norm = -raw_exit_n / jnp.where(exit_mag > 1e-6, exit_mag, 1.0)
         # 4. Bend ray back into air (glass → air)
         dir_out = _refract(dir_in, exit_norm, ior)
         # 5. March scene from exit point to find what's behind the glass
@@ -299,8 +332,11 @@ def _render_pixel(
         t_bg, _ = _sphere_trace(sdf, bg_origin, dir_out, refract_steps)
         bg_pos = bg_origin + t_bg * dir_out
         bg_hit = t_bg < max_dist
-        raw_bg_n = jax.grad(sdf)(bg_pos)
-        bg_mag = jnp.linalg.norm(raw_bg_n)
+        if fd_normals:
+            raw_bg_n, bg_mag = _normal_fd(sdf, bg_pos, normal_eps)
+        else:
+            raw_bg_n = jax.grad(sdf)(bg_pos)
+            bg_mag = jnp.linalg.norm(raw_bg_n)
         bg_norm = raw_bg_n / jnp.where(bg_mag > 1e-6, bg_mag, 1.0)
         bg_ao = jnp.clip(bg_mag, 0.0, 1.0)
         bg_mat = material_fn(bg_pos)
@@ -332,8 +368,9 @@ def _render_pixel(
             1.0 - opacity
         ) * rgb_transmitted
     else:
-        # Legacy behaviour: opacity fades to black
-        rgb = rgb_surface * mat["opacity"]
+        # Opacity blends surface with background (no refraction)
+        opacity = mat["opacity"]
+        rgb = rgb_surface * opacity + background_color * (1.0 - opacity)
 
     # Smooth edge: anti-alias contour by fading to background_color
     coverage = jnp.clip(1.0 - d_min / edge_width, 0.0, 1.0)
@@ -358,6 +395,8 @@ def raymarch(
     aa_samples: int = 1,
     background_color: Array = jnp.array([0.0, 0.0, 0.0]),
     refract_steps: int = 0,
+    fd_normals: bool = False,
+    normal_eps: float = 1e-4,
 ) -> np.ndarray:
     """Render an SDF via sphere tracing and return an RGB image array.
 
@@ -387,6 +426,10 @@ def raymarch(
             and used as the edge fade target.  Default is black.
         refract_steps: Number of interior march steps for glass refraction.
             0 disables refraction (legacy behaviour).  Try 32–64 for glass.
+        fd_normals: Use central finite differences for surface normals instead
+            of ``jax.grad``.  Eliminates 2nd-order AD overhead when rendering
+            inside ``jax.grad(loss_fn)``.  Default False (AD normals).
+        normal_eps: Step size for finite-difference normal estimation.
 
     Returns:
         Float32 numpy array of shape (H, W, 3) with values in [0, 1].
@@ -442,6 +485,8 @@ def raymarch(
                 background_color,
                 refract_steps,
                 use_grad_ao,
+                fd_normals,
+                normal_eps,
             )
         )
     )
@@ -474,6 +519,8 @@ def render_raymarched(
     aa_samples: int = 1,
     background_color: Array = jnp.array([0.0, 0.0, 0.0]),
     refract_steps: int = 0,
+    fd_normals: bool = False,
+    normal_eps: float = 1e-4,
     ax: plt.Axes | None = None,
     title: str | None = None,
 ) -> plt.Axes:
@@ -499,6 +546,8 @@ def render_raymarched(
         aa_samples: Super-sampling anti-aliasing factor.
         background_color: RGB color for rays that miss all geometry.
         refract_steps: Interior march steps for glass refraction (0 = disabled).
+        fd_normals: Use finite-difference normals (avoids 2nd-order AD overhead).
+        normal_eps: Step size for finite-difference normal estimation.
         ax: Existing matplotlib axes; creates new figure if None.
         title: Axes title.
 
@@ -525,6 +574,8 @@ def render_raymarched(
         aa_samples=aa_samples,
         background_color=background_color,
         refract_steps=refract_steps,
+        fd_normals=fd_normals,
+        normal_eps=normal_eps,
     )
 
     ax.imshow(image, vmin=0, vmax=1)
