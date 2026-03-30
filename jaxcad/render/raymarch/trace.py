@@ -161,6 +161,22 @@ def _trace(
     if trace_mode == "bisection_refinement":
         t_hit, d_min, t_lo, t_hi = _sphere_trace_with_bracket(sdf, origin, direction, steps)
         bracket_found = t_hi < _SDF_INF
+
+        # Exact SDFs never go negative during sphere tracing (no overshoot), so the
+        # sign-change bracket above is rarely set.  Use a Newton step to establish
+        # one: the directional derivative of the SDF along the ray gives the distance
+        # to the zero crossing.  A small nudge past that puts us inside the surface.
+        p_hit = origin + t_hit * direction
+        grad = jax.grad(sdf)(p_hit)  # surface normal (unit vec for exact SDFs)
+        proj = jnp.dot(grad, direction)  # < 0 for a ray approaching the surface
+        safe_proj = jnp.where(proj < -1e-6, proj, jnp.array(-1e-6))
+        t_over = t_hit + (-d_min / safe_proj) + 1e-4  # Newton step + tiny overshoot
+        d_over = sdf(origin + t_over * direction)
+        sign_change = (d_over < 0.0) & ~bracket_found & (d_min < 1.0)
+        t_lo = jnp.where(sign_change, t_hit, t_lo)
+        t_hi = jnp.where(sign_change, t_over, t_hi)
+        bracket_found = bracket_found | sign_change
+
         # Clamp t_hi so bisection always operates in a finite range
         t_hi_safe = jnp.where(bracket_found, t_hi, t_lo + 1.0)
         t_refined = _bisection_refine(sdf, origin, direction, t_lo, t_hi_safe, bisect_steps)
