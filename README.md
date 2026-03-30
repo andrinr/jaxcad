@@ -5,7 +5,7 @@ Differentiable SDF primitives, transformations, and constraint system built with
 > [!WARNING]
 > The API is not stable. Expect breaking changes.
 
-![primitives](examples/ior.png)
+![primitives](examples/assets/ior.png)
 
 
 ---
@@ -154,7 +154,7 @@ Inspired by [Fidget](https://www.mattkeeter.com/projects/fidget/) and [Inigo Qui
 
 ---
 
-![primitives](examples/thingy.png)
+![primitives](examples/assets/thingy.png)
 
 ## License
 
