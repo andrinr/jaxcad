@@ -392,14 +392,16 @@ def test_raymarch_shadow_hardness_changes_penumbra():
 def test_raymarch_background_color_on_miss():
     """Corner pixels that miss the geometry must equal gamma(background_color)."""
     bg = jnp.array([0.2, 0.4, 0.6])
+    gamma = 2.2
     img = raymarch(
         _sphere_sdf(radius=0.01),
         camera_pos=jnp.array([5.0, 5.0, 5.0]),
         resolution=(8, 8),
         max_steps=8,
         background_color=bg,
+        gamma=gamma,
     )
-    expected = np.array(bg, dtype=np.float32) ** (1.0 / 2.2)
+    expected = np.array(bg, dtype=np.float32) ** (1.0 / gamma)
     np.testing.assert_allclose(img[0, 0], expected, atol=1e-4)
 
 
@@ -643,6 +645,144 @@ def test_fd_normals_grad_wrt_sdf_param_finite_nonzero():
         return pixel.sum()
 
     grad = jax.grad(loss)(jnp.array(1.0))
+    assert jnp.isfinite(grad), f"gradient is not finite: {grad}"
+    assert float(grad) != 0.0, "gradient is zero"
+
+
+# ---------------------------------------------------------------------------
+# Reflections
+# ---------------------------------------------------------------------------
+
+
+def test_reflect_steps_zero_unchanged():
+    """reflect_steps=0 (default) produces the same image as not passing it."""
+    sdf = _sphere_sdf(radius=1.0)
+    common = {
+        "camera_pos": jnp.array([0.0, 0.0, 5.0]),
+        "look_at": jnp.array([0.0, 0.0, 0.0]),
+        "light_dirs": jnp.array([0.5, 1.0, 0.3]),
+        "resolution": (16, 16),
+        "max_steps": 32,
+    }
+    img_default = raymarch(sdf, **common)
+    img_zero = raymarch(sdf, reflect_steps=0, **common)
+    np.testing.assert_allclose(img_default, img_zero, atol=1e-6)
+
+
+def test_reflect_steps_changes_image():
+    """A sphere with high reflectivity + reflect_steps>0 differs from reflectivity=0."""
+    from jaxcad.sdf.primitives import Sphere
+
+    mirror = Sphere(radius=1.0, material=Material(reflectivity=0.9))
+    plain = Sphere(radius=1.0, material=Material(reflectivity=0.0))
+    common = {
+        "camera_pos": jnp.array([0.0, 0.0, 5.0]),
+        "look_at": jnp.array([0.0, 0.0, 0.0]),
+        "light_dirs": jnp.array([0.5, 1.0, 0.3]),
+        "resolution": (16, 16),
+        "max_steps": 32,
+        "reflect_steps": 16,
+    }
+    img_mirror = raymarch(mirror, **common)
+    img_plain = raymarch(plain, **common)
+    assert not np.allclose(img_mirror, img_plain, atol=1e-3)
+
+
+def test_reflect_steps_background_on_miss():
+    """Reflected ray that misses all geometry uses background_color.
+
+    Ray straight along -z toward the sphere top. Normal at top is [0,0,1].
+    reflect_dir = [0,0,-1] - 2*dot([0,0,-1],[0,0,1])*[0,0,1] = [0,0,1].
+    This reflected ray moves away from the sphere → miss → background_color.
+    With reflectivity=1 the surface color is entirely the reflected color, so the
+    final pixel should equal background_color (modulo edge coverage ≈ 1).
+    """
+    bg = jnp.array([0.5, 0.2, 0.8])
+
+    def sdf(p):
+        return jnp.linalg.norm(p) - 1.0
+
+    def mat_fn(_p):
+        return {
+            "color": jnp.ones(3),
+            "roughness": jnp.array(0.5),
+            "metallic": jnp.array(0.0),
+            "opacity": jnp.array(1.0),
+            "ior": jnp.array(1.0),
+            "reflectivity": jnp.array(1.0),
+        }
+
+    light_dirs = jnp.array([[0.0, 1.0, 0.0]])
+    light_colors = jnp.ones((1, 3))
+    ray_origin = jnp.array([0.0, 0.0, 5.0])
+    ray_dir = jnp.array([0.0, 0.0, -1.0])
+
+    pixel = _render_pixel(
+        sdf,
+        mat_fn,
+        ray_origin,
+        ray_dir,
+        light_dirs,
+        light_colors,
+        max_steps=64,
+        max_dist=20.0,
+        shadow_steps=8,
+        shadow_hardness=8.0,
+        ambient=0.0,
+        edge_width=0.05,
+        background_color=bg,
+        refract_steps=0,
+        fd_normals=True,
+        reflect_steps=32,
+    )
+    # With reflectivity=1, rgb_surface = rgb_reflected = bg (miss).
+    # With opacity=1, rgb = bg.  Coverage ≈ 1 on a direct center hit.
+    np.testing.assert_allclose(np.array(pixel), np.array(bg), atol=0.05)
+
+
+def test_grad_reflectivity_finite_nonzero():
+    """jax.grad through _render_pixel w.r.t. reflectivity is finite and non-zero."""
+    light_dirs = jnp.array([[0.5, 1.0, 0.3]])
+    light_dirs = light_dirs / jnp.linalg.norm(light_dirs, axis=1, keepdims=True)
+    light_colors = jnp.ones((1, 3))
+    ray_origin = jnp.array([0.0, 0.0, 5.0])
+    ray_dir = jnp.array([0.0, 0.0, -1.0])  # hits unit sphere at top
+
+    def loss(reflectivity):
+        def sdf(p):
+            return jnp.linalg.norm(p) - 1.0
+
+        def mat_fn(_p):
+            return {
+                "color": jnp.ones(3) * 0.8,
+                "roughness": jnp.array(0.5),
+                "metallic": jnp.array(0.0),
+                "opacity": jnp.array(1.0),
+                "ior": jnp.array(1.0),
+                "reflectivity": reflectivity,
+            }
+
+        pixel = _render_pixel(
+            sdf,
+            mat_fn,
+            ray_origin,
+            ray_dir,
+            light_dirs,
+            light_colors,
+            max_steps=64,
+            max_dist=20.0,
+            shadow_steps=8,
+            shadow_hardness=8.0,
+            ambient=0.1,
+            edge_width=0.1,
+            background_color=jnp.array([0.0, 0.5, 1.0]),
+            refract_steps=0,
+            fd_normals=True,
+            reflect_steps=16,
+        )
+        return pixel.sum()
+
+    grad = jax.grad(loss)(jnp.array(0.5))
     assert jnp.isfinite(grad), f"gradient is not finite: {grad}"
     assert float(grad) != 0.0, "gradient is zero"
 

@@ -2,13 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from typing import Callable
 
-import jax
 import jax.numpy as jnp
-
-if TYPE_CHECKING:
-    from jaxcad.render.scene import Scene
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -229,106 +225,3 @@ def functionalize_scene(geometry) -> Callable:
         )
 
     return scene_fn
-
-
-# ── functionalize_render ──────────────────────────────────────────────────────
-
-
-def functionalize_render(
-    scene: Scene,
-    max_steps: int = 32,
-    max_dist: float = 15.0,
-    shadow_steps: int = 12,
-    shadow_hardness: float = 6.0,
-    gamma: float = 2.2,
-    fd_normals: bool = False,
-    normal_eps: float = 1e-4,
-) -> Callable:
-    """Compile a ``Scene`` to a differentiable render function.
-
-    Fixed geometry params are extracted once at call time and baked in, so the
-    returned function only needs ``free_params`` — the dict that changes each
-    optimisation step::
-
-        render_fn = functionalize_render(scene)
-        image     = render_fn(free_params, resolution=(64, 96))
-
-    ``image`` is a JAX ``(H, W, 3)`` float32 array fully differentiable
-    w.r.t. ``free_params`` via ``jax.grad``.
-
-    Args:
-        scene: ``Scene`` with geometry and ``RenderConfig``.
-        max_steps: Sphere-tracing iterations per primary ray.
-        max_dist: Miss threshold distance.
-        shadow_steps: Soft shadow ray iterations.
-        shadow_hardness: Shadow edge sharpness.
-        gamma: Gamma correction exponent applied to the final image.
-        fd_normals: Use central finite differences for surface normals instead
-            of ``jax.grad``.  Set to True when calling inside
-            ``jax.grad(loss_fn)`` to avoid 2nd-order AD overhead.
-        normal_eps: Step size for finite-difference normal estimation.
-
-    Returns:
-        ``(free_params, resolution=(H, W)) -> JAX image (H, W, 3)``
-    """
-    from jaxcad.extraction import extract_parameters
-    from jaxcad.render.raymarch import _camera_rays, _render_pixel
-
-    # Pre-extract geometry fixed params with the correct counter offset (0-based,
-    # starting from geometry root) so paths match functionalize_scene's counter.
-    _, geo_fixed, _ = extract_parameters(scene.geometry)
-    scene_fn = functionalize_scene(scene.geometry)
-    rc = scene.render_config
-
-    def render_fn(free_params: dict, resolution: tuple[int, int] = (64, 96)):
-        sdf, material_fn = scene_fn(free_params, geo_fixed)
-
-        camera_pos = _resolve(rc.params["camera_pos"], free_params)
-        look_at = _resolve(rc.params["look_at"], free_params)
-        fov = _resolve(rc.params["fov"], free_params)
-        bg = jax.nn.sigmoid(_resolve(rc.params["bg_color"], free_params))
-
-        # Stop gradient through scene_dist: edge_width is a rendering-quality
-        # scalar, not an optimisation target, so it shouldn't pull camera params.
-        scene_dist = jax.lax.stop_gradient(jnp.linalg.norm(camera_pos - look_at))
-        h, w = resolution
-        edge_width = 2.0 * fov / min(h, w) * scene_dist
-        rays = _camera_rays(camera_pos, look_at, resolution, fov)
-
-        # Resolve light params (free Vector list → (N,3) array; fixed → stored array)
-        if rc.free_lights:
-            light_dirs = jnp.stack(
-                [_resolve(rc.params[f"light_dir_{i}"], free_params) for i in range(rc.n_lights)]
-            )
-            light_dirs = light_dirs / jnp.linalg.norm(light_dirs, axis=1, keepdims=True)
-            light_colors = jnp.stack(
-                [_resolve(rc.params[f"light_color_{i}"], free_params) for i in range(rc.n_lights)]
-            )
-        else:
-            light_dirs = rc.light_dirs
-            light_colors = rc.light_colors
-
-        def render_pixel(ray_dir):
-            return _render_pixel(
-                sdf,
-                material_fn,
-                camera_pos,
-                ray_dir,
-                light_dirs,
-                light_colors,
-                max_steps=max_steps,
-                max_dist=max_dist,
-                shadow_steps=shadow_steps,
-                shadow_hardness=shadow_hardness,
-                ambient=0.0,  # ambient handled via bg fallback
-                edge_width=edge_width,
-                background_color=bg,
-                refract_steps=0,
-                fd_normals=fd_normals,
-                normal_eps=normal_eps,
-            )
-
-        image = jax.vmap(render_pixel)(rays).reshape(h, w, 3)
-        return jnp.clip(jnp.maximum(image, 0.0) ** (1.0 / gamma), 0.0, 1.0)
-
-    return render_fn

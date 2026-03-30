@@ -1,4 +1,4 @@
-"""Scene and RenderConfig: top-level Fluent nodes for inverse rendering."""
+"""Scene and Camera: top-level Fluent nodes for inverse rendering."""
 
 from __future__ import annotations
 
@@ -8,11 +8,45 @@ from jaxcad.fluent import Fluent
 from jaxcad.geometry.parameters import Scalar, Vector
 
 
-class RenderConfig(Fluent):
-    """Camera and lighting configuration stored as Fluent parameters.
+class Camera(Fluent):
+    """Perspective camera stored as Fluent parameters.
 
-    Camera and background params are ``Scalar`` / ``Vector`` objects and can be
-    marked ``free=True`` to include them in gradient-based optimisation.
+    All params can be marked ``free=True`` to include them in gradient-based
+    optimisation (e.g. camera pose fitting)::
+
+        cam = Camera(
+            camera_pos=Vector([4.0, 2.0, 6.0], free=True, name="camera_pos"),
+            look_at=Vector([0.0, 0.0, 0.0],    free=False, name="look_at"),
+            fov=Scalar(0.55,                    free=False, name="fov"),
+        )
+
+    Args:
+        camera_pos: World-space camera position.
+        look_at: Point the camera looks toward.
+        fov: Half-width field-of-view (world units at unit depth).
+    """
+
+    def __init__(
+        self,
+        camera_pos: Vector,
+        look_at: Vector,
+        fov: Scalar,
+    ):
+        self.params = {
+            "camera_pos": camera_pos,
+            "look_at": look_at,
+            "fov": fov,
+        }
+
+    def children(self) -> list:
+        return []
+
+
+class Scene(Fluent):
+    """Root Fluent node: geometry tree + camera + lighting.
+
+    A single ``extract_parameters(scene)`` call yields every free parameter
+    across geometry, materials, camera, and lights.
 
     Lights are fixed plain arrays by default.  To make them differentiable,
     pass ``light_dirs`` / ``light_colors`` as lists of ``Vector`` params::
@@ -27,34 +61,35 @@ class RenderConfig(Fluent):
         ]
 
     Args:
-        camera_pos: World-space camera position.
-        look_at: Point the camera looks toward.
-        fov: Half-width field-of-view (world units at unit depth).
-        bg_color: Background / sky colour in logit space (sigmoid applied at
-            render time so values are unconstrained).
+        geometry: SDF tree (``Union``, ``Translate``, primitives, …).
+        camera: :class:`Camera` instance holding pose and FOV.
         light_dirs: ``(N, 3)`` array of light directions (normalised internally),
             or a list of ``Vector`` params for differentiable lights.
         light_colors: ``(N, 3)`` array of light RGB colours,
             or a list of ``Vector`` params for differentiable lights.
+        bg_color: Background / sky colour in logit space (sigmoid applied at
+            render time so values remain unconstrained during optimisation).
+            Pass a ``Vector`` param to make it differentiable.
     """
 
     def __init__(
         self,
-        camera_pos: Vector,
-        look_at: Vector,
-        fov: Scalar,
-        bg_color: Vector,
+        geometry,
+        camera: Camera,
         light_dirs=None,
         light_colors=None,
+        bg_color=None,
     ):
-        self.params = {
-            "camera_pos": camera_pos,
-            "look_at": look_at,
-            "fov": fov,
-            "bg_color": bg_color,
-        }
+        self.params = {}
+        self.geometry = geometry
+        self.camera = camera
 
-        # Detect free Vector params vs fixed plain arrays
+        # bg_color: free Vector param or fixed array
+        if bg_color is None:
+            bg_color = Vector([0.1, 0.25, 0.55], name="bg_color")
+        self.params["bg_color"] = bg_color
+
+        # Detect free Vector params vs fixed plain arrays for lights
         if (
             isinstance(light_dirs, (list, tuple))
             and light_dirs
@@ -81,24 +116,4 @@ class RenderConfig(Fluent):
             self.free_lights = False
 
     def children(self) -> list:
-        return []
-
-
-class Scene(Fluent):
-    """Root Fluent node: geometry tree + render configuration.
-
-    A single ``extract_parameters(scene)`` call yields every free parameter
-    across geometry, materials, and render config.
-
-    Args:
-        geometry: SDF tree (``Union``, ``Translate``, primitives, …).
-        render_config: ``RenderConfig`` with camera and lighting.
-    """
-
-    def __init__(self, geometry, render_config: RenderConfig):
-        self.params = {}
-        self.geometry = geometry
-        self.render_config = render_config
-
-    def children(self) -> list:
-        return [self.geometry, self.render_config]
+        return [self.geometry, self.camera]
